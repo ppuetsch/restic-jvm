@@ -8,6 +8,9 @@ import java.nio.file.Path
 public class Restic(public val configuration: ResticConfiguration) {
     private val runner = ProcessRunner(configuration)
     private val backupCommand = BackupCommand(runner)
+    private val snapshotsCommand = SnapshotsCommand(runner)
+    private val lsCommand = LsCommand(runner)
+    private val findCommand = FindCommand(runner)
 
     public fun version(): ResticVersion {
         val node = lastJsonLine(listOf("version", "--json"))
@@ -54,6 +57,73 @@ public class Restic(public val configuration: ResticConfiguration) {
         listener: BackupListener? = null,
     ): BackupResult = backupCommand.backupCommandOutput(command, options, listener)
 
+    /** Alle passenden Snapshots als flache Liste, auch wenn `groupBy` gesetzt ist. */
+    @JvmOverloads
+    public fun snapshots(options: SnapshotsOptions = SnapshotsOptions.DEFAULT): List<Snapshot> = snapshotsCommand.snapshots(options)
+
+    @JvmSynthetic
+    public fun snapshots(configure: SnapshotsOptions.Builder.() -> Unit): List<Snapshot> =
+        snapshots(SnapshotsOptions.builder().apply(configure).build())
+
+    /** Snapshots gruppiert; ohne `groupBy` wird nach `host,paths` gruppiert. */
+    @JvmOverloads
+    public fun snapshotGroups(options: SnapshotsOptions = SnapshotsOptions.DEFAULT): List<SnapshotGroup> =
+        snapshotsCommand.snapshotGroups(options)
+
+    /** Listet den Inhalt eines Snapshots (`latest` oder eine ID) und meldet jeden Eintrag an den Listener. */
+    @JvmOverloads
+    public fun ls(
+        snapshotId: String = LATEST,
+        options: LsOptions = LsOptions.DEFAULT,
+        listener: LsListener? = null,
+    ): Snapshot = lsCommand.ls(snapshotId, options, listener)
+
+    @JvmSynthetic
+    public fun ls(
+        snapshotId: String = LATEST,
+        listener: LsListener? = null,
+        configure: LsOptions.Builder.() -> Unit,
+    ): Snapshot = ls(snapshotId, LsOptions.builder().apply(configure).build(), listener)
+
+    /** Wie [ls], sammelt aber alle Einträge in einer Liste. */
+    @JvmOverloads
+    public fun listNodes(
+        snapshotId: String = LATEST,
+        options: LsOptions = LsOptions.DEFAULT,
+    ): LsResult {
+        val nodes = mutableListOf<LsNode>()
+        val snapshot = ls(snapshotId, options) { nodes += it }
+        return LsResult(snapshot, nodes)
+    }
+
+    /** `restic ls --ncdu`: Export im NCDU-Format als Text. */
+    @JvmOverloads
+    public fun lsNcdu(
+        snapshotId: String = LATEST,
+        options: LsOptions = LsOptions.DEFAULT,
+    ): String = lsCommand.ncdu(snapshotId, options)
+
+    /** Sucht Dateien oder Verzeichnisse nach Namensmuster in den Snapshots. */
+    @JvmOverloads
+    public fun find(
+        patterns: List<String>,
+        options: FindOptions = FindOptions.DEFAULT,
+    ): List<FindSnapshotMatches> = findCommand.findNames(patterns, options)
+
+    @JvmSynthetic
+    public fun find(
+        patterns: List<String>,
+        configure: FindOptions.Builder.() -> Unit,
+    ): List<FindSnapshotMatches> = find(patterns, FindOptions.builder().apply(configure).build())
+
+    /** Sucht, in welchen Snapshots ein Blob, Tree oder Pack vorkommt. */
+    @JvmOverloads
+    public fun findObjects(
+        kind: FindObjectKind,
+        ids: List<String>,
+        options: FindOptions = FindOptions.DEFAULT,
+    ): List<FindObject> = findCommand.findObjects(kind, ids, options)
+
     private fun lastJsonLine(
         arguments: List<String>,
         environment: Map<String, String> = emptyMap(),
@@ -61,5 +131,9 @@ public class Restic(public val configuration: ResticConfiguration) {
         var lastLine = ""
         runner.runChecked(ProcessRequest(arguments, environment)) { line -> if (line.isNotBlank()) lastLine = line }
         return Json.parse(lastLine)
+    }
+
+    public companion object {
+        public const val LATEST: String = "latest"
     }
 }
