@@ -21,6 +21,7 @@ public class Restic(public val configuration: ResticConfiguration) {
     private val tagCommand = TagCommand(runner)
     private val rewriteAndCopyCommand = RewriteAndCopyCommand(runner)
     private val listCommand = ListCommand(runner)
+    private val adminCommands = AdminCommands(runner)
 
     public fun version(): ResticVersion {
         val node = lastJsonLine(listOf("version", "--json"))
@@ -269,6 +270,60 @@ public class Restic(public val configuration: ResticConfiguration) {
     public fun list(type: ListObjectType): List<String> = listCommand.list(type)
 
     public fun listBlobs(): List<BlobEntry> = listCommand.listBlobs()
+
+    public fun listKeys(): List<KeyInfo> = adminCommands.listKeys()
+
+    /** Fügt dem Repository einen weiteren Schlüssel (Passwort) hinzu. */
+    @JvmOverloads
+    public fun addKey(options: NewKeyOptions = NewKeyOptions.DEFAULT): KeyAddResult = adminCommands.addKey(options)
+
+    @JvmSynthetic
+    public fun addKey(configure: NewKeyOptions.Builder.() -> Unit): KeyAddResult = addKey(NewKeyOptions.builder().apply(configure).build())
+
+    /** Ersetzt den aktuell verwendeten Schlüssel durch einen mit neuem Passwort. */
+    @JvmOverloads
+    public fun changePassword(options: NewKeyOptions = NewKeyOptions.DEFAULT): CommandOutput = adminCommands.changePassword(options)
+
+    @JvmSynthetic
+    public fun changePassword(configure: NewKeyOptions.Builder.() -> Unit): CommandOutput =
+        changePassword(NewKeyOptions.builder().apply(configure).build())
+
+    public fun removeKey(keyId: String): CommandOutput = adminCommands.removeKey(keyId)
+
+    /** Entfernt veraltete Sperren; mit `removeAll` auch aktive. */
+    @JvmOverloads
+    public fun unlock(removeAll: Boolean = false): CommandOutput = adminCommands.unlock(removeAll)
+
+    /** Ohne Namen werden die verfügbaren Migrationen aufgelistet. */
+    @JvmOverloads
+    public fun migrate(
+        names: List<String> = emptyList(),
+        force: Boolean = false,
+    ): CommandOutput = adminCommands.migrate(names, force)
+
+    @JvmOverloads
+    public fun cache(options: CacheOptions = CacheOptions.DEFAULT): CommandOutput = adminCommands.cache(options)
+
+    @JvmSynthetic
+    public fun cache(configure: CacheOptions.Builder.() -> Unit): CommandOutput = cache(CacheOptions.builder().apply(configure).build())
+
+    public fun features(): List<FeatureFlag> = adminCommands.features()
+
+    /** Baut Snapshots aus verwaisten Bäumen wieder auf (`restic recover`). */
+    public fun recover(): CommandOutput = adminCommands.recover()
+
+    @JvmOverloads
+    public fun repairIndex(readAllPacks: Boolean = false): CommandOutput = adminCommands.repairIndex(readAllPacks)
+
+    public fun repairPacks(packIds: List<String>): CommandOutput = adminCommands.repairPacks(packIds)
+
+    @JvmOverloads
+    public fun repairSnapshots(options: RepairSnapshotsOptions = RepairSnapshotsOptions.DEFAULT): CommandOutput =
+        adminCommands.repairSnapshots(options)
+
+    @JvmSynthetic
+    public fun repairSnapshots(configure: RepairSnapshotsOptions.Builder.() -> Unit): CommandOutput =
+        repairSnapshots(RepairSnapshotsOptions.builder().apply(configure).build())
 
     private fun lastJsonLine(
         arguments: List<String>,
