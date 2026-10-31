@@ -88,4 +88,33 @@ class JavaUsageTest {
         List<FindSnapshotMatches> found = restic.find(List.of("*.txt"));
         assertEquals(1, found.get(0).getHits());
     }
+
+    @Test
+    void restoreDumpAndCatAreUsableFromJava(@TempDir Path temporaryDirectory) throws Exception {
+        String binary = System.getenv("RESTIC_BINARY") != null ? System.getenv("RESTIC_BINARY") : "restic";
+        Restic restic = new Restic(ResticConfiguration.builder()
+                .binary(binary)
+                .repository(temporaryDirectory.resolve("repo").toString())
+                .password("pw")
+                .build());
+        restic.init();
+        Path source = Files.createDirectory(temporaryDirectory.resolve("src"));
+        Files.writeString(source.resolve("a.txt"), "hello");
+        restic.backup(List.of(source));
+
+        String filePathInSnapshot = restic.listNodes(Restic.LATEST, LsOptions.builder().recursive().build())
+                .getNodes().stream().filter(node -> node.getName().equals("a.txt")).findFirst().orElseThrow().getPath();
+        java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+        restic.dump(Restic.LATEST, filePathInSnapshot, output);
+        assertEquals("hello", output.toString(java.nio.charset.StandardCharsets.UTF_8));
+
+        assertTrue(restic.catText(CatObjectType.CONFIG).contains("chunker_polynomial"));
+
+        RestoreSummary summary = restic.restore(
+                Restic.LATEST + ":" + filePathInSnapshot.substring(0, filePathInSnapshot.lastIndexOf('/')),
+                temporaryDirectory.resolve("out"),
+                RestoreOptions.builder().overwrite(OverwriteBehavior.ALWAYS).verify().build(),
+                event -> { });
+        assertEquals(1, summary.getFilesRestored());
+    }
 }

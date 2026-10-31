@@ -2,6 +2,7 @@ package io.github.ppuetsch.restic
 
 import java.io.IOException
 import java.io.InputStream
+import java.io.OutputStream
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -19,6 +20,7 @@ internal class ProcessRequest(
     val extraEnvironment: Map<String, String> = emptyMap(),
     val standardInput: InputStream? = null,
     val cancellation: CancellationToken? = null,
+    val standardOutput: OutputStream? = null,
 )
 
 internal class ProcessRunner(private val configuration: ResticConfiguration) {
@@ -38,7 +40,7 @@ internal class ProcessRunner(private val configuration: ResticConfiguration) {
         feedStandardInput(process, request.standardInput)
         val standardError = CompletableFuture.supplyAsync { process.errorStream.bufferedReader().readText() }
         try {
-            process.inputStream.bufferedReader().forEachLine(onStandardOutputLine)
+            consumeStandardOutput(process, request.standardOutput, onStandardOutputLine)
             process.waitFor()
         } finally {
             watchdog?.cancel(false)
@@ -73,6 +75,19 @@ internal class ProcessRunner(private val configuration: ResticConfiguration) {
             builder.start()
         } catch (failure: IOException) {
             throw ResticNotAvailableException("Cannot start '${configuration.binary}': ${failure.message}", failure)
+        }
+    }
+
+    private fun consumeStandardOutput(
+        process: Process,
+        binaryTarget: OutputStream?,
+        onLine: (String) -> Unit,
+    ) {
+        if (binaryTarget != null) {
+            process.inputStream.transferTo(binaryTarget)
+            binaryTarget.flush()
+        } else {
+            process.inputStream.bufferedReader().forEachLine(onLine)
         }
     }
 
