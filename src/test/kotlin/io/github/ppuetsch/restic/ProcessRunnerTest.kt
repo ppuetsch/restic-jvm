@@ -31,7 +31,7 @@ class ProcessRunnerTest {
     fun `version printed on standard output`() {
         val lines = mutableListOf<String>()
         ProcessRunner(ResticConfiguration.builder().binary(resticBinary).build())
-            .runChecked(listOf("version"), lines::add)
+            .runChecked(listOf("version"), onStandardOutputLine = lines::add)
         assertTrue(lines.single().startsWith("restic "), lines.toString())
     }
 

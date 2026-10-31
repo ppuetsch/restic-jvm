@@ -16,9 +16,10 @@ internal class ProcessOutcome(
 internal class ProcessRunner(private val configuration: ResticConfiguration) {
     fun run(
         arguments: List<String>,
+        extraEnvironment: Map<String, String> = emptyMap(),
         onStandardOutputLine: (String) -> Unit = {},
     ): ProcessOutcome {
-        val process = start(arguments)
+        val process = start(arguments, extraEnvironment)
         val timedOut = AtomicBoolean(false)
         val watchdog = startWatchdog(process, timedOut)
         val standardError = CompletableFuture.supplyAsync { process.errorStream.bufferedReader().readText() }
@@ -37,16 +38,21 @@ internal class ProcessRunner(private val configuration: ResticConfiguration) {
     /** Wirft bei Exit-Code != 0 die passende [ResticCommandException]. */
     fun runChecked(
         arguments: List<String>,
+        extraEnvironment: Map<String, String> = emptyMap(),
         onStandardOutputLine: (String) -> Unit = {},
     ): ProcessOutcome {
-        val outcome = run(arguments, onStandardOutputLine)
+        val outcome = run(arguments, extraEnvironment, onStandardOutputLine)
         if (outcome.exitCode != 0) throw commandExceptionFor(outcome.exitCode, outcome.standardError)
         return outcome
     }
 
-    private fun start(arguments: List<String>): Process {
+    private fun start(
+        arguments: List<String>,
+        extraEnvironment: Map<String, String>,
+    ): Process {
         val builder = ProcessBuilder(listOf(configuration.binary) + configuration.globalArguments() + arguments)
         builder.environment().putAll(configuration.processEnvironment())
+        builder.environment().putAll(extraEnvironment)
         configuration.workingDirectory?.let { builder.directory(it.toFile()) }
         return try {
             builder.start()
