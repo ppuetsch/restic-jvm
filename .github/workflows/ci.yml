@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  PINNED_RESTIC_VERSION: "0.18.1"
+
+jobs:
+  build:
+    name: build-and-e2e (${{ matrix.os }}, restic ${{ matrix.restic }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        restic: ["0.18.1"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Install restic
+        shell: bash
+        run: |
+          scripts/install-restic.sh "${{ matrix.restic }}" "$RUNNER_TEMP/restic-bin"
+          echo "RESTIC_BINARY=$RUNNER_TEMP/restic-bin/restic" >> "$GITHUB_ENV"
+      - name: Build, lint and test
+        shell: bash
+        run: ./gradlew build --no-daemon
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports-${{ matrix.os }}-${{ matrix.restic }}
+          path: build/reports/tests
