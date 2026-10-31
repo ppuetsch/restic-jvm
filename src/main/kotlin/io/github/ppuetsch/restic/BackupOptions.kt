@@ -101,6 +101,7 @@ public class BackupOptions private constructor(builder: Builder) {
         internal var verbose: Boolean = false
         internal var cancellationToken: CancellationToken? = null
 
+        @JvmOverloads
         public fun dryRun(enabled: Boolean = true): Builder = apply { dryRun = enabled }
 
         public fun exclude(pattern: String): Builder = apply { excludes.add(pattern) }
@@ -111,8 +112,10 @@ public class BackupOptions private constructor(builder: Builder) {
 
         public fun caseInsensitiveExcludeFile(file: Path): Builder = apply { caseInsensitiveExcludeFiles.add(file) }
 
+        @JvmOverloads
         public fun excludeCaches(enabled: Boolean = true): Builder = apply { excludeCaches = enabled }
 
+        @JvmOverloads
         public fun excludeCloudFiles(enabled: Boolean = true): Builder = apply { excludeCloudFiles = enabled }
 
         /** Format `dateiname` oder `dateiname:header`. */
@@ -128,6 +131,7 @@ public class BackupOptions private constructor(builder: Builder) {
 
         public fun filesFromVerbatim(file: Path): Builder = apply { filesFromVerbatim.add(file) }
 
+        @JvmOverloads
         public fun force(enabled: Boolean = true): Builder = apply { force = enabled }
 
         /** Kombination aus `host`, `paths`, `tags`, durch Komma getrennt; leer deaktiviert die Gruppierung. */
@@ -135,18 +139,23 @@ public class BackupOptions private constructor(builder: Builder) {
 
         public fun host(hostname: String): Builder = apply { host = hostname }
 
+        @JvmOverloads
         public fun ignoreCtime(enabled: Boolean = true): Builder = apply { ignoreCtime = enabled }
 
+        @JvmOverloads
         public fun ignoreInode(enabled: Boolean = true): Builder = apply { ignoreInode = enabled }
 
+        @JvmOverloads
         public fun noScan(enabled: Boolean = true): Builder = apply { noScan = enabled }
 
+        @JvmOverloads
         public fun oneFileSystem(enabled: Boolean = true): Builder = apply { oneFileSystem = enabled }
 
         public fun parent(snapshotId: String): Builder = apply { parent = snapshotId }
 
         public fun readConcurrency(files: Int): Builder = apply { readConcurrency = files }
 
+        @JvmOverloads
         public fun skipIfUnchanged(enabled: Boolean = true): Builder = apply { skipIfUnchanged = enabled }
 
         /** Dateiname im Snapshot, wenn von stdin gesichert wird (Standard bei restic: `stdin`). */
@@ -157,11 +166,14 @@ public class BackupOptions private constructor(builder: Builder) {
         /** Zeitpunkt des Backups in lokaler Zeit; Standard ist jetzt. */
         public fun time(time: LocalDateTime): Builder = apply { this.time = time }
 
+        @JvmOverloads
         public fun useFsSnapshot(enabled: Boolean = true): Builder = apply { useFsSnapshot = enabled }
 
+        @JvmOverloads
         public fun withAtime(enabled: Boolean = true): Builder = apply { withAtime = enabled }
 
         /** Liefert zusätzlich [BackupEvent.FileAction]-Ereignisse pro Datei. */
+        @JvmOverloads
         public fun verbose(enabled: Boolean = true): Builder = apply { verbose = enabled }
 
         public fun cancellationToken(token: CancellationToken): Builder = apply { cancellationToken = token }

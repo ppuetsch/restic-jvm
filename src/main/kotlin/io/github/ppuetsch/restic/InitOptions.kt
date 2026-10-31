@@ -42,6 +42,7 @@ public class InitOptions private constructor(builder: Builder) {
         /** Ein Format (`1`, `2`), `latest` oder `stable`. */
         public fun repositoryVersion(version: String): Builder = apply { repositoryVersion = version }
 
+        @JvmOverloads
         public fun copyChunkerParams(enabled: Boolean = true): Builder = apply { copyChunkerParams = enabled }
 
         public fun fromRepository(repository: String): Builder = apply { fromRepository = repository }
@@ -57,6 +58,7 @@ public class InitOptions private constructor(builder: Builder) {
 
         public fun fromKeyHint(keyId: String): Builder = apply { fromKeyHint = keyId }
 
+        @JvmOverloads
         public fun fromInsecureNoPassword(enabled: Boolean = true): Builder = apply { fromInsecureNoPassword = enabled }
 
         public fun build(): InitOptions = InitOptions(this)

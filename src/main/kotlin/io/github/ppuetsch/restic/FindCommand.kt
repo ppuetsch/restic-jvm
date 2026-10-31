@@ -54,10 +54,13 @@ public class FindOptions private constructor(builder: Builder) {
         /** Sucht nur in diesem Snapshot (mehrfach möglich). */
         public fun snapshotId(id: String): Builder = apply { snapshotIds.add(id) }
 
+        @JvmOverloads
         public fun ignoreCase(enabled: Boolean = true): Builder = apply { ignoreCase = enabled }
 
+        @JvmOverloads
         public fun long(enabled: Boolean = true): Builder = apply { long = enabled }
 
+        @JvmOverloads
         public fun humanReadable(enabled: Boolean = true): Builder = apply { humanReadable = enabled }
 
         /** Neuester Änderungszeitpunkt, Format `YYYY-MM-DD[ HH:MM[:SS]]`. */
@@ -66,8 +69,10 @@ public class FindOptions private constructor(builder: Builder) {
         /** Ältester Änderungszeitpunkt, Format `YYYY-MM-DD[ HH:MM[:SS]]`. */
         public fun oldest(dateTime: String): Builder = apply { oldest = dateTime }
 
+        @JvmOverloads
         public fun reverse(enabled: Boolean = true): Builder = apply { reverse = enabled }
 
+        @JvmOverloads
         public fun showPackId(enabled: Boolean = true): Builder = apply { showPackId = enabled }
 
         public fun build(): FindOptions = FindOptions(this)

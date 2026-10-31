@@ -53,14 +53,18 @@ public class LsOptions private constructor(builder: Builder) {
         /** Verzeichnis innerhalb des Snapshots, das aufgelistet werden soll. */
         public fun directory(pathInSnapshot: String): Builder = apply { directories.add(pathInSnapshot) }
 
+        @JvmOverloads
         public fun recursive(enabled: Boolean = true): Builder = apply { recursive = enabled }
 
+        @JvmOverloads
         public fun reverse(enabled: Boolean = true): Builder = apply { reverse = enabled }
 
         public fun sort(sort: LsSort): Builder = apply { this.sort = sort }
 
+        @JvmOverloads
         public fun long(enabled: Boolean = true): Builder = apply { long = enabled }
 
+        @JvmOverloads
         public fun humanReadable(enabled: Boolean = true): Builder = apply { humanReadable = enabled }
 
         public fun build(): LsOptions = LsOptions(this)

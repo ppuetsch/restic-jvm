@@ -122,6 +122,7 @@ public class ResticConfiguration private constructor(builder: Builder) {
         /** Wird über die Umgebungsvariable `RESTIC_PASSWORD` übergeben. */
         public fun password(password: String): Builder = apply { this.password = password }
 
+        @JvmOverloads
         public fun insecureNoPassword(enabled: Boolean = true): Builder = apply { this.insecureNoPassword = enabled }
 
         public fun keyHint(keyId: String): Builder = apply { this.keyHint = keyId }
@@ -130,20 +131,25 @@ public class ResticConfiguration private constructor(builder: Builder) {
 
         public fun tlsClientCertificate(file: Path): Builder = apply { this.tlsClientCertificate = file }
 
+        @JvmOverloads
         public fun insecureTls(enabled: Boolean = true): Builder = apply { this.insecureTls = enabled }
 
         public fun cacheDirectory(directory: Path): Builder = apply { this.cacheDirectory = directory }
 
+        @JvmOverloads
         public fun noCache(enabled: Boolean = true): Builder = apply { this.noCache = enabled }
 
+        @JvmOverloads
         public fun cleanupCache(enabled: Boolean = true): Builder = apply { this.cleanupCache = enabled }
 
         public fun compression(compression: Compression): Builder = apply { this.compression = compression }
 
         public fun packSizeMebibytes(mebibytes: Int): Builder = apply { this.packSizeMebibytes = mebibytes }
 
+        @JvmOverloads
         public fun noExtraVerify(enabled: Boolean = true): Builder = apply { this.noExtraVerify = enabled }
 
+        @JvmOverloads
         public fun noLock(enabled: Boolean = true): Builder = apply { this.noLock = enabled }
 
         public fun retryLock(duration: Duration): Builder = apply { this.retryLock = duration }

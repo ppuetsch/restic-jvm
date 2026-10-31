@@ -36,6 +36,7 @@ public class SnapshotsOptions private constructor(builder: Builder) {
         /** Nur die letzten n Snapshots je Host und Pfad. */
         public fun latest(count: Int): Builder = apply { latest = count }
 
+        @JvmOverloads
         public fun compact(enabled: Boolean = true): Builder = apply { compact = enabled }
 
         /** Beschränkt die Ausgabe auf bestimmte Snapshots (ID, Kurz-ID oder `latest`). */
