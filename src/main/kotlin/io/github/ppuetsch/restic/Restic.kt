@@ -17,6 +17,10 @@ public class Restic(public val configuration: ResticConfiguration) {
     private val forgetCommand = ForgetCommand(runner)
     private val pruneCommand = PruneCommand(runner)
     private val checkAndStatsCommand = CheckAndStatsCommand(runner)
+    private val diffCommand = DiffCommand(runner)
+    private val tagCommand = TagCommand(runner)
+    private val rewriteAndCopyCommand = RewriteAndCopyCommand(runner)
+    private val listCommand = ListCommand(runner)
 
     public fun version(): ResticVersion {
         val node = lastJsonLine(listOf("version", "--json"))
@@ -212,6 +216,59 @@ public class Restic(public val configuration: ResticConfiguration) {
 
     @JvmSynthetic
     public fun stats(configure: StatsOptions.Builder.() -> Unit): StatsResult = stats(StatsOptions.builder().apply(configure).build())
+
+    /** Vergleicht zwei Snapshots und meldet jede Änderung an den Listener. */
+    @JvmOverloads
+    public fun diff(
+        firstSnapshotId: String,
+        secondSnapshotId: String,
+        options: DiffOptions = DiffOptions.DEFAULT,
+        listener: DiffListener? = null,
+    ): DiffStatistics = diffCommand.diff(firstSnapshotId, secondSnapshotId, options, listener)
+
+    /** Wie [diff], sammelt aber alle Änderungen in einer Liste. */
+    @JvmOverloads
+    public fun diffAll(
+        firstSnapshotId: String,
+        secondSnapshotId: String,
+        options: DiffOptions = DiffOptions.DEFAULT,
+    ): DiffResult {
+        val changes = mutableListOf<DiffChange>()
+        val statistics = diff(firstSnapshotId, secondSnapshotId, options) { changes += it }
+        return DiffResult(changes, statistics)
+    }
+
+    /** Ändert Tags von Snapshots; restic legt dafür neue Snapshots an. */
+    public fun tag(options: TagOptions): TagResult = tagCommand.tag(options)
+
+    @JvmSynthetic
+    public fun tag(configure: TagOptions.Builder.() -> Unit): TagResult = tag(TagOptions.builder().apply(configure).build())
+
+    /** Schreibt Snapshots um (Ausschlüsse, Host, Zeit). */
+    @JvmOverloads
+    public fun rewrite(
+        options: RewriteOptions,
+        listener: OutputLineListener? = null,
+    ): RewriteResult = rewriteAndCopyCommand.rewrite(options, listener)
+
+    @JvmSynthetic
+    public fun rewrite(configure: RewriteOptions.Builder.() -> Unit): RewriteResult =
+        rewrite(RewriteOptions.builder().apply(configure).build())
+
+    /** Kopiert Snapshots aus dem in den Optionen genannten Quell-Repository in dieses Repository. */
+    @JvmOverloads
+    public fun copy(
+        options: CopyOptions,
+        listener: OutputLineListener? = null,
+    ): CopyResult = rewriteAndCopyCommand.copy(options, listener)
+
+    @JvmSynthetic
+    public fun copy(configure: CopyOptions.Builder.() -> Unit): CopyResult = copy(CopyOptions.builder().apply(configure).build())
+
+    /** Zählt Objekt-IDs des Repositorys auf (`restic list`). */
+    public fun list(type: ListObjectType): List<String> = listCommand.list(type)
+
+    public fun listBlobs(): List<BlobEntry> = listCommand.listBlobs()
 
     private fun lastJsonLine(
         arguments: List<String>,

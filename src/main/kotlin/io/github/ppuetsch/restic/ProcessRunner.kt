@@ -42,6 +42,9 @@ internal class ProcessRunner(private val configuration: ResticConfiguration) {
         try {
             consumeStandardOutput(process, request.standardOutput, onStandardOutputLine)
             process.waitFor()
+        } catch (failure: IOException) {
+            val wasStoppedByUs = timedOut.get() || request.cancellation?.isCancelled == true
+            if (!wasStoppedByUs) throw failure
         } finally {
             watchdog?.cancel(false)
             process.destroy()

@@ -142,4 +142,39 @@ class JavaUsageTest {
         assertTrue(restic.check(CheckOptions.builder().readData().build()).isHealthy());
         assertEquals(1, restic.stats(StatsOptions.builder().mode(StatsMode.RAW_DATA).build()).getSnapshotsCount());
     }
+
+    @Test
+    void diffTagListAndCopyAreUsableFromJava(@TempDir Path temporaryDirectory) throws Exception {
+        String binary = System.getenv("RESTIC_BINARY") != null ? System.getenv("RESTIC_BINARY") : "restic";
+        Restic restic = new Restic(ResticConfiguration.builder()
+                .binary(binary)
+                .repository(temporaryDirectory.resolve("repo").toString())
+                .password("pw")
+                .build());
+        restic.init();
+        Path source = Files.createDirectory(temporaryDirectory.resolve("src"));
+        Files.writeString(source.resolve("a.txt"), "one");
+        String first = restic.backup(List.of(source)).getSummary().getSnapshotId();
+        Files.writeString(source.resolve("a.txt"), "two");
+        String second = restic.backup(List.of(source)).getSummary().getSnapshotId();
+
+        DiffResult diff = restic.diffAll(first, second);
+        assertEquals(1, diff.getStatistics().getChangedFiles());
+
+        TagResult tagged = restic.tag(TagOptions.builder().snapshotId(second).add("java").build());
+        assertEquals(1, tagged.getChangedSnapshots());
+        assertEquals(2, restic.list(ListObjectType.SNAPSHOTS).size());
+
+        Restic target = new Restic(ResticConfiguration.builder()
+                .binary(binary)
+                .repository(temporaryDirectory.resolve("target").toString())
+                .password("pw")
+                .build());
+        target.init();
+        CopyResult copied = target.copy(CopyOptions.builder()
+                .fromRepository(temporaryDirectory.resolve("repo").toString())
+                .fromPassword("pw")
+                .build());
+        assertEquals(2, copied.getNewSnapshotIds().size());
+    }
 }
