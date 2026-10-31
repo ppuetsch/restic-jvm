@@ -20,7 +20,6 @@ public class MountOptions private constructor(builder: Builder) {
     public val noDefaultPermissions: Boolean = builder.noDefaultPermissions
     public val ownerRoot: Boolean = builder.ownerRoot
     public val pathTemplates: List<String> = builder.pathTemplates.toList()
-    public val snapshotTemplate: String? = builder.snapshotTemplate
     public val timeTemplate: String? = builder.timeTemplate
 
     internal fun arguments(): List<String> =
@@ -30,7 +29,6 @@ public class MountOptions private constructor(builder: Builder) {
             optionalFlag("--no-default-permissions", noDefaultPermissions)
             optionalFlag("--owner-root", ownerRoot)
             pathTemplates.forEach { optionalValue("--path-template", it) }
-            optionalValue("--snapshot-template", snapshotTemplate)
             optionalValue("--time-template", timeTemplate)
         }
 
@@ -40,7 +38,6 @@ public class MountOptions private constructor(builder: Builder) {
         internal var noDefaultPermissions: Boolean = false
         internal var ownerRoot: Boolean = false
         internal val pathTemplates: MutableList<String> = mutableListOf()
-        internal var snapshotTemplate: String? = null
         internal var timeTemplate: String? = null
 
         public fun host(hostname: String): Builder = apply { filter.host(hostname) }
@@ -59,8 +56,6 @@ public class MountOptions private constructor(builder: Builder) {
         public fun ownerRoot(enabled: Boolean = true): Builder = apply { ownerRoot = enabled }
 
         public fun pathTemplate(template: String): Builder = apply { pathTemplates.add(template) }
-
-        public fun snapshotTemplate(template: String): Builder = apply { snapshotTemplate = template }
 
         public fun timeTemplate(template: String): Builder = apply { timeTemplate = template }
 

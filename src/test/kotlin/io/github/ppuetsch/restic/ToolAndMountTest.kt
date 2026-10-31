@@ -94,7 +94,7 @@ class ToolAndMountTest {
         assumeTrue(System.getProperty("os.name").startsWith("Linux"), "mount is not available on this platform")
         val help = restic.help("mount")
         val expectedFlags = listOf("--allow-other", "--no-default-permissions", "--owner-root", "--path-template")
-        val expectedTemplateFlags = listOf("--snapshot-template", "--time-template", "--host", "--path", "--tag")
+        val expectedTemplateFlags = listOf("--time-template", "--host", "--path", "--tag")
         (expectedFlags + expectedTemplateFlags).forEach { assertTrue(help.contains(it), "$it missing in: $help") }
     }
 
@@ -106,7 +106,7 @@ class ToolAndMountTest {
         restic.mount(mountpoint, MountOptions.builder().ownerRoot().build()).use { handle ->
             handle.awaitMounted(Duration.ofSeconds(60))
             assertTrue(handle.isRunning())
-            val latest = mountpoint.resolve("snapshots").resolve("latest")
+            val latest = mountpoint.resolve("snapshots").resolve("latest").toRealPath()
             val readFile = findFileNamed(latest, "a.txt")
             assertEquals("hello", readFile.readText())
         }
