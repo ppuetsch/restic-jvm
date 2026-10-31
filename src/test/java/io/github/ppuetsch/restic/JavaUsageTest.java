@@ -199,7 +199,7 @@ class JavaUsageTest {
     }
 
     @Test
-    void helpCompletionAndOptionsAreUsableFromJava(@TempDir Path temporaryDirectory) {
+    void helpCompletionAndOptionsAreUsableFromJava(@TempDir Path temporaryDirectory) throws Exception {
         String binary = System.getenv("RESTIC_BINARY") != null ? System.getenv("RESTIC_BINARY") : "restic";
         Restic restic = new Restic(ResticConfiguration.builder().binary(binary).build());
 
