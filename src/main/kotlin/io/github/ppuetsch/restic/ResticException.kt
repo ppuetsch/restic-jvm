@@ -19,6 +19,12 @@ public class ResticNotAvailableException(message: String, cause: Throwable) : Re
 
 public class ResticTimeoutException(message: String) : ResticException(message)
 
+/** Der Aufruf wurde über ein [CancellationToken] abgebrochen. */
+public class ResticCancelledException : ResticException("restic call was cancelled")
+
+/** restic hat Ausgabe geliefert, die die Library nicht als JSON lesen konnte. */
+public class ResticOutputException(message: String, cause: Throwable?) : ResticException(message, cause)
+
 /** restic wurde gestartet, beendete sich aber mit einem Fehler-Exit-Code. */
 public sealed class ResticCommandException(
     public val exitCode: Int,
