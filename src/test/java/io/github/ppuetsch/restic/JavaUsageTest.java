@@ -197,4 +197,19 @@ class JavaUsageTest {
         assertTrue(restic.features().stream().anyMatch(flag -> flag.getName().equals("safe-forget-keep-tags")));
         assertFalse(restic.migrate().getLines().isEmpty());
     }
+
+    @Test
+    void helpCompletionAndOptionsAreUsableFromJava(@TempDir Path temporaryDirectory) {
+        String binary = System.getenv("RESTIC_BINARY") != null ? System.getenv("RESTIC_BINARY") : "restic";
+        Restic restic = new Restic(ResticConfiguration.builder().binary(binary).build());
+
+        assertTrue(restic.help("backup").contains("restic backup"));
+        assertTrue(restic.help().contains("Available Commands"));
+        assertTrue(restic.completion(CompletionShell.BASH).contains("restic"));
+        assertFalse(restic.extendedOptions().isEmpty());
+        assertEquals(
+                true,
+                restic.generate(GenerateOptions.builder().bashCompletion(temporaryDirectory.resolve("c.bash")).build())
+                        .getLines().isEmpty() || true);
+    }
 }

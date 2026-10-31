@@ -22,6 +22,8 @@ public class Restic(public val configuration: ResticConfiguration) {
     private val rewriteAndCopyCommand = RewriteAndCopyCommand(runner)
     private val listCommand = ListCommand(runner)
     private val adminCommands = AdminCommands(runner)
+    private val toolCommands = ToolCommands(runner)
+    private val mountCommand = MountCommand(runner)
 
     public fun version(): ResticVersion {
         val node = lastJsonLine(listOf("version", "--json"))
@@ -324,6 +326,36 @@ public class Restic(public val configuration: ResticConfiguration) {
     @JvmSynthetic
     public fun repairSnapshots(configure: RepairSnapshotsOptions.Builder.() -> Unit): CommandOutput =
         repairSnapshots(RepairSnapshotsOptions.builder().apply(configure).build())
+
+    /** Erzeugt Shell-Vervollständigungen und Man-Pages in den angegebenen Zielen. */
+    public fun generate(options: GenerateOptions): CommandOutput = toolCommands.generate(options)
+
+    @JvmSynthetic
+    public fun generate(configure: GenerateOptions.Builder.() -> Unit): CommandOutput =
+        generate(GenerateOptions.builder().apply(configure).build())
+
+    /** Das Vervollständigungsskript für eine Shell als Text. */
+    public fun completion(shell: CompletionShell): String = toolCommands.completion(shell)
+
+    /** Aktualisiert die restic-Binary; mit `output` wird sie stattdessen in diese Datei geschrieben. */
+    @JvmOverloads
+    public fun selfUpdate(output: Path? = null): CommandOutput = toolCommands.selfUpdate(output)
+
+    /** Hilfetext eines Befehls, z.B. `help("key", "add")`; ohne Argumente die allgemeine Hilfe. */
+    public fun help(vararg commandPath: String): String = toolCommands.help(commandPath.toList())
+
+    /** Die erweiterten Optionen (`--option key=value`) der Backends. */
+    public fun extendedOptions(): List<ExtendedOption> = toolCommands.extendedOptions()
+
+    /**
+     * Stellt das Repository per FUSE als Verzeichnisbaum bereit (nicht unter Windows).
+     * Der Aufruf kehrt sofort zurück; [MountHandle.awaitMounted] wartet auf die Bereitschaft, [MountHandle.close] hängt wieder aus.
+     */
+    @JvmOverloads
+    public fun mount(
+        mountpoint: Path,
+        options: MountOptions = MountOptions.DEFAULT,
+    ): MountHandle = mountCommand.mount(mountpoint, options)
 
     private fun lastJsonLine(
         arguments: List<String>,

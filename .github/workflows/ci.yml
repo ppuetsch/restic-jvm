@@ -24,6 +24,9 @@ jobs:
           distribution: temurin
           java-version: "25"
       - uses: gradle/actions/setup-gradle@v5
+      - name: Install FUSE for mount tests
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y fuse3
       - name: Install restic
         shell: bash
         run: |
