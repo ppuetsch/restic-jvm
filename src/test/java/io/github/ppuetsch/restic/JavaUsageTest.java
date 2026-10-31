@@ -117,4 +117,29 @@ class JavaUsageTest {
                 event -> { });
         assertEquals(1, summary.getFilesRestored());
     }
+
+    @Test
+    void forgetPruneCheckAndStatsAreUsableFromJava(@TempDir Path temporaryDirectory) throws Exception {
+        String binary = System.getenv("RESTIC_BINARY") != null ? System.getenv("RESTIC_BINARY") : "restic";
+        Restic restic = new Restic(ResticConfiguration.builder()
+                .binary(binary)
+                .repository(temporaryDirectory.resolve("repo").toString())
+                .password("pw")
+                .build());
+        restic.init();
+        Path source = Files.createDirectory(temporaryDirectory.resolve("src"));
+        Files.writeString(source.resolve("a.txt"), "one");
+        restic.backup(List.of(source));
+        Files.writeString(source.resolve("a.txt"), "two");
+        restic.backup(List.of(source));
+
+        ForgetResult forgotten = restic.forget(ForgetOptions.builder().keepLast(1).dryRun().build());
+        assertEquals(1, forgotten.removedSnapshots().size());
+        restic.forget(ForgetOptions.builder().keepLast(1).build());
+
+        PruneResult pruned = restic.prune();
+        assertFalse(pruned.getOutputLines().isEmpty());
+        assertTrue(restic.check(CheckOptions.builder().readData().build()).isHealthy());
+        assertEquals(1, restic.stats(StatsOptions.builder().mode(StatsMode.RAW_DATA).build()).getSnapshotsCount());
+    }
 }
