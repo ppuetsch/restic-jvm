@@ -64,4 +64,28 @@ class JavaUsageTest {
         assertTrue(events.get(events.size() - 1) instanceof BackupEvent.Summary);
         assertFalse(result.getHasUnreadableSources());
     }
+
+    @Test
+    void snapshotsLsAndFindAreUsableFromJava(@TempDir Path temporaryDirectory) throws Exception {
+        String binary = System.getenv("RESTIC_BINARY") != null ? System.getenv("RESTIC_BINARY") : "restic";
+        Restic restic = new Restic(ResticConfiguration.builder()
+                .binary(binary)
+                .repository(temporaryDirectory.resolve("repo").toString())
+                .password("pw")
+                .build());
+        restic.init();
+        Path source = Files.createDirectory(temporaryDirectory.resolve("src"));
+        Files.writeString(source.resolve("a.txt"), "hello");
+        restic.backup(List.of(source), BackupOptions.builder().tag("java", "x").build());
+
+        List<Snapshot> snapshots = restic.snapshots(SnapshotsOptions.builder().tag("java").latest(1).build());
+        assertEquals(1, snapshots.size());
+
+        List<String> names = new ArrayList<>();
+        restic.ls(Restic.LATEST, LsOptions.builder().recursive().build(), node -> names.add(node.getName()));
+        assertTrue(names.contains("a.txt"));
+
+        List<FindSnapshotMatches> found = restic.find(List.of("*.txt"));
+        assertEquals(1, found.get(0).getHits());
+    }
 }

@@ -152,7 +152,7 @@ public class BackupOptions private constructor(builder: Builder) {
         /** Dateiname im Snapshot, wenn von stdin gesichert wird (Standard bei restic: `stdin`). */
         public fun stdinFilename(filename: String): Builder = apply { stdinFilename = filename }
 
-        public fun tag(tag: String): Builder = apply { tags.add(tag) }
+        public fun tag(vararg tags: String): Builder = apply { this.tags.addAll(tags) }
 
         /** Zeitpunkt des Backups in lokaler Zeit; Standard ist jetzt. */
         public fun time(time: LocalDateTime): Builder = apply { this.time = time }
