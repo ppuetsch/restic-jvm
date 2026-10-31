@@ -69,6 +69,9 @@ internal class ProcessRunner(private val configuration: ResticConfiguration) {
         return outcome
     }
 
+    /** Startet den Prozess und überlässt dem Aufrufer Ein- und Ausgabe sowie das Beenden. */
+    fun startProcess(request: ProcessRequest): Process = start(request)
+
     private fun start(request: ProcessRequest): Process {
         val builder = ProcessBuilder(listOf(configuration.binary) + configuration.globalArguments() + request.arguments)
         builder.environment().putAll(configuration.processEnvironment())
