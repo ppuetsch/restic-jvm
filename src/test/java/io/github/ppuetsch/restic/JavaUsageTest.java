@@ -207,9 +207,8 @@ class JavaUsageTest {
         assertTrue(restic.help().contains("Available Commands"));
         assertTrue(restic.completion(CompletionShell.BASH).contains("restic"));
         assertFalse(restic.extendedOptions().isEmpty());
-        assertEquals(
-                true,
-                restic.generate(GenerateOptions.builder().bashCompletion(temporaryDirectory.resolve("c.bash")).build())
-                        .getLines().isEmpty() || true);
+        Path completionFile = temporaryDirectory.resolve("c.bash");
+        restic.generate(GenerateOptions.builder().bashCompletion(completionFile).build());
+        assertTrue(Files.size(completionFile) > 0);
     }
 }
