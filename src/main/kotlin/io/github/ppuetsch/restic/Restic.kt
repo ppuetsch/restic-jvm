@@ -2,6 +2,7 @@ package io.github.ppuetsch.restic
 
 import com.fasterxml.jackson.databind.JsonNode
 import java.io.InputStream
+import java.io.OutputStream
 import java.nio.file.Path
 
 /** Einstiegspunkt: eine Instanz pro Repository-Konfiguration; thread-safe, da zustandslos. */
@@ -11,6 +12,8 @@ public class Restic(public val configuration: ResticConfiguration) {
     private val snapshotsCommand = SnapshotsCommand(runner)
     private val lsCommand = LsCommand(runner)
     private val findCommand = FindCommand(runner)
+    private val restoreCommand = RestoreCommand(runner)
+    private val dumpAndCatCommand = DumpAndCatCommand(runner)
 
     public fun version(): ResticVersion {
         val node = lastJsonLine(listOf("version", "--json"))
@@ -123,6 +126,56 @@ public class Restic(public val configuration: ResticConfiguration) {
         ids: List<String>,
         options: FindOptions = FindOptions.DEFAULT,
     ): List<FindObject> = findCommand.findObjects(kind, ids, options)
+
+    /** Stellt einen Snapshot (`latest`, ID oder `id:unterordner`) im Zielverzeichnis wieder her. */
+    @JvmOverloads
+    public fun restore(
+        snapshotId: String,
+        target: Path,
+        options: RestoreOptions = RestoreOptions.DEFAULT,
+        listener: RestoreListener? = null,
+    ): RestoreSummary = restoreCommand.restore(snapshotId, target, options, listener)
+
+    @JvmSynthetic
+    public fun restore(
+        snapshotId: String,
+        target: Path,
+        listener: RestoreListener? = null,
+        configure: RestoreOptions.Builder.() -> Unit,
+    ): RestoreSummary = restore(snapshotId, target, RestoreOptions.builder().apply(configure).build(), listener)
+
+    /** Schreibt eine Datei (oder ein Verzeichnis als Archiv) aus dem Snapshot in den Stream. */
+    @JvmOverloads
+    public fun dump(
+        snapshotId: String,
+        fileInSnapshot: String,
+        output: OutputStream,
+        options: DumpOptions = DumpOptions.DEFAULT,
+    ): Unit = dumpAndCatCommand.dump(snapshotId, fileInSnapshot, options, output)
+
+    /** Wie [dump], schreibt aber direkt in eine Zieldatei (`--target`). */
+    @JvmOverloads
+    public fun dumpToFile(
+        snapshotId: String,
+        fileInSnapshot: String,
+        target: Path,
+        options: DumpOptions = DumpOptions.DEFAULT,
+    ): Unit = dumpAndCatCommand.dumpToFile(snapshotId, fileInSnapshot, target, options)
+
+    /** Gibt ein Repository-Objekt roh in den Stream aus (`restic cat`). Für Typen ohne feste ID genügt `id = null`. */
+    @JvmOverloads
+    public fun cat(
+        type: CatObjectType,
+        id: String? = null,
+        output: OutputStream,
+    ): Unit = dumpAndCatCommand.cat(type, id, output)
+
+    /** Wie [cat], liefert aber den Inhalt als Text (sinnvoll für JSON-Objekte wie config oder snapshot). */
+    @JvmOverloads
+    public fun catText(
+        type: CatObjectType,
+        id: String? = null,
+    ): String = dumpAndCatCommand.catText(type, id)
 
     private fun lastJsonLine(
         arguments: List<String>,
