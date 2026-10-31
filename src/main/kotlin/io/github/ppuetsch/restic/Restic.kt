@@ -14,6 +14,9 @@ public class Restic(public val configuration: ResticConfiguration) {
     private val findCommand = FindCommand(runner)
     private val restoreCommand = RestoreCommand(runner)
     private val dumpAndCatCommand = DumpAndCatCommand(runner)
+    private val forgetCommand = ForgetCommand(runner)
+    private val pruneCommand = PruneCommand(runner)
+    private val checkAndStatsCommand = CheckAndStatsCommand(runner)
 
     public fun version(): ResticVersion {
         val node = lastJsonLine(listOf("version", "--json"))
@@ -176,6 +179,39 @@ public class Restic(public val configuration: ResticConfiguration) {
         type: CatObjectType,
         id: String? = null,
     ): String = dumpAndCatCommand.catText(type, id)
+
+    /** Entfernt Snapshots nach Aufbewahrungsregeln oder gezielt per ID. */
+    @JvmOverloads
+    public fun forget(
+        options: ForgetOptions,
+        outputListener: OutputLineListener? = null,
+    ): ForgetResult = forgetCommand.forget(options, outputListener)
+
+    @JvmSynthetic
+    public fun forget(configure: ForgetOptions.Builder.() -> Unit): ForgetResult = forget(ForgetOptions.builder().apply(configure).build())
+
+    /** Gibt ungenutzten Speicher im Repository frei. */
+    @JvmOverloads
+    public fun prune(
+        options: PruneOptions = PruneOptions.DEFAULT,
+        listener: OutputLineListener? = null,
+    ): PruneResult = pruneCommand.prune(options, listener)
+
+    @JvmSynthetic
+    public fun prune(configure: PruneOptions.Builder.() -> Unit): PruneResult = prune(PruneOptions.builder().apply(configure).build())
+
+    /** Prüft das Repository; Fehler im Repository führen zu [CheckResult.isHealthy] = false statt zu einer Exception. */
+    @JvmOverloads
+    public fun check(options: CheckOptions = CheckOptions.DEFAULT): CheckResult = checkAndStatsCommand.check(options)
+
+    @JvmSynthetic
+    public fun check(configure: CheckOptions.Builder.() -> Unit): CheckResult = check(CheckOptions.builder().apply(configure).build())
+
+    @JvmOverloads
+    public fun stats(options: StatsOptions = StatsOptions.DEFAULT): StatsResult = checkAndStatsCommand.stats(options)
+
+    @JvmSynthetic
+    public fun stats(configure: StatsOptions.Builder.() -> Unit): StatsResult = stats(StatsOptions.builder().apply(configure).build())
 
     private fun lastJsonLine(
         arguments: List<String>,
