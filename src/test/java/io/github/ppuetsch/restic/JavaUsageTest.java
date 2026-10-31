@@ -177,4 +177,24 @@ class JavaUsageTest {
                 .build());
         assertEquals(2, copied.getNewSnapshotIds().size());
     }
+
+    @Test
+    void keysFeaturesAndUnlockAreUsableFromJava(@TempDir Path temporaryDirectory) {
+        String binary = System.getenv("RESTIC_BINARY") != null ? System.getenv("RESTIC_BINARY") : "restic";
+        Restic restic = new Restic(ResticConfiguration.builder()
+                .binary(binary)
+                .repository(temporaryDirectory.resolve("repo").toString())
+                .password("pw")
+                .build());
+        restic.init();
+
+        KeyAddResult added = restic.addKey(NewKeyOptions.builder().newPassword("second").user("bob").build());
+        assertEquals(2, restic.listKeys().size());
+        restic.removeKey(added.getKeyId());
+        assertEquals(1, restic.listKeys().size());
+
+        restic.unlock();
+        assertTrue(restic.features().stream().anyMatch(flag -> flag.getName().equals("safe-forget-keep-tags")));
+        assertFalse(restic.migrate().getLines().isEmpty());
+    }
 }
