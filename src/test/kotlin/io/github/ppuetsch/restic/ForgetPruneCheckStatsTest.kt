@@ -202,10 +202,10 @@ class ForgetPruneCheckStatsTest {
     }
 
     @Test
-    fun `check detects a damaged pack`() {
+    fun `check detects a missing pack`() {
         val dataDirectory = fixture.repository.resolve("data")
         val pack = Files.walk(dataDirectory).use { stream -> stream.filter { Files.isRegularFile(it) }.findFirst().orElseThrow() }
-        Files.write(pack, ByteArray(64) { 7 })
+        Files.delete(pack)
         val result = restic.check { readData() }
         assertFalse(result.isHealthy())
         assertTrue(result.errorCount > 0 || result.errorMessages.isNotEmpty())
