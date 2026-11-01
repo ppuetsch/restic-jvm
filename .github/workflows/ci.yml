@@ -47,12 +47,18 @@ jobs:
       - name: Build, ktlint, detekt (type resolution), tests and coverage
         shell: bash
         run: ./gradlew build --no-daemon
-      - name: Upload detekt findings to code scanning
+      - name: Upload detekt main findings to code scanning
         if: always() && env.IS_ANALYSIS_LEG == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: build/reports/detekt
-          category: detekt
+          sarif_file: build/reports/detekt/main.sarif
+          category: detekt-main
+      - name: Upload detekt test findings to code scanning
+        if: always() && env.IS_ANALYSIS_LEG == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: build/reports/detekt/test.sarif
+          category: detekt-test
       - name: SonarCloud analysis
         if: env.IS_ANALYSIS_LEG == 'true' && env.SONAR_TOKEN != ''
         run: ./gradlew sonar --no-daemon
