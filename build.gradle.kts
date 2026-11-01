@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
+
 buildscript {
     configurations.classpath {
         resolutionStrategy.activateDependencyLocking()
@@ -15,6 +17,8 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.dependency.check)
     alias(libs.plugins.sonarqube)
+    alias(libs.plugins.pitest)
+    alias(libs.plugins.cyclonedx)
     jacoco
 }
 
@@ -22,6 +26,30 @@ group = "io.github.ppuetsch"
 version = "0.6.0"
 
 val repositoryUrl = "https://github.com/ppuetsch/restic-jvm"
+
+// Untergrenzen knapp unter dem Stand unter Windows, wo die FUSE-Mount-Tests entfallen.
+val minimumLineCoverage = "0.90".toBigDecimal()
+val minimumBranchCoverage = "0.70".toBigDecimal()
+
+// Stand bei Einführung: 97,5 %; die Überlebenden sind gleichwertige Mutanten wie entfernte Kotlin-Null-Prüfungen.
+val minimumMutationScorePercent = 95
+
+// Die reinen Parser und Argument-Bauer, deren Tests ohne langsame End-to-End-Läufe auskommen.
+val mutationTargetClasses =
+    listOf(
+        "io.github.ppuetsch.restic.ErrorOutput*",
+        "io.github.ppuetsch.restic.Json*",
+        "io.github.ppuetsch.restic.PruneSummaryParser*",
+        "io.github.ppuetsch.restic.ArgumentBuilding*",
+        "io.github.ppuetsch.restic.ResticConfiguration*",
+    )
+val mutationTargetTests =
+    listOf(
+        "io.github.ppuetsch.restic.ErrorMessageTest",
+        "io.github.ppuetsch.restic.CheckAndPruneOutputTest",
+        "io.github.ppuetsch.restic.GlobalArgumentsTest",
+        "io.github.ppuetsch.restic.JsonAndErrorLinesTest",
+    )
 
 repositories {
     mavenCentral()
@@ -73,6 +101,35 @@ sonar {
 kotlin {
     jvmToolchain(25)
     explicitApi()
+    compilerOptions {
+        allWarningsAsErrors.set(true)
+    }
+
+    // Fängt versehentliche Änderungen am öffentlichen API ab; Absicht wird mit updateLegacyAbi bestätigt.
+    @OptIn(ExperimentalAbiValidation::class)
+    abiValidation {}
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.addAll(listOf("-Xlint:all", "-Werror"))
+}
+
+tasks.cyclonedxDirectBom {
+    includeConfigs.set(listOf("runtimeClasspath"))
+    projectType.set(org.cyclonedx.model.Component.Type.LIBRARY)
+    jsonOutput.set(layout.buildDirectory.file("reports/sbom/restic-jvm-${project.version}.cdx.json"))
+    xmlOutput.unsetConvention()
+}
+
+pitest {
+    pitestVersion.set(libs.versions.pitest.core)
+    junit5PluginVersion.set(libs.versions.pitest.junit5)
+    targetClasses.set(mutationTargetClasses)
+    targetTests.set(mutationTargetTests)
+    threads.set(Runtime.getRuntime().availableProcessors())
+    outputFormats.set(listOf("HTML", "XML"))
+    timestampedReports.set(false)
+    mutationThreshold.set(minimumMutationScorePercent)
 }
 
 java {
@@ -110,9 +167,25 @@ tasks.jacocoTestReport {
     }
 }
 
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.test)
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                minimum = minimumLineCoverage
+            }
+            limit {
+                counter = "BRANCH"
+                minimum = minimumBranchCoverage
+            }
+        }
+    }
+}
+
 // detektMain und detektTest analysieren mit Typauflösung; das einfache `detekt` sähe weniger.
 tasks.named("check") {
-    dependsOn("detektMain", "detektTest")
+    dependsOn("detektMain", "detektTest", tasks.jacocoTestCoverageVerification)
 }
 
 tasks.register("printVersion") {
@@ -166,7 +239,7 @@ publishing {
 }
 
 signing {
-    val signingKey = providers.environmentVariable("SIGNING_KEY").orNull
+    val signingKey = providers.environmentVariable("SIGNING_KEY").orNull?.takeIf(String::isNotBlank)
     val signingPassword = providers.environmentVariable("SIGNING_PASSWORD").orNull
     isRequired = false
     if (signingKey != null) {

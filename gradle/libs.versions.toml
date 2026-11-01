@@ -9,6 +9,10 @@ sonarqube = "7.5.0.8588"
 jacoco = "0.8.16"
 jackson = "3.2.4"
 junit = "6.1.3"
+gradle-pitest = "1.19.0"
+pitest-core = "1.30.1"
+pitest-junit5 = "1.2.3"
+cyclonedx = "3.5.1"
 
 [libraries]
 jackson-databind = { module = "tools.jackson.core:jackson-databind", version.ref = "jackson" }
@@ -24,3 +28,5 @@ dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version.ref = "dokka" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
 dependency-check = { id = "org.owasp.dependencycheck", version.ref = "dependency-check" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
+pitest = { id = "info.solidsoft.pitest", version.ref = "gradle-pitest" }
+cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx" }

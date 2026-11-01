@@ -168,21 +168,42 @@ Global flags (`--no-lock`, `--compression`, `--limit-upload`, `--option`, ...) a
 
 ```
 ./gradlew build                   # needs a restic binary; set RESTIC_BINARY to its path if it is not on the PATH
+./gradlew pitest                  # mutation testing of the parsers and argument building
+./gradlew updateKotlinAbi         # accept an intended change of the public API
+./gradlew cyclonedxDirectBom      # CycloneDX SBOM in build/reports/sbom
 ./gradlew dependencyCheckAnalyze  # OWASP dependency check; set NVD_API_KEY for a fast NVD download
 ./gradlew sonar                   # SonarCloud analysis; needs SONAR_TOKEN
 ```
 
-`build` runs the end-to-end tests, ktlint, detekt with type resolution (`detektMain`, `detektTest`) and JaCoCo coverage.
-CI runs this on Linux and Windows against restic 0.18 and 0.19, uploads detekt and dependency-check findings to GitHub
-code scanning, sends the analysis to SonarCloud and repeats everything weekly to catch newly published vulnerabilities.
+`build` fails on any of these:
+
+- a failing end-to-end test, a ktlint or detekt finding (`detektMain`, `detektTest` with type resolution)
+- a compiler warning (Kotlin and Java)
+- a change of the public API that is not recorded in `api/restic-jvm.api`
+- line coverage below 90 % or branch coverage below 70 % (JaCoCo)
+
+CI runs this on Linux and Windows against restic 0.18 and 0.19, plus PIT (mutation score at least 95 %), CodeQL,
+OpenSSF Scorecard, the OWASP dependency check and SonarCloud. Findings go to GitHub code scanning; everything repeats
+weekly to catch newly published vulnerabilities. `main` only accepts pull requests with green checks.
 
 Versions live in `gradle/libs.versions.toml`. Resolved versions are locked (`*.lockfile`) and every artifact is checked
 against its SHA-256 in `gradle/verification-metadata.xml`. After changing a version, rewrite both:
 
 ```
-./gradlew --write-locks --write-verification-metadata sha256 build javadocJar sourcesJar
+./gradlew --write-locks --write-verification-metadata sha256 build javadocJar cyclonedxDirectBom pitest
 ```
 
 GitHub Actions are pinned to commit SHAs; Dependabot keeps them current.
+
+### Verifying a release
+
+Each release carries the jars, their PGP signatures, a CycloneDX SBOM and the public key `signing-key.asc`
+(fingerprint `7B34 1314 7ACE 1EDB 715F 6293 05A9 61D4 163E 33E5`), plus a GitHub build provenance attestation:
+
+```
+gpg --import signing-key.asc
+gpg --verify restic-jvm-0.7.0.jar.asc restic-jvm-0.7.0.jar
+gh attestation verify restic-jvm-0.7.0.jar --repo ppuetsch/restic-jvm
+```
 
 Apache License 2.0.
