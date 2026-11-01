@@ -70,7 +70,18 @@ class CheckAndPruneOutputTest {
 
         assertEquals(result.outputLines, listener.standardOutput)
         assertEquals("using temporary cache in /tmp/x", result.outputLines.first())
-        assertEquals(3, result.outputLines.size)
+        assertEquals(
+            listOf("using temporary cache in /tmp/x", "error: pack abc damaged", "check finished: 1 errors, 1 broken packs"),
+            result.outputLines,
+        )
+        assertEquals(
+            listOf(
+                CheckMessage.Text("using temporary cache in /tmp/x"),
+                CheckMessage.Error("pack abc damaged"),
+                CheckMessage.Summary(1, listOf("abc"), suggestRepairIndex = true, suggestPrune = false),
+            ),
+            result.messages,
+        )
         assertEquals(listOf("hint: repository is slow"), listener.standardError)
         assertEquals(listener.standardError, result.errorOutputLines)
         assertEquals(1, result.errorCount)
@@ -102,7 +113,7 @@ class CheckAndPruneOutputTest {
         val result = repository.restic.check(CheckOptions.DEFAULT, listener)
 
         assertTrue(result.isHealthy())
-        assertTrue(result.outputLines.any { it.contains("summary") }, result.outputLines.toString())
+        assertTrue(result.outputLines.any { it.startsWith("check finished") }, result.outputLines.toString())
         assertEquals(result.outputLines, listener.standardOutput)
     }
 

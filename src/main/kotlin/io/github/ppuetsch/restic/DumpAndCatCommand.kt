@@ -1,5 +1,6 @@
 package io.github.ppuetsch.restic
 
+import com.fasterxml.jackson.databind.JsonNode
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.nio.charset.StandardCharsets
@@ -64,6 +65,8 @@ public enum class CatObjectType(internal val cliValue: String, internal val need
     TREE("tree", true),
 }
 
+private const val SHORT_ID_LENGTH: Int = 8
+
 internal class DumpAndCatCommand(private val runner: ProcessRunner) {
     fun dump(
         snapshotId: String,
@@ -92,6 +95,14 @@ internal class DumpAndCatCommand(private val runner: ProcessRunner) {
         val arguments = listOf("cat", type.cliValue) + listOfNotNull(id)
         runner.runChecked(ProcessRequest(arguments, standardOutput = output))
     }
+
+    fun catJson(
+        type: CatObjectType,
+        id: String?,
+    ): JsonNode = Json.parse(catText(type, id))
+
+    fun catSnapshot(id: String): Snapshot =
+        snapshotFrom(catJson(CatObjectType.SNAPSHOT, id)).let { it.copy(id = id, shortId = id.take(SHORT_ID_LENGTH)) }
 
     fun catText(
         type: CatObjectType,
