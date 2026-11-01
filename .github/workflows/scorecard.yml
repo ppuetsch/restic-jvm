@@ -8,13 +8,16 @@ on:
   branch_protection_rule:
   workflow_dispatch:
 
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   analysis:
     name: Scorecard analysis
     runs-on: ubuntu-latest
     permissions:
+      contents: read
+      actions: read
       security-events: write
       id-token: write
     steps:
