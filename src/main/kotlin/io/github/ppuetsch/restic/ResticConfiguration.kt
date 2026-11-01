@@ -192,4 +192,5 @@ public class ResticConfiguration private constructor(builder: Builder) {
     }
 }
 
-private fun goDuration(duration: Duration): String = "${duration.seconds}s"
+/** Go-Dauer für restic; Bruchteile von Sekunden in Millisekunden, damit z.B. 500 ms nicht zu `0s` (= aus) werden. */
+private fun goDuration(duration: Duration): String = if (duration.toNanosPart() == 0) "${duration.seconds}s" else "${duration.toMillis()}ms"
