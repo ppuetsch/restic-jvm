@@ -5,15 +5,19 @@ import com.fasterxml.jackson.databind.JsonNode
 /** Optionen für `restic diff`. */
 public class DiffOptions private constructor(builder: Builder) {
     public val metadata: Boolean = builder.metadata
+    public val cancellationToken: CancellationToken? = builder.cancellationToken
 
     internal fun arguments(): List<String> = buildList { optionalFlag("--metadata", metadata) }
 
     public class Builder internal constructor() {
         internal var metadata: Boolean = false
+        internal var cancellationToken: CancellationToken? = null
 
         /** Meldet auch reine Metadaten-Änderungen. */
         @JvmOverloads
         public fun metadata(enabled: Boolean = true): Builder = apply { metadata = enabled }
+
+        public fun cancellationToken(token: CancellationToken): Builder = apply { cancellationToken = token }
 
         public fun build(): DiffOptions = DiffOptions(this)
     }
@@ -81,9 +85,8 @@ internal class DiffCommand(private val runner: ProcessRunner) {
     ): DiffStatistics {
         var statistics: DiffStatistics? = null
         val arguments = listOf("diff", "--json") + options.arguments() + firstSnapshotId + secondSnapshotId
-        runner.runChecked(arguments) { line ->
-            if (line.startsWith("{")) {
-                val node = Json.parse(line)
+        runner.runChecked(ProcessRequest(arguments, cancellation = options.cancellationToken)) { line ->
+            Json.parseOrNull(line)?.let { node ->
                 when (node.messageType()) {
                     "change" -> listener?.onChange(DiffChange(node.text("path"), node.text("modifier")))
                     "statistics" ->

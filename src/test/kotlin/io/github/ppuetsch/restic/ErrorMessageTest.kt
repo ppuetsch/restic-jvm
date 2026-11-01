@@ -57,10 +57,24 @@ class ErrorMessageTest {
     }
 
     @Test
-    fun `json lines of other message types and broken json are kept unchanged`() {
-        val stderr = """{"message_type":"error","error":{"message":"x"}}""" + "\n{not json at all\n"
+    fun `error messages are reduced to item and message and broken json stays text`() {
+        val stderr =
+            listOf(
+                """{"message_type":"error","error":{"message":"permission denied"},"during":"archival","item":"/x"}""",
+                "{not json at all",
+                "",
+            ).joinToString("\n")
 
-        assertEquals(stderr.trimEnd(), commandExceptionFor(1, stderr).errorMessage)
+        assertEquals(listOf("/x: permission denied", "{not json at all"), commandExceptionFor(1, stderr).errorMessage.lines())
+    }
+
+    @Test
+    fun `json messages of other types never come back as raw json`() {
+        val stderr = listOf("""{"message_type":"verbose_status","message":"loading index"}""", """{"message_type":"status"}""")
+
+        val message = commandExceptionFor(1, stderr.joinToString("\n")).errorMessage
+
+        assertEquals(listOf("loading index", "restic message: status"), message.lines())
     }
 
     @Test

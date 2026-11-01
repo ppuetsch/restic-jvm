@@ -9,21 +9,17 @@ import java.nio.file.Path
 public class Restic(public val configuration: ResticConfiguration) {
     private val runner = ProcessRunner(configuration)
     private val backupCommand = BackupCommand(runner)
-    private val findCommand = FindCommand(runner)
     private val restoreCommand = RestoreCommand(runner)
-    private val dumpAndCatCommand = DumpAndCatCommand(runner)
     private val forgetCommand = ForgetCommand(runner)
     private val pruneCommand = PruneCommand(runner)
     private val checkAndStatsCommand = CheckAndStatsCommand(runner)
     private val diffCommand = DiffCommand(runner)
-    private val tagCommand = TagCommand(runner)
     private val rewriteAndCopyCommand = RewriteAndCopyCommand(runner)
-    private val adminCommands = AdminCommands(runner)
-    private val toolCommands = ToolCommands(runner)
     private val mountCommand = MountCommand(runner)
 
-    public fun version(): ResticVersion {
-        val node = lastJsonLine(listOf("version", "--json"))
+    @JvmOverloads
+    public fun version(cancellationToken: CancellationToken? = null): ResticVersion {
+        val node = lastJsonLine(listOf("version", "--json"), cancellationToken = cancellationToken)
         return ResticVersion(node.text("version"), node.text("go_version"), node.text("go_os"), node.text("go_arch"))
     }
 
@@ -131,7 +127,8 @@ public class Restic(public val configuration: ResticConfiguration) {
     public fun find(
         patterns: List<String>,
         options: FindOptions = FindOptions.DEFAULT,
-    ): List<FindSnapshotMatches> = findCommand.findNames(patterns, options)
+        cancellationToken: CancellationToken? = null,
+    ): List<FindSnapshotMatches> = FindCommand(runner.cancellableBy(cancellationToken)).findNames(patterns, options)
 
     @JvmSynthetic
     public fun find(
@@ -145,7 +142,8 @@ public class Restic(public val configuration: ResticConfiguration) {
         kind: FindObjectKind,
         ids: List<String>,
         options: FindOptions = FindOptions.DEFAULT,
-    ): List<FindObject> = findCommand.findObjects(kind, ids, options)
+        cancellationToken: CancellationToken? = null,
+    ): List<FindObject> = FindCommand(runner.cancellableBy(cancellationToken)).findObjects(kind, ids, options)
 
     /** Stellt einen Snapshot (`latest`, ID oder `id:unterordner`) im Zielverzeichnis wieder her. */
     @JvmOverloads
@@ -171,7 +169,8 @@ public class Restic(public val configuration: ResticConfiguration) {
         fileInSnapshot: String,
         output: OutputStream,
         options: DumpOptions = DumpOptions.DEFAULT,
-    ): Unit = dumpAndCatCommand.dump(snapshotId, fileInSnapshot, options, output)
+        cancellationToken: CancellationToken? = null,
+    ): Unit = DumpAndCatCommand(runner.cancellableBy(cancellationToken)).dump(snapshotId, fileInSnapshot, options, output)
 
     /** Wie [dump], schreibt aber direkt in eine Zieldatei (`--target`). */
     @JvmOverloads
@@ -180,7 +179,8 @@ public class Restic(public val configuration: ResticConfiguration) {
         fileInSnapshot: String,
         target: Path,
         options: DumpOptions = DumpOptions.DEFAULT,
-    ): Unit = dumpAndCatCommand.dumpToFile(snapshotId, fileInSnapshot, target, options)
+        cancellationToken: CancellationToken? = null,
+    ): Unit = DumpAndCatCommand(runner.cancellableBy(cancellationToken)).dumpToFile(snapshotId, fileInSnapshot, target, options)
 
     /** Gibt ein Repository-Objekt roh in den Stream aus (`restic cat`). Für Typen ohne feste ID genügt `id = null`. */
     @JvmOverloads
@@ -306,7 +306,11 @@ public class Restic(public val configuration: ResticConfiguration) {
     }
 
     /** Ändert Tags von Snapshots; restic legt dafür neue Snapshots an. */
-    public fun tag(options: TagOptions): TagResult = tagCommand.tag(options)
+    @JvmOverloads
+    public fun tag(
+        options: TagOptions,
+        cancellationToken: CancellationToken? = null,
+    ): TagResult = TagCommand(runner.cancellableBy(cancellationToken)).tag(options)
 
     @JvmSynthetic
     public fun tag(configure: TagOptions.Builder.() -> Unit): TagResult = tag(TagOptions.builder().apply(configure).build())
@@ -344,83 +348,126 @@ public class Restic(public val configuration: ResticConfiguration) {
         ListCommand(runner.cancellableBy(cancellationToken)).listBlobs()
 
     @JvmOverloads
-    public fun listKeys(cancellationToken: CancellationToken? = null): List<KeyInfo> =
-        AdminCommands(runner.cancellableBy(cancellationToken)).listKeys()
+    public fun listKeys(cancellationToken: CancellationToken? = null): List<KeyInfo> = admin(cancellationToken).listKeys()
 
     /** Fügt dem Repository einen weiteren Schlüssel (Passwort) hinzu. */
     @JvmOverloads
-    public fun addKey(options: NewKeyOptions = NewKeyOptions.DEFAULT): KeyAddResult = adminCommands.addKey(options)
+    public fun addKey(
+        options: NewKeyOptions = NewKeyOptions.DEFAULT,
+        cancellationToken: CancellationToken? = null,
+    ): KeyAddResult = admin(cancellationToken).addKey(options)
 
     @JvmSynthetic
     public fun addKey(configure: NewKeyOptions.Builder.() -> Unit): KeyAddResult = addKey(NewKeyOptions.builder().apply(configure).build())
 
     /** Ersetzt den aktuell verwendeten Schlüssel durch einen mit neuem Passwort. */
     @JvmOverloads
-    public fun changePassword(options: NewKeyOptions = NewKeyOptions.DEFAULT): CommandOutput = adminCommands.changePassword(options)
+    public fun changePassword(
+        options: NewKeyOptions = NewKeyOptions.DEFAULT,
+        cancellationToken: CancellationToken? = null,
+    ): CommandOutput = admin(cancellationToken).changePassword(options)
 
     @JvmSynthetic
     public fun changePassword(configure: NewKeyOptions.Builder.() -> Unit): CommandOutput =
         changePassword(NewKeyOptions.builder().apply(configure).build())
 
-    public fun removeKey(keyId: String): CommandOutput = adminCommands.removeKey(keyId)
+    @JvmOverloads
+    public fun removeKey(
+        keyId: String,
+        cancellationToken: CancellationToken? = null,
+    ): CommandOutput = admin(cancellationToken).removeKey(keyId)
 
     /** Entfernt veraltete Sperren; mit `removeAll` auch aktive. */
     @JvmOverloads
     public fun unlock(
         removeAll: Boolean = false,
         cancellationToken: CancellationToken? = null,
-    ): CommandOutput = AdminCommands(runner.cancellableBy(cancellationToken)).unlock(removeAll)
+    ): CommandOutput = admin(cancellationToken).unlock(removeAll)
 
     /** Ohne Namen werden die verfügbaren Migrationen aufgelistet. */
     @JvmOverloads
     public fun migrate(
         names: List<String> = emptyList(),
         force: Boolean = false,
-    ): CommandOutput = adminCommands.migrate(names, force)
+        cancellationToken: CancellationToken? = null,
+    ): CommandOutput = admin(cancellationToken).migrate(names, force)
 
     @JvmOverloads
-    public fun cache(options: CacheOptions = CacheOptions.DEFAULT): CommandOutput = adminCommands.cache(options)
+    public fun cache(
+        options: CacheOptions = CacheOptions.DEFAULT,
+        cancellationToken: CancellationToken? = null,
+    ): CommandOutput = admin(cancellationToken).cache(options)
 
     @JvmSynthetic
     public fun cache(configure: CacheOptions.Builder.() -> Unit): CommandOutput = cache(CacheOptions.builder().apply(configure).build())
 
-    public fun features(): List<FeatureFlag> = adminCommands.features()
+    @JvmOverloads
+    public fun features(cancellationToken: CancellationToken? = null): List<FeatureFlag> = admin(cancellationToken).features()
 
     /** Baut Snapshots aus verwaisten Bäumen wieder auf (`restic recover`). */
-    public fun recover(): CommandOutput = adminCommands.recover()
+    @JvmOverloads
+    public fun recover(cancellationToken: CancellationToken? = null): CommandOutput = admin(cancellationToken).recover()
 
     @JvmOverloads
-    public fun repairIndex(readAllPacks: Boolean = false): CommandOutput = adminCommands.repairIndex(readAllPacks)
-
-    public fun repairPacks(packIds: List<String>): CommandOutput = adminCommands.repairPacks(packIds)
+    public fun repairIndex(
+        readAllPacks: Boolean = false,
+        cancellationToken: CancellationToken? = null,
+    ): CommandOutput = admin(cancellationToken).repairIndex(readAllPacks)
 
     @JvmOverloads
-    public fun repairSnapshots(options: RepairSnapshotsOptions = RepairSnapshotsOptions.DEFAULT): CommandOutput =
-        adminCommands.repairSnapshots(options)
+    public fun repairPacks(
+        packIds: List<String>,
+        cancellationToken: CancellationToken? = null,
+    ): CommandOutput = admin(cancellationToken).repairPacks(packIds)
+
+    @JvmOverloads
+    public fun repairSnapshots(
+        options: RepairSnapshotsOptions = RepairSnapshotsOptions.DEFAULT,
+        cancellationToken: CancellationToken? = null,
+    ): CommandOutput = admin(cancellationToken).repairSnapshots(options)
 
     @JvmSynthetic
     public fun repairSnapshots(configure: RepairSnapshotsOptions.Builder.() -> Unit): CommandOutput =
         repairSnapshots(RepairSnapshotsOptions.builder().apply(configure).build())
 
     /** Erzeugt Shell-Vervollständigungen und Man-Pages in den angegebenen Zielen. */
-    public fun generate(options: GenerateOptions): CommandOutput = toolCommands.generate(options)
+    @JvmOverloads
+    public fun generate(
+        options: GenerateOptions,
+        cancellationToken: CancellationToken? = null,
+    ): CommandOutput = tools(cancellationToken).generate(options)
 
     @JvmSynthetic
     public fun generate(configure: GenerateOptions.Builder.() -> Unit): CommandOutput =
         generate(GenerateOptions.builder().apply(configure).build())
 
     /** Das Vervollständigungsskript für eine Shell als Text. */
-    public fun completion(shell: CompletionShell): String = toolCommands.completion(shell)
+    @JvmOverloads
+    public fun completion(
+        shell: CompletionShell,
+        cancellationToken: CancellationToken? = null,
+    ): String = tools(cancellationToken).completion(shell)
 
     /** Aktualisiert die restic-Binary; mit `output` wird sie stattdessen in diese Datei geschrieben. */
     @JvmOverloads
-    public fun selfUpdate(output: Path? = null): CommandOutput = toolCommands.selfUpdate(output)
+    public fun selfUpdate(
+        output: Path? = null,
+        cancellationToken: CancellationToken? = null,
+    ): CommandOutput = tools(cancellationToken).selfUpdate(output)
 
     /** Hilfetext eines Befehls, z.B. `help("key", "add")`; ohne Argumente die allgemeine Hilfe. */
-    public fun help(vararg commandPath: String): String = toolCommands.help(commandPath.toList())
+    public fun help(vararg commandPath: String): String = help(commandPath.toList(), null)
+
+    /** Wie [help] mit einem Befehlspfad als Liste, abbrechbar über [cancellationToken]. */
+    public fun help(
+        commandPath: List<String>,
+        cancellationToken: CancellationToken?,
+    ): String = tools(cancellationToken).help(commandPath)
 
     /** Die erweiterten Optionen (`--option key=value`) der Backends. */
-    public fun extendedOptions(): List<ExtendedOption> = toolCommands.extendedOptions()
+    @JvmOverloads
+    public fun extendedOptions(cancellationToken: CancellationToken? = null): List<ExtendedOption> =
+        tools(cancellationToken).extendedOptions()
 
     /**
      * Stellt das Repository per FUSE als Verzeichnisbaum bereit (nicht unter Windows).
@@ -431,6 +478,10 @@ public class Restic(public val configuration: ResticConfiguration) {
         mountpoint: Path,
         options: MountOptions = MountOptions.DEFAULT,
     ): MountHandle = mountCommand.mount(mountpoint, options)
+
+    private fun admin(cancellationToken: CancellationToken?): AdminCommands = AdminCommands(runner.cancellableBy(cancellationToken))
+
+    private fun tools(cancellationToken: CancellationToken?): ToolCommands = ToolCommands(runner.cancellableBy(cancellationToken))
 
     private fun catJson(
         type: CatObjectType,

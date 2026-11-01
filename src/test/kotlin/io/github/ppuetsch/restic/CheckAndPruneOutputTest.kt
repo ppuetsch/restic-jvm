@@ -2,11 +2,16 @@ package io.github.ppuetsch.restic
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTimeoutPreemptively
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
+import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
+
+private val LISTENER_FAILURE_TIMEOUT: Duration = Duration.ofSeconds(90)
 
 private class RecordingListener : OutputLineListener {
     val standardOutput = CopyOnWriteArrayList<String>()
@@ -165,6 +170,40 @@ class CheckAndPruneOutputTest {
         assertNull(result.bytesFreed)
         assertNull(result.packsDeleted)
         assertNull(result.packsRepacked)
+    }
+
+    @Test
+    fun `json on standard error reaches the listener as readable text`() {
+        val listener = RecordingListener()
+        val fake =
+            FakeRestic(
+                temporaryDirectory,
+                """err {"message_type":"error","error":{"message":"pack damaged"},"item":"pack/abc"}""",
+                """out {"message_type":"summary","num_errors":1,"broken_packs":["abc"]}""",
+            )
+
+        val result = fake.restic().check(CheckOptions.DEFAULT, listener)
+
+        assertEquals(listOf("pack/abc: pack damaged"), listener.standardError)
+        assertEquals(listener.standardError, result.errorOutputLines)
+    }
+
+    @Test
+    fun `a failing error listener surfaces its exception instead of blocking restic`() {
+        val failingListener =
+            object : OutputLineListener {
+                override fun onLine(line: String) = Unit
+
+                override fun onErrorLine(line: String): Unit = throw IllegalStateException("listener broke")
+            }
+        val fake = FakeRestic(temporaryDirectory, "errflood 20000", "out total prune: 0 blobs / 0 B")
+
+        val failure =
+            assertTimeoutPreemptively<IllegalStateException>(LISTENER_FAILURE_TIMEOUT) {
+                assertThrows<IllegalStateException> { fake.restic().prune(PruneOptions.DEFAULT, failingListener) }
+            }
+
+        assertEquals("listener broke", failure.message)
     }
 
     @Test

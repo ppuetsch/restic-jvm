@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Stand-in for the restic binary, run through the Java source launcher so it behaves the same on Linux and Windows.
  * Reads the scenario named by FAKE_RESTIC_SCENARIO, one instruction per line:
- * out TEXT | err TEXT | self FILE | child FILE | sleep | exit CODE
+ * out TEXT | err TEXT | errflood LINES | self FILE | child FILE | sleep | exit CODE
  */
 public final class FakeRestic {
     private static final String SLEEPER_ARGUMENT = "--sleeper";
@@ -27,11 +27,18 @@ public final class FakeRestic {
         switch (verb) {
             case "out" -> System.out.println(rest);
             case "err" -> System.err.println(rest);
+            case "errflood" -> floodStandardError(Integer.parseInt(rest));
             case "self" -> Files.writeString(Path.of(rest), Long.toString(ProcessHandle.current().pid()));
             case "child" -> Files.writeString(Path.of(rest), Long.toString(startSleepingChild().pid()));
             case "sleep" -> Thread.sleep(Long.MAX_VALUE);
             case "exit" -> System.exit(Integer.parseInt(rest));
             default -> throw new IllegalArgumentException("unknown instruction: " + instruction);
+        }
+    }
+
+    private static void floodStandardError(int lines) {
+        for (int line = 0; line < lines; line++) {
+            System.err.println("warning: line " + line + " of a long diagnostic output that fills the pipe buffer");
         }
     }
 

@@ -17,7 +17,7 @@ Releases are published to GitHub Packages (`https://maven.pkg.github.com/ppuetsc
 
 ```kotlin
 dependencies {
-    implementation("io.github.ppuetsch:restic-jvm:0.3.0")
+    implementation("io.github.ppuetsch:restic-jvm:0.4.0")
 }
 ```
 
@@ -70,11 +70,18 @@ Errors are a sealed `ResticException` hierarchy
 
 ### Cancelling
 
-Every command that starts a restic process accepts an optional `CancellationToken`
-(`backup`, `restore`, `ls`, `init`, `unlock`, `list`, `cat`, `snapshots`, `stats`, ...; `check` and `prune` take it through their options).
+Every command that starts a restic process accepts an optional `CancellationToken`:
+
+- commands with a listener take it through their options: `backup*`, `restore`, `check`, `prune`, `forget`, `copy`, `rewrite`, `diff`, `diffAll`
+  (`OptionsBuilder.cancellationToken(token)`);
+- `ls` has the overload `ls(snapshotId, options, cancellationToken, listener)`;
+- every other method takes it as its last parameter, e.g. `snapshots(options, token)`, `unlock(false, token)`, `help(listOf("backup"), token)`.
+
 `cancel()` ends restic **and all its child processes** (for example `rclone` behind an `rclone:` repository),
 first politely and after two seconds forcibly, on Linux and Windows. The call throws `ResticCancelledException`.
-A configured `timeout` ends the process tree the same way.
+One token may be shared by several calls, also in parallel; `cancel()` stops all of them, and a cancelled token stays cancelled.
+A configured `timeout` ends the process tree the same way and throws `ResticTimeoutException`.
+If restic still finished successfully at the moment of cancellation, its result is returned.
 
 ```kotlin
 val token = CancellationToken()
@@ -84,8 +91,9 @@ token.cancel() // from any thread; the call above throws ResticCancelledExceptio
 
 ### Error messages and classification
 
-`ResticCommandException.errorMessage` is the readable text:
-the `message` of restic's `exit_error` JSON line, other lines unchanged, blank lines removed.
+`ResticCommandException.errorMessage` is the readable text: restic's `exit_error` and `error` JSON lines reduced to
+their message (`item: message` where restic names a file), other JSON messages to their `message` or type,
+plain text lines unchanged, blank lines removed. The raw output is not exposed.
 `kind` classifies the failure by exit code and message.
 
 ```kotlin
@@ -104,8 +112,9 @@ try {
 
 ### Check and prune with a live log
 
-`check` and `prune` accept an `OutputLineListener` that receives standard output (`onLine`) and standard error
-(`onErrorLine`) line by line while the command runs. The results keep the lines as well.
+`check`, `prune`, `forget`, `copy` and `rewrite` accept an `OutputLineListener` that receives standard output (`onLine`)
+and standard error (`onErrorLine`) line by line while the command runs; JSON messages arrive as readable text.
+An exception thrown by the listener aborts the call and is rethrown to the caller. The results keep the lines as well.
 
 ```kotlin
 val listener = object : OutputLineListener {
