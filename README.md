@@ -17,7 +17,7 @@ Releases are published to GitHub Packages (`https://maven.pkg.github.com/ppuetsc
 
 ```kotlin
 dependencies {
-    implementation("io.github.ppuetsch:restic-jvm:0.4.0")
+    implementation("io.github.ppuetsch:restic-jvm:0.5.0")
 }
 ```
 
@@ -72,10 +72,13 @@ Errors are a sealed `ResticException` hierarchy
 
 Every command that starts a restic process accepts an optional `CancellationToken`:
 
-- commands with a listener take it through their options: `backup*`, `restore`, `check`, `prune`, `forget`, `copy`, `rewrite`, `diff`, `diffAll`
-  (`OptionsBuilder.cancellationToken(token)`);
-- `ls` has the overload `ls(snapshotId, options, cancellationToken, listener)`;
-- every other method takes it as its last parameter, e.g. `snapshots(options, token)`, `unlock(false, token)`, `help(listOf("backup"), token)`.
+- every options class takes it: `cancellationToken(token)` on the builders of `BackupOptions`, `RestoreOptions`,
+  `CheckOptions`, `PruneOptions`, `ForgetOptions`, `CopyOptions`, `RewriteOptions`, `DiffOptions`, `LsOptions`,
+  `SnapshotsOptions`, `FindOptions` and `StatsOptions`;
+- `ls` also has the overload `ls(snapshotId, options, cancellationToken, listener)`; `listNodes`, `snapshots`,
+  `snapshotGroups`, `find`, `findObjects` and `stats` also take it as their last parameter.
+  **A token passed directly wins over the one in the options**; if it is `null`, the options token applies;
+- methods without options take it as their last parameter, e.g. `unlock(false, token)`, `listKeys(token)`, `help(listOf("backup"), token)`.
 
 `cancel()` ends restic **and all its child processes** (for example `rclone` behind an `rclone:` repository),
 first politely and after two seconds forcibly, on Linux and Windows. The call throws `ResticCancelledException`.
@@ -85,7 +88,7 @@ If restic still finished successfully at the moment of cancellation, its result 
 
 ```kotlin
 val token = CancellationToken()
-val listing = executor.submit { restic.ls(Restic.LATEST, LsOptions.DEFAULT, token, null) }
+val listing = executor.submit { restic.listNodes(Restic.LATEST, LsOptions.builder().cancellationToken(token).build()) }
 token.cancel() // from any thread; the call above throws ResticCancelledException
 ```
 

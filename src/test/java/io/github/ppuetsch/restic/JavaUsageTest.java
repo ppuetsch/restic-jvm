@@ -241,6 +241,17 @@ class JavaUsageTest {
         assertThrows(ResticCancelledException.class,
                 () -> restic.diffAll("a", "b", DiffOptions.builder().cancellationToken(cancelled).build()));
         assertFalse(restic.version(new CancellationToken()).getVersion().isEmpty());
+        assertThrows(ResticCancelledException.class,
+                () -> restic.listNodes(Restic.LATEST, LsOptions.builder().cancellationToken(cancelled).build()));
+        assertThrows(ResticCancelledException.class,
+                () -> restic.snapshots(SnapshotsOptions.builder().cancellationToken(cancelled).build()));
+        assertThrows(ResticCancelledException.class,
+                () -> restic.find(java.util.List.of("*.txt"), FindOptions.builder().cancellationToken(cancelled).build()));
+        assertThrows(ResticCancelledException.class,
+                () -> restic.stats(StatsOptions.builder().cancellationToken(cancelled).build()));
+        LsOptions withCancelledToken = LsOptions.builder().cancellationToken(cancelled).build();
+        assertEquals(cancelled, withCancelledToken.getCancellationToken());
+        assertThrows(ResticCancelledException.class, () -> restic.ls(Restic.LATEST, LsOptions.DEFAULT, cancelled, null));
 
         java.util.List<String> errorLines = new java.util.ArrayList<>();
         restic.prune(PruneOptions.DEFAULT, new OutputLineListener() {

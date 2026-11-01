@@ -92,6 +92,7 @@ public enum class StatsMode(internal val cliValue: String) {
 
 /** Optionen für `restic stats`. */
 public class StatsOptions private constructor(builder: Builder) {
+    public val cancellationToken: CancellationToken? = builder.cancellationToken
     public val filter: SnapshotFilter = builder.filter.build()
     public val mode: StatsMode? = builder.mode
     public val snapshotIds: List<String> = builder.snapshotIds.toList()
@@ -104,6 +105,7 @@ public class StatsOptions private constructor(builder: Builder) {
         }
 
     public class Builder internal constructor() {
+        internal var cancellationToken: CancellationToken? = null
         internal val filter: SnapshotFilter.Builder = SnapshotFilter.builder()
         internal var mode: StatsMode? = null
         internal val snapshotIds: MutableList<String> = mutableListOf()
@@ -117,6 +119,9 @@ public class StatsOptions private constructor(builder: Builder) {
         public fun mode(mode: StatsMode): Builder = apply { this.mode = mode }
 
         public fun snapshotId(id: String): Builder = apply { snapshotIds.add(id) }
+
+        /** Bricht den Aufruf ab; ein direkt an [Restic] übergebenes Token hat Vorrang. */
+        public fun cancellationToken(token: CancellationToken): Builder = apply { cancellationToken = token }
 
         public fun build(): StatsOptions = StatsOptions(this)
     }

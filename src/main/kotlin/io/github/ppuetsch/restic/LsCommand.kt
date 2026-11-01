@@ -14,6 +14,7 @@ public enum class LsSort(internal val cliValue: String) {
 
 /** Optionen für `restic ls`. */
 public class LsOptions private constructor(builder: Builder) {
+    public val cancellationToken: CancellationToken? = builder.cancellationToken
     public val filter: SnapshotFilter = builder.filter.build()
     public val directories: List<String> = builder.directories.toList()
     public val recursive: Boolean = builder.recursive
@@ -33,6 +34,7 @@ public class LsOptions private constructor(builder: Builder) {
         }
 
     public class Builder internal constructor() {
+        internal var cancellationToken: CancellationToken? = null
         internal val filter: SnapshotFilter.Builder = SnapshotFilter.builder()
         internal val directories: MutableList<String> = mutableListOf()
         internal var recursive: Boolean = false
@@ -66,6 +68,9 @@ public class LsOptions private constructor(builder: Builder) {
 
         @JvmOverloads
         public fun humanReadable(enabled: Boolean = true): Builder = apply { humanReadable = enabled }
+
+        /** Bricht den Aufruf ab; ein direkt an [Restic] übergebenes Token hat Vorrang. */
+        public fun cancellationToken(token: CancellationToken): Builder = apply { cancellationToken = token }
 
         public fun build(): LsOptions = LsOptions(this)
     }
