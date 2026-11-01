@@ -35,7 +35,6 @@ class ErrorMessageTest {
         val exception = commandExceptionFor(12, WRONG_PASSWORD_STDERR)
 
         assertEquals("Fatal: wrong password or no key found", exception.errorMessage)
-        assertEquals(WRONG_PASSWORD_STDERR, exception.standardError)
         assertEquals("restic exited with code 12: Fatal: wrong password or no key found", exception.message)
     }
 
@@ -106,7 +105,6 @@ class ErrorMessageTest {
 
         assertEquals("Fatal: wrong password or no key found", failure.errorMessage)
         assertEquals(ResticErrorKind.WRONG_PASSWORD, failure.kind)
-        assertTrue(failure.standardError.contains("exit_error"), failure.standardError)
     }
 
     @Test

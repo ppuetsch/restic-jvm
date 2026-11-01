@@ -17,7 +17,7 @@ Releases are published to GitHub Packages (`https://maven.pkg.github.com/ppuetsc
 
 ```kotlin
 dependencies {
-    implementation("io.github.ppuetsch:restic-jvm:0.2.0")
+    implementation("io.github.ppuetsch:restic-jvm:0.3.0")
 }
 ```
 
@@ -84,7 +84,7 @@ token.cancel() // from any thread; the call above throws ResticCancelledExceptio
 
 ### Error messages and classification
 
-`ResticCommandException.standardError` is the raw output. `errorMessage` is the readable text:
+`ResticCommandException.errorMessage` is the readable text:
 the `message` of restic's `exit_error` JSON line, other lines unchanged, blank lines removed.
 `kind` classifies the failure by exit code and message.
 
@@ -130,7 +130,7 @@ If restic prints no summary the figures are `null`; the raw `outputLines` are al
 |---|---|
 | `init`, `version` | `init`, `version` |
 | `backup` (incl. stdin, stdin-from-command) | `backup`, `backupStandardInput`, `backupCommandOutput` |
-| `snapshots`, `ls`, `find` | `snapshots`, `snapshotGroups`, `ls`, `listNodes`, `lsNcdu`, `find`, `findObjects` |
+| `snapshots`, `ls`, `find` | `snapshots`, `snapshotGroups`, `ls`, `listNodes`, `find`, `findObjects` |
 | `restore`, `dump`, `cat` | `restore`, `dump`, `dumpToFile`, `cat` (raw bytes), typed `catConfig`, `catSnapshot`, `catKey`, `catLock`, `catTree`, `catIndex`, `catMasterKey` |
 | `forget`, `prune`, `check`, `stats` | `forget`, `prune`, `check`, `stats` |
 | `diff`, `copy`, `tag`, `rewrite`, `list` | `diff`, `diffAll`, `copy`, `tag`, `rewrite`, `list`, `listBlobs` |
@@ -147,7 +147,7 @@ Global flags (`--no-lock`, `--compression`, `--limit-upload`, `--option`, ...) a
 - Commands without JSON output (`copy`, `rewrite`, `recover`, `repair`, ...) return their text lines.
 - On Windows, restoring a snapshot that contains ancestors such as `C:\Users` fails when restic cannot set their timestamps; restore a sub folder (`latest:/C/Users/me/docs`) instead.
 - `check` reports repository damage in `CheckResult.isHealthy()` instead of throwing. Its JSON is parsed into `CheckResult.messages` (`CheckMessage.Summary`/`Error`/`Text`); `outputLines` and the listener get readable text, never raw JSON.
-- restic's JSON is always returned as typed objects. The only raw text left is `ResticCommandException.standardError` (kept next to the parsed `errorMessage`), `catText` for non-JSON objects and the deprecated `lsNcdu`, a file for the external `ncdu` tool.
+- restic's JSON is always returned as typed objects, never as raw strings; `catText` is only for non-JSON objects.
 
 ## Build
 

@@ -148,13 +148,4 @@ internal class LsCommand(private val runner: ProcessRunner) {
         }
         return snapshot ?: throw ResticOutputException("restic ls produced no snapshot header", null)
     }
-
-    fun ncdu(
-        snapshotId: String,
-        options: LsOptions,
-    ): String {
-        val lines = mutableListOf<String>()
-        runner.runChecked(listOf("ls", "--ncdu") + options.arguments() + snapshotId + options.directories) { lines += it }
-        return lines.joinToString("\n")
-    }
 }
