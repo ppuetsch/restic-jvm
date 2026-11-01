@@ -89,7 +89,7 @@ public class MountHandle internal constructor(
             throw ResticTimeoutException("restic mount was not ready within $timeout")
         } catch (failure: ExecutionException) {
             process.waitFor(EXIT_GRACE_SECONDS, TimeUnit.SECONDS)
-            throw commandExceptionFor(exitCodeOrOne(), errorOutput.getNow(""))
+            throw commandExceptionFor(exitCodeOrOne(), errorOutputOrEmpty())
         }
     }
 
@@ -98,10 +98,18 @@ public class MountHandle internal constructor(
     override fun close() {
         if (!process.isAlive) return
         process.destroy()
-        if (!process.waitFor(UNMOUNT_GRACE_SECONDS, TimeUnit.SECONDS)) process.destroyForcibly()
+        if (!process.waitFor(UNMOUNT_GRACE_SECONDS, TimeUnit.SECONDS)) ProcessTree.terminateForcibly(process)
     }
 
     private fun exitCodeOrOne(): Int = if (process.isAlive) 1 else process.exitValue()
+
+    /** Nach dem Prozessende braucht der Leser von stderr noch einen Moment, bis er alles hat. */
+    private fun errorOutputOrEmpty(): String =
+        try {
+            errorOutput.get(EXIT_GRACE_SECONDS, TimeUnit.SECONDS)
+        } catch (notAvailable: Exception) {
+            ""
+        }
 }
 
 internal class MountCommand(private val runner: ProcessRunner) {
@@ -112,8 +120,8 @@ internal class MountCommand(private val runner: ProcessRunner) {
         val process = runner.startProcess(ProcessRequest(listOf("mount") + options.arguments() + mountpoint.toString()))
         val ready = CompletableFuture<Unit>()
         process.outputStream.close()
-        Thread.ofVirtual().start { watchForReadyMarker(process, ready) }
-        val errorOutput = CompletableFuture.supplyAsync { process.errorStream.bufferedReader().readText() }
+        STREAM_READERS.execute { watchForReadyMarker(process, ready) }
+        val errorOutput = CompletableFuture.supplyAsync({ process.errorStream.bufferedReader().readText() }, STREAM_READERS)
         return MountHandle(process, ready, errorOutput)
     }
 

@@ -218,11 +218,9 @@ internal class RestoreCommand(private val runner: ProcessRunner) {
         var summary: RestoreSummary? = null
         val arguments = listOf("restore", "--json", "--target", target.toString()) + options.arguments() + snapshotId
         runner.runChecked(ProcessRequest(arguments, cancellation = options.cancellationToken)) { line ->
-            if (line.isNotBlank()) {
-                restoreEventFrom(Json.parse(line))?.let { event ->
-                    if (event is RestoreEvent.Summary) summary = event.summary
-                    listener?.onEvent(event)
-                }
+            Json.parseOrNull(line)?.let(::restoreEventFrom)?.let { event ->
+                if (event is RestoreEvent.Summary) summary = event.summary
+                listener?.onEvent(event)
             }
         }
         return summary ?: throw ResticOutputException("restic restore produced no summary", null)

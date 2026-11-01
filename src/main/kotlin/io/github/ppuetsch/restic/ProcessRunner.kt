@@ -4,13 +4,22 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionException
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 private const val LINE_FEED: Char = '\n'
+
+/** Blockierendes Lesen der Prozess-Streams gehört nicht in den gemeinsamen ForkJoinPool. */
+internal val STREAM_READERS: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
+
+private val WATCHDOG: ScheduledExecutorService =
+    Executors.newSingleThreadScheduledExecutor { task -> Thread(task, "restic-watchdog").apply { isDaemon = true } }
 
 internal class ProcessOutcome(
     val exitCode: Int,
@@ -52,23 +61,11 @@ internal class ProcessRunner(
         val request = plainRequest.withDefaultCancellation(defaultCancellation)
         val process = start(request)
         request.cancellation?.attach(process)
-        val timedOut = AtomicBoolean(false)
-        val watchdog = startWatchdog(process, timedOut)
-        feedStandardInput(process, request.standardInput)
-        val standardError = CompletableFuture.supplyAsync { readStandardError(process, request.onStandardErrorLine) }
         try {
-            consumeStandardOutput(process, request.standardOutput, onStandardOutputLine)
-            process.waitFor()
-        } catch (failure: IOException) {
-            val wasStoppedByUs = timedOut.get() || request.cancellation?.isCancelled == true
-            if (!wasStoppedByUs) throw failure
+            return superviseUntilExit(process, request, onStandardOutputLine)
         } finally {
-            watchdog?.cancel(false)
-            if (process.isAlive) ProcessTree.terminate(process)
+            request.cancellation?.detach(process)
         }
-        if (request.cancellation?.isCancelled == true) throw ResticCancelledException()
-        if (timedOut.get()) throw ResticTimeoutException("restic did not finish within ${configuration.timeout}")
-        return ProcessOutcome(process.exitValue(), standardError.get())
     }
 
     fun runChecked(
@@ -101,18 +98,38 @@ internal class ProcessRunner(
         }
     }
 
-    private fun readStandardError(
+    private fun superviseUntilExit(
         process: Process,
-        onLine: ((String) -> Unit)?,
-    ): String {
-        val reader = process.errorStream.bufferedReader()
-        if (onLine == null) return reader.readText()
-        val collected = StringBuilder()
-        reader.forEachLine { line ->
-            collected.append(line).append(LINE_FEED)
-            onLine(line)
+        request: ProcessRequest,
+        onStandardOutputLine: (String) -> Unit,
+    ): ProcessOutcome {
+        val timedOut = AtomicBoolean(false)
+        val watchdog = startWatchdog(process, timedOut)
+        feedStandardInput(process, request.standardInput)
+        val standardError = StandardErrorReader(process, request.onStandardErrorLine)
+        try {
+            consumeStandardOutput(process, request.standardOutput, onStandardOutputLine)
+        } catch (failure: Throwable) {
+            throwIfStoppedByUs(request.cancellation, timedOut.get())
+            throw failure
+        } finally {
+            watchdog?.cancel(false)
         }
-        return collected.toString()
+        val exitCode = process.waitFor()
+        if (exitCode != 0) throwIfStoppedByUs(request.cancellation, timedOut.get())
+        return ProcessOutcome(exitCode, standardError.await())
+    }
+
+    /**
+     * Nach Abbruch oder Timeout sind Lesefehler und halbe Ausgaben Folgen des Beendens, nicht die Ursache; gemeldet
+     * wird deshalb der Abbruch. Endete restic trotzdem regulär mit 0, gilt das Ergebnis (siehe Aufrufer).
+     */
+    private fun throwIfStoppedByUs(
+        cancellation: CancellationToken?,
+        timedOut: Boolean,
+    ) {
+        if (cancellation?.isCancelled == true) throw ResticCancelledException()
+        if (timedOut) throw ResticTimeoutException("restic did not finish within ${configuration.timeout}")
     }
 
     private fun consumeStandardOutput(
@@ -120,11 +137,16 @@ internal class ProcessRunner(
         binaryTarget: OutputStream?,
         onLine: (String) -> Unit,
     ) {
-        if (binaryTarget != null) {
-            process.inputStream.transferTo(binaryTarget)
-            binaryTarget.flush()
-        } else {
-            process.inputStream.bufferedReader().forEachLine(onLine)
+        try {
+            if (binaryTarget != null) {
+                process.inputStream.transferTo(binaryTarget)
+                binaryTarget.flush()
+            } else {
+                process.inputStream.bufferedReader().forEachLine(onLine)
+            }
+        } catch (listenerOrStreamFailure: Throwable) {
+            ProcessTree.terminate(process)
+            throw listenerOrStreamFailure
         }
     }
 
@@ -136,7 +158,7 @@ internal class ProcessRunner(
             process.outputStream.close()
             return
         }
-        Thread.ofVirtual().start {
+        STREAM_READERS.execute {
             try {
                 process.outputStream.use { standardInput.transferTo(it) }
             } catch (ignored: IOException) {
@@ -155,9 +177,47 @@ internal class ProcessRunner(
             ProcessTree.terminateForcibly(process)
         }, timeout.toMillis(), TimeUnit.MILLISECONDS)
     }
+}
 
-    private companion object {
-        val WATCHDOG: ScheduledExecutorService =
-            Executors.newSingleThreadScheduledExecutor { task -> Thread(task, "restic-watchdog").apply { isDaemon = true } }
+/**
+ * Liest stderr vollständig, auch wenn der Listener wirft: Bliebe die Pipe ungelesen, liefe sie voll,
+ * restic blockierte beim Schreiben und der Aufruf hinge für immer. Der erste Listener-Fehler wird in [await] geworfen.
+ */
+private class StandardErrorReader(
+    process: Process,
+    private val onLine: ((String) -> Unit)?,
+) {
+    private val listenerFailure = AtomicReference<Throwable?>(null)
+    private val text: CompletableFuture<String> = CompletableFuture.supplyAsync({ read(process) }, STREAM_READERS)
+
+    fun await(): String {
+        val collected =
+            try {
+                text.join()
+            } catch (failure: CompletionException) {
+                throw failure.cause ?: failure
+            }
+        listenerFailure.get()?.let { throw it }
+        return collected
+    }
+
+    private fun read(process: Process): String {
+        val reader = process.errorStream.bufferedReader()
+        if (onLine == null) return reader.readText()
+        val collected = StringBuilder()
+        reader.forEachLine { line ->
+            collected.append(line).append(LINE_FEED)
+            notifyListener(line)
+        }
+        return collected.toString()
+    }
+
+    private fun notifyListener(line: String) {
+        if (listenerFailure.get() != null) return
+        try {
+            onLine?.invoke(line)
+        } catch (failure: Throwable) {
+            listenerFailure.compareAndSet(null, failure)
+        }
     }
 }

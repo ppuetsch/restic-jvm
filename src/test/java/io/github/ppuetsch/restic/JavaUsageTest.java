@@ -236,6 +236,23 @@ class JavaUsageTest {
         CancellationToken cancelled = new CancellationToken();
         cancelled.cancel();
         assertThrows(ResticCancelledException.class, () -> restic.unlock(false, cancelled));
+        assertThrows(ResticCancelledException.class, () -> restic.features(cancelled));
+        assertThrows(ResticCancelledException.class, () -> restic.help(java.util.List.of("backup"), cancelled));
+        assertThrows(ResticCancelledException.class,
+                () -> restic.diffAll("a", "b", DiffOptions.builder().cancellationToken(cancelled).build()));
+        assertFalse(restic.version(new CancellationToken()).getVersion().isEmpty());
+
+        java.util.List<String> errorLines = new java.util.ArrayList<>();
+        restic.prune(PruneOptions.DEFAULT, new OutputLineListener() {
+            @Override
+            public void onLine(String line) {
+            }
+
+            @Override
+            public void onErrorLine(String line) {
+                errorLines.add(line);
+            }
+        });
 
         Restic wrongPassword = new Restic(ResticConfiguration.builder()
                 .binary(binary)

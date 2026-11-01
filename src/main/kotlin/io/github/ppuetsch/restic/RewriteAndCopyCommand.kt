@@ -21,6 +21,7 @@ public class RewriteOptions private constructor(builder: Builder) {
     public val newHost: String? = builder.newHost
     public val newTime: LocalDateTime? = builder.newTime
     public val snapshotSummary: Boolean = builder.snapshotSummary
+    public val cancellationToken: CancellationToken? = builder.cancellationToken
 
     internal fun arguments(): List<String> =
         buildList {
@@ -49,6 +50,7 @@ public class RewriteOptions private constructor(builder: Builder) {
         internal var newHost: String? = null
         internal var newTime: LocalDateTime? = null
         internal var snapshotSummary: Boolean = false
+        internal var cancellationToken: CancellationToken? = null
 
         public fun host(hostname: String): Builder = apply { filter.host(hostname) }
 
@@ -80,6 +82,8 @@ public class RewriteOptions private constructor(builder: Builder) {
         /** Legt einen Snapshot-Summary-Datensatz an, falls er fehlt. */
         @JvmOverloads
         public fun snapshotSummary(enabled: Boolean = true): Builder = apply { snapshotSummary = enabled }
+
+        public fun cancellationToken(token: CancellationToken): Builder = apply { cancellationToken = token }
 
         public fun build(): RewriteOptions = RewriteOptions(this)
     }
@@ -183,7 +187,13 @@ internal class RewriteAndCopyCommand(private val runner: ProcessRunner) {
         options: RewriteOptions,
         listener: OutputLineListener?,
     ): RewriteResult {
-        val lines = collectLines(ProcessRequest(listOf("rewrite") + options.arguments()), listener)
+        val request =
+            ProcessRequest(
+                listOf("rewrite") + options.arguments(),
+                cancellation = options.cancellationToken,
+                onStandardErrorLine = readableErrorLines(listener),
+            )
+        val lines = collectLines(request, listener)
         return RewriteResult(lines, idsMatching(SAVED_REWRITE_PATTERN, lines))
     }
 
@@ -191,7 +201,13 @@ internal class RewriteAndCopyCommand(private val runner: ProcessRunner) {
         options: CopyOptions,
         listener: OutputLineListener?,
     ): CopyResult {
-        val request = ProcessRequest(listOf("copy") + options.arguments(), options.environment(), cancellation = options.cancellationToken)
+        val request =
+            ProcessRequest(
+                listOf("copy") + options.arguments(),
+                options.environment(),
+                cancellation = options.cancellationToken,
+                onStandardErrorLine = readableErrorLines(listener),
+            )
         val lines = collectLines(request, listener)
         return CopyResult(lines, idsMatching(SAVED_SNAPSHOT_PATTERN, lines))
     }

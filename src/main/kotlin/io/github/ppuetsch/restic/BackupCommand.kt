@@ -31,14 +31,14 @@ internal class BackupCommand(private val runner: ProcessRunner) {
         val errors = mutableListOf<BackupEvent.Error>()
         var summary: BackupSummary? = null
         val handleLine = { line: String ->
-            backupEventFrom(Json.parse(line))?.let { event ->
+            Json.parseOrNull(line)?.let(::backupEventFrom)?.let { event ->
                 if (event is BackupEvent.Error) errors += event
                 if (event is BackupEvent.Summary) summary = event.summary
                 listener?.onEvent(event)
             }
         }
         val request = ProcessRequest(arguments, standardInput = input, cancellation = options.cancellationToken)
-        val outcome = runner.run(request) { line -> if (line.isNotBlank()) handleLine(line) }
+        val outcome = runner.run(request) { line -> handleLine(line) }
         return resultFrom(outcome, summary, errors)
     }
 

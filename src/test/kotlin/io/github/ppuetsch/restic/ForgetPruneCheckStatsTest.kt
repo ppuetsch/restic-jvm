@@ -152,6 +152,20 @@ class ForgetPruneCheckStatsTest {
     }
 
     @Test
+    fun `forget output that is not json is never parsed as the group document`() {
+        val fake =
+            FakeRestic(
+                temporaryDirectory.resolve("fake").also(Files::createDirectories),
+                "out []",
+                "out [0:00] 100.00%  3 / 3 snapshots",
+            )
+
+        val result = fake.restic().forget(ForgetOptions.builder().keepLast(1).prune().build())
+
+        assertEquals(listOf("[0:00] 100.00%  3 / 3 snapshots"), result.pruneOutputLines)
+    }
+
+    @Test
     fun `forget accepts all prune tuning flags`() {
         restic.forget {
             keepLast(2)

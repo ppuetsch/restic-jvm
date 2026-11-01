@@ -1,8 +1,6 @@
 package io.github.ppuetsch.restic
 
-import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
 
 /** Grobe Ursache eines fehlgeschlagenen restic-Aufrufs, abgeleitet aus Exit-Code und Meldung. */
 public enum class ResticErrorKind {
@@ -21,6 +19,8 @@ public enum class ResticErrorKind {
 }
 
 private const val EXIT_ERROR_MESSAGE_TYPE: String = "exit_error"
+private const val ERROR_MESSAGE_TYPE: String = "error"
+private const val LINE_SEPARATOR: String = "\n"
 
 private val NETWORK_HINTS: List<String> =
     listOf(
@@ -51,13 +51,24 @@ private val AUTHENTICATION_HINTS: List<String> =
         "401 unauthorized",
     )
 
+/** Macht aus restic-Ausgabezeilen Klartext, damit nach außen nie rohes JSON gelangt. */
 internal object ErrorOutput {
-    private val mapper = ObjectMapper()
-
     fun readableMessage(standardError: String): String =
-        standardError.lineSequence()
-            .filter { it.isNotBlank() }
-            .joinToString("\n") { line -> exitErrorMessage(line) ?: line.trimEnd() }
+        standardError.lineSequence().mapNotNull(::readableLine).joinToString(LINE_SEPARATOR)
+
+    /**
+     * `exit_error` und `error` werden auf ihre Meldung reduziert, andere JSON-Meldungen auf `message` oder ihren Typ;
+     * Text bleibt unverändert. Leerzeilen ergeben `null`.
+     */
+    fun readableLine(line: String): String? {
+        if (line.isBlank()) return null
+        val node = Json.parseOrNull(line)?.takeIf(JsonNode::isObject) ?: return line.trimEnd()
+        return when (node.messageType()) {
+            EXIT_ERROR_MESSAGE_TYPE -> node.text("message")
+            ERROR_MESSAGE_TYPE -> errorText(node)
+            else -> node.textOrNull("message") ?: "restic message: ${node.messageType().orEmpty()}"
+        }
+    }
 
     fun classify(
         exitCode: Int,
@@ -79,18 +90,21 @@ internal object ErrorOutput {
             else -> ResticErrorKind.OTHER
         }
 
-    private fun exitErrorMessage(line: String): String? {
-        val node = parseObjectOrNull(line) ?: return null
-        if (node.messageType() != EXIT_ERROR_MESSAGE_TYPE) return null
-        return node.textOrNull("message")
-    }
-
-    private fun parseObjectOrNull(line: String): JsonNode? {
-        if (!line.trimStart().startsWith("{")) return null
-        return try {
-            mapper.readTree(line)?.takeIf(JsonNode::isObject)
-        } catch (notJson: JsonProcessingException) {
-            null
-        }
+    private fun errorText(node: JsonNode): String {
+        val message = node.get("error")?.textOrNull("message") ?: node.text("message")
+        val item = node.textOrNull("item")?.takeIf(String::isNotEmpty) ?: return message
+        return "$item: $message"
     }
 }
+
+/** Leitet stderr-Zeilen als Klartext an den Listener weiter und sammelt sie optional. */
+internal fun readableErrorLines(
+    listener: OutputLineListener?,
+    collected: MutableList<String>? = null,
+): (String) -> Unit =
+    { rawLine ->
+        ErrorOutput.readableLine(rawLine)?.let { line ->
+            collected?.add(line)
+            listener?.onErrorLine(line)
+        }
+    }

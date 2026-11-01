@@ -203,24 +203,32 @@ private fun forgetGroupFrom(node: JsonNode) =
             }.orEmpty(),
     )
 
+/** Prune-Fortschritt wie `[0:00] 100.00%` beginnt ebenfalls mit `[`, ist aber kein JSON. */
+private fun isGroupDocument(line: String): Boolean = Json.parseOrNull(line)?.isArray == true
+
 internal class ForgetCommand(private val runner: ProcessRunner) {
     fun forget(
         options: ForgetOptions,
         outputListener: OutputLineListener?,
     ): ForgetResult {
-        var groups: List<ForgetGroup> = emptyList()
+        var groups: List<ForgetGroup>? = null
         val pruneOutput = mutableListOf<String>()
-        val request = ProcessRequest(listOf("forget", "--json") + options.arguments(), cancellation = options.cancellationToken)
+        val request =
+            ProcessRequest(
+                listOf("forget", "--json") + options.arguments(),
+                cancellation = options.cancellationToken,
+                onStandardErrorLine = readableErrorLines(outputListener),
+            )
         runner.runChecked(request) { line ->
             when {
                 line.isBlank() -> Unit
-                line.startsWith("[") && groups.isEmpty() -> groups = Json.parse(line).map(::forgetGroupFrom)
+                groups == null && isGroupDocument(line) -> groups = Json.parse(line).map(::forgetGroupFrom)
                 else -> {
                     pruneOutput += line
                     outputListener?.onLine(line)
                 }
             }
         }
-        return ForgetResult(groups, pruneOutput)
+        return ForgetResult(groups.orEmpty(), pruneOutput)
     }
 }

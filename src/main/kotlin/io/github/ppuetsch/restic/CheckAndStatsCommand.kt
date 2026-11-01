@@ -207,10 +207,7 @@ internal class CheckAndStatsCommand(private val runner: ProcessRunner) {
             ProcessRequest(
                 listOf("check", "--json") + options.arguments(),
                 cancellation = options.cancellationToken,
-                onStandardErrorLine = { line ->
-                    errorLines += line
-                    listener?.onErrorLine(line)
-                },
+                onStandardErrorLine = readableErrorLines(listener, errorLines),
             )
         val outcome =
             runner.run(request) { line ->
@@ -249,7 +246,7 @@ internal class PruneCommand(private val runner: ProcessRunner) {
             ProcessRequest(
                 listOf("prune") + options.arguments(),
                 cancellation = options.cancellationToken,
-                onStandardErrorLine = { listener?.onErrorLine(it) },
+                onStandardErrorLine = readableErrorLines(listener),
             )
         runner.runChecked(request) { line ->
             lines += line

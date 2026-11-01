@@ -138,8 +138,7 @@ internal class LsCommand(private val runner: ProcessRunner) {
         var snapshot: Snapshot? = null
         val arguments = listOf("ls", "--json") + options.arguments() + snapshotId + options.directories
         runner.runChecked(arguments) { line ->
-            if (line.isNotBlank()) {
-                val node = Json.parse(line)
+            Json.parseOrNull(line)?.let { node ->
                 when (node.get("struct_type")?.asText() ?: node.messageType()) {
                     "snapshot" -> snapshot = snapshotFrom(node)
                     "node" -> listener?.onNode(lsNodeFrom(node))

@@ -66,8 +66,7 @@ internal class TagCommand(private val runner: ProcessRunner) {
         val changes = mutableListOf<TagChange>()
         var changedSnapshots = 0L
         runner.runChecked(listOf("tag", "--json") + options.arguments()) { line ->
-            if (line.startsWith("{")) {
-                val node = Json.parse(line)
+            Json.parseOrNull(line)?.let { node ->
                 when (node.messageType()) {
                     "changed" -> changes += TagChange(node.text("old_snapshot_id"), node.text("new_snapshot_id"))
                     "summary" -> changedSnapshots = node.long("changed_snapshots")

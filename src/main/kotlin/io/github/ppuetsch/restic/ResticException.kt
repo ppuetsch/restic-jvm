@@ -30,7 +30,7 @@ public sealed class ResticCommandException(
     public val exitCode: Int,
     standardError: String,
 ) : ResticException("restic exited with code $exitCode: ${ErrorOutput.readableMessage(standardError)}") {
-    /** Die Fehlermeldung als Klartext: bei `exit_error`-Zeilen deren `message`, andere Zeilen unverändert, ohne Leerzeilen. */
+    /** Die Fehlermeldung als Klartext, nie rohes JSON: JSON-Meldungen auf ihren Text reduziert, Textzeilen unverändert, ohne Leerzeilen. */
     public val errorMessage: String = ErrorOutput.readableMessage(standardError)
 
     public val kind: ResticErrorKind = ErrorOutput.classify(exitCode, errorMessage)
