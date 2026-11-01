@@ -1,6 +1,6 @@
 package io.github.ppuetsch.restic
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 
 /** Grobe Ursache eines fehlgeschlagenen restic-Aufrufs, abgeleitet aus Exit-Code und Meldung. */
 public enum class ResticErrorKind {
@@ -60,15 +60,18 @@ internal object ErrorOutput {
      * `exit_error` und `error` werden auf ihre Meldung reduziert, andere JSON-Meldungen auf `message` oder ihren Typ;
      * Text bleibt unverändert. Leerzeilen ergeben `null`.
      */
-    fun readableLine(line: String): String? {
-        if (line.isBlank()) return null
-        val node = Json.parseOrNull(line)?.takeIf(JsonNode::isObject) ?: return line.trimEnd()
-        return when (node.messageType()) {
+    fun readableLine(line: String): String? =
+        when {
+            line.isBlank() -> null
+            else -> Json.parseOrNull(line)?.takeIf(JsonNode::isObject)?.let(::readableMessageOf) ?: line.trimEnd()
+        }
+
+    private fun readableMessageOf(node: JsonNode): String =
+        when (node.messageType()) {
             EXIT_ERROR_MESSAGE_TYPE -> node.text("message")
             ERROR_MESSAGE_TYPE -> errorText(node)
             else -> node.textOrNull("message") ?: "restic message: ${node.messageType().orEmpty()}"
         }
-    }
 
     fun classify(
         exitCode: Int,
@@ -92,10 +95,16 @@ internal object ErrorOutput {
 
     private fun errorText(node: JsonNode): String {
         val message = node.get("error")?.textOrNull("message") ?: node.text("message")
-        val item = node.textOrNull("item")?.takeIf(String::isNotEmpty) ?: return message
-        return "$item: $message"
+        val item = node.textOrNull("item") ?: node.get("error")?.textOrNull("item")
+        return readableError(item, message)
     }
 }
+
+/** Einheitliche Klartextform aller restic-Fehlermeldungen zu einer Datei: `pfad: meldung`. */
+internal fun readableError(
+    item: String?,
+    message: String,
+): String = if (item.isNullOrEmpty()) message else "$item: $message"
 
 /** Leitet stderr-Zeilen als Klartext an den Listener weiter und sammelt sie optional. */
 internal fun readableErrorLines(

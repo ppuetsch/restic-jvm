@@ -1,8 +1,10 @@
 package io.github.ppuetsch.restic
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 
-internal class SnapshotsCommand(private val runner: ProcessRunner) {
+internal class SnapshotsCommand(
+    private val runner: ProcessRunner,
+) {
     fun snapshots(options: SnapshotsOptions): List<Snapshot> {
         val document = readDocument(options.arguments())
         val isGrouped = document.firstOrNull()?.has("group_key") == true
@@ -17,8 +19,7 @@ internal class SnapshotsCommand(private val runner: ProcessRunner) {
     private fun readDocument(optionArguments: List<String>): List<JsonNode> {
         val lines = mutableListOf<String>()
         runner.runChecked(listOf("snapshots", "--json") + optionArguments) { lines += it }
-        val text = lines.joinToString("\n").trim()
-        return if (text.isEmpty() || text == "null") emptyList() else Json.parse(text).toList()
+        return Json.arrayElements(lines)
     }
 
     private companion object {

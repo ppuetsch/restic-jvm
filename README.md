@@ -17,7 +17,7 @@ Releases are published to GitHub Packages (`https://maven.pkg.github.com/ppuetsc
 
 ```kotlin
 dependencies {
-    implementation("io.github.ppuetsch:restic-jvm:0.5.0")
+    implementation("io.github.ppuetsch:restic-jvm:0.6.0")
 }
 ```
 
@@ -113,6 +113,9 @@ try {
 
 `NETWORK` and `AUTHENTICATION` are recognised from typical Go, SSH and S3 messages; anything else with exit code 1 is `OTHER`.
 
+Errors that `backup` and `restore` report for single files (`BackupEvent.Error`, `RestoreEvent.Error`) offer the same
+line through `readable()`: `/home/me/locked.db: permission denied`.
+
 ### Check and prune with a live log
 
 `check`, `prune`, `forget`, `copy` and `rewrite` accept an `OutputLineListener` that receives standard output (`onLine`)
@@ -164,7 +167,13 @@ Global flags (`--no-lock`, `--compression`, `--limit-upload`, `--option`, ...) a
 ## Build
 
 ```
-./gradlew build      # needs a restic binary; set RESTIC_BINARY to its path if it is not on the PATH
+./gradlew build                   # needs a restic binary; set RESTIC_BINARY to its path if it is not on the PATH
+./gradlew dependencyCheckAnalyze  # OWASP dependency check; set NVD_API_KEY for a fast NVD download
+./gradlew sonar                   # SonarCloud analysis; needs SONAR_TOKEN
 ```
+
+`build` runs the end-to-end tests, ktlint, detekt with type resolution (`detektMain`, `detektTest`) and JaCoCo coverage.
+CI runs this on Linux and Windows against restic 0.18 and 0.19, uploads detekt and dependency-check findings to GitHub
+code scanning, sends the analysis to SonarCloud and repeats everything weekly to catch newly published vulnerabilities.
 
 Apache License 2.0.

@@ -14,7 +14,8 @@ class GlobalArgumentsTest {
     @Test
     fun `all global flags are translated`() {
         val configuration =
-            ResticConfiguration.builder()
+            ResticConfiguration
+                .builder()
                 .repository("sftp:user@host:/backups")
                 .passwordFile(Path.of("pw.txt"))
                 .compression(Compression.MAX)
@@ -30,17 +31,26 @@ class GlobalArgumentsTest {
 
         assertEquals(
             listOf(
-                "--repo", "sftp:user@host:/backups",
-                "--password-file", "pw.txt",
+                "--repo",
+                "sftp:user@host:/backups",
+                "--password-file",
+                "pw.txt",
                 "--no-cache",
-                "--compression", "max",
-                "--pack-size", "64",
+                "--compression",
+                "max",
+                "--pack-size",
+                "64",
                 "--no-lock",
-                "--retry-lock", "300s",
-                "--limit-download", "200",
-                "--limit-upload", "100",
-                "--option", "sftp.command=ssh x",
-                "--verbose", "--verbose",
+                "--retry-lock",
+                "300s",
+                "--limit-download",
+                "200",
+                "--limit-upload",
+                "100",
+                "--option",
+                "sftp.command=ssh x",
+                "--verbose",
+                "--verbose",
             ),
             configuration.globalArguments(),
         )
@@ -56,7 +66,8 @@ class GlobalArgumentsTest {
     @Test
     fun `durations below a second are passed in milliseconds instead of being cut to zero`() {
         val configuration =
-            ResticConfiguration.builder()
+            ResticConfiguration
+                .builder()
                 .retryLock(Duration.ofMillis(1500))
                 .stuckRequestTimeout(Duration.ofMillis(500))
                 .build()

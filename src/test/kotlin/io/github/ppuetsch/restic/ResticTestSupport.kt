@@ -13,7 +13,8 @@ internal fun resticFor(
     configure: ResticConfiguration.Builder.() -> Unit = {},
 ): Restic =
     Restic(
-        ResticConfiguration.builder()
+        ResticConfiguration
+            .builder()
             .binary(resticBinaryForTests)
             .repository(repository.toString())
             .password(TEST_PASSWORD)
@@ -22,7 +23,9 @@ internal fun resticFor(
     )
 
 /** Ein frisches lokales Repository samt Quellverzeichnis mit drei Dateien (`a.txt`, `debug.log`, `sub/b.txt`). */
-internal class RepositoryFixture(workDirectory: Path) {
+internal class RepositoryFixture(
+    workDirectory: Path,
+) {
     val source: Path = workDirectory.resolve("source").createDirectories()
     val repository: Path = workDirectory.resolve("repo")
     val restic: Restic = resticFor(repository)
@@ -30,13 +33,18 @@ internal class RepositoryFixture(workDirectory: Path) {
     init {
         source.resolve("a.txt").writeText("hello")
         source.resolve("debug.log").writeText("noise")
-        source.resolve("sub").createDirectories().resolve("b.txt").writeText("world")
+        source
+            .resolve("sub")
+            .createDirectories()
+            .resolve("b.txt")
+            .writeText("world")
         restic.init()
     }
 
     fun backup(configure: BackupOptions.Builder.() -> Unit = {}): BackupSummary =
-        restic.backup(
-            listOf(source),
-            configure = configure,
-        ).summary
+        restic
+            .backup(
+                listOf(source),
+                configure = configure,
+            ).summary
 }

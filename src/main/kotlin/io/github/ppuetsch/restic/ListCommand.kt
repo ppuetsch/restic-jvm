@@ -1,7 +1,9 @@
 package io.github.ppuetsch.restic
 
 /** Objektarten, die `restic list` aufzählen kann (ohne `blobs`, siehe [Restic.listBlobs]). */
-public enum class ListObjectType(internal val cliValue: String) {
+public enum class ListObjectType(
+    internal val cliValue: String,
+) {
     PACKS("packs"),
     INDEX("index"),
     SNAPSHOTS("snapshots"),
@@ -15,7 +17,9 @@ public data class BlobEntry(
     val id: String,
 )
 
-internal class ListCommand(private val runner: ProcessRunner) {
+internal class ListCommand(
+    private val runner: ProcessRunner,
+) {
     fun list(type: ListObjectType): List<String> = readLines(type.cliValue).map(String::trim)
 
     fun listBlobs(): List<BlobEntry> =

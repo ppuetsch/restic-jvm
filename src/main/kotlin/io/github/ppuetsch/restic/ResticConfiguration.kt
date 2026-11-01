@@ -5,7 +5,9 @@ import java.time.Duration
 
 public const val DEFAULT_RESTIC_BINARY: String = "restic"
 
-public enum class Compression(internal val cliValue: String) {
+public enum class Compression(
+    internal val cliValue: String,
+) {
     AUTO("auto"),
     OFF("off"),
     MAX("max"),
@@ -15,7 +17,9 @@ public enum class Compression(internal val cliValue: String) {
  * Unveränderliche Verbindungs- und Prozesseinstellungen samt aller globalen restic-Flags.
  * Ein Passwort im Klartext wird nie als Argument übergeben, damit es nicht in der Prozessliste auftaucht.
  */
-public class ResticConfiguration private constructor(builder: Builder) {
+public class ResticConfiguration private constructor(
+    builder: Builder,
+) {
     public val binary: String = builder.binary
     public val repository: String? = builder.repository
     public val repositoryFile: Path? = builder.repositoryFile
@@ -78,6 +82,7 @@ public class ResticConfiguration private constructor(builder: Builder) {
             password?.let { put(PASSWORD_VARIABLE, it) }
         }
 
+    @Suppress("TooManyFunctions") // eine Methode je restic-Flag; das Builder-API bildet die CLI vollständig ab
     public class Builder internal constructor() {
         internal var binary: String = DEFAULT_RESTIC_BINARY
         internal var repository: String? = null

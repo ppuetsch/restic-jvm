@@ -1,9 +1,11 @@
 package io.github.ppuetsch.restic
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 
 /** Optionen für `restic diff`. */
-public class DiffOptions private constructor(builder: Builder) {
+public class DiffOptions private constructor(
+    builder: Builder,
+) {
     public val metadata: Boolean = builder.metadata
     public val cancellationToken: CancellationToken? = builder.cancellationToken
 
@@ -76,7 +78,9 @@ private fun diffCountsFrom(node: JsonNode?): DiffCounts =
         bytes = node?.long("bytes") ?: 0,
     )
 
-internal class DiffCommand(private val runner: ProcessRunner) {
+internal class DiffCommand(
+    private val runner: ProcessRunner,
+) {
     fun diff(
         firstSnapshotId: String,
         secondSnapshotId: String,
@@ -88,8 +92,11 @@ internal class DiffCommand(private val runner: ProcessRunner) {
         runner.runChecked(ProcessRequest(arguments, cancellation = options.cancellationToken)) { line ->
             Json.parseOrNull(line)?.let { node ->
                 when (node.messageType()) {
-                    "change" -> listener?.onChange(DiffChange(node.text("path"), node.text("modifier")))
-                    "statistics" ->
+                    "change" -> {
+                        listener?.onChange(DiffChange(node.text("path"), node.text("modifier")))
+                    }
+
+                    "statistics" -> {
                         statistics =
                             DiffStatistics(
                                 sourceSnapshotId = node.text("source_snapshot"),
@@ -98,6 +105,7 @@ internal class DiffCommand(private val runner: ProcessRunner) {
                                 added = diffCountsFrom(node.get("added")),
                                 removed = diffCountsFrom(node.get("removed")),
                             )
+                    }
                 }
             }
         }

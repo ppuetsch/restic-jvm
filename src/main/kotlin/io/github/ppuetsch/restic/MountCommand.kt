@@ -14,7 +14,9 @@ private const val UNMOUNT_GRACE_SECONDS: Long = 30
 private const val EXIT_GRACE_SECONDS: Long = 5
 
 /** Optionen für `restic mount` (nur auf Plattformen mit FUSE verfügbar, nicht unter Windows). */
-public class MountOptions private constructor(builder: Builder) {
+public class MountOptions private constructor(
+    builder: Builder,
+) {
     public val filter: SnapshotFilter = builder.filter.build()
     public val allowOther: Boolean = builder.allowOther
     public val noDefaultPermissions: Boolean = builder.noDefaultPermissions
@@ -84,10 +86,10 @@ public class MountHandle internal constructor(
     public fun awaitMounted(timeout: Duration = DEFAULT_MOUNT_TIMEOUT) {
         try {
             ready.get(timeout.toMillis(), TimeUnit.MILLISECONDS)
-        } catch (failure: TimeoutException) {
+        } catch (notReady: TimeoutException) {
             close()
-            throw ResticTimeoutException("restic mount was not ready within $timeout")
-        } catch (failure: ExecutionException) {
+            throw ResticTimeoutException("restic mount was not ready within $timeout", notReady)
+        } catch (expectedEarlyExit: ExecutionException) {
             process.waitFor(EXIT_GRACE_SECONDS, TimeUnit.SECONDS)
             throw commandExceptionFor(exitCodeOrOne(), errorOutputOrEmpty())
         }
@@ -105,14 +107,15 @@ public class MountHandle internal constructor(
 
     /** Nach dem Prozessende braucht der Leser von stderr noch einen Moment, bis er alles hat. */
     private fun errorOutputOrEmpty(): String =
-        try {
-            errorOutput.get(EXIT_GRACE_SECONDS, TimeUnit.SECONDS)
-        } catch (notAvailable: Exception) {
-            ""
-        }
+        errorOutput
+            .completeOnTimeout("", EXIT_GRACE_SECONDS, TimeUnit.SECONDS)
+            .exceptionally { "" }
+            .join()
 }
 
-internal class MountCommand(private val runner: ProcessRunner) {
+internal class MountCommand(
+    private val runner: ProcessRunner,
+) {
     fun mount(
         mountpoint: Path,
         options: MountOptions,

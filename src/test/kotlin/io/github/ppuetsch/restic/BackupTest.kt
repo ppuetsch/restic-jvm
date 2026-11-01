@@ -1,6 +1,5 @@
 package io.github.ppuetsch.restic
 
-import com.fasterxml.jackson.databind.JsonNode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -10,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
+import tools.jackson.databind.JsonNode
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.LocalDateTime
@@ -29,7 +29,11 @@ class BackupTest {
         source = temporaryDirectory.resolve("source").createDirectories()
         source.resolve("a.txt").writeText("hello")
         source.resolve("debug.log").writeText("noise")
-        source.resolve("sub").createDirectories().resolve("b.txt").writeText("world")
+        source
+            .resolve("sub")
+            .createDirectories()
+            .resolve("b.txt")
+            .writeText("world")
         repository = temporaryDirectory.resolve("repo")
         restic = resticFor(repository)
         restic.init()
@@ -56,7 +60,11 @@ class BackupTest {
 
     @Test
     fun `a relative path starting with a dash is backed up instead of being read as a flag`() {
-        temporaryDirectory.resolve("-dash").createDirectories().resolve("c.txt").writeText("dash")
+        temporaryDirectory
+            .resolve("-dash")
+            .createDirectories()
+            .resolve("c.txt")
+            .writeText("dash")
         val inWorkDirectory = resticFor(repository) { workingDirectory(temporaryDirectory) }
 
         val summary = inWorkDirectory.backup(listOf(Path.of("-dash"))).summary
@@ -83,10 +91,11 @@ class BackupTest {
     @Test
     fun `exclude patterns and kotlin dsl`() {
         val summary =
-            restic.backup(listOf(source)) {
-                exclude("*.log")
-                excludeLargerThan("1k")
-            }.summary
+            restic
+                .backup(listOf(source)) {
+                    exclude("*.log")
+                    excludeLargerThan("1k")
+                }.summary
         assertEquals(2, summary.filesNew)
     }
 
@@ -153,16 +162,17 @@ class BackupTest {
     fun `parent group by force and scan flags are accepted`() {
         val first = restic.backup(listOf(source)).summary
         val summary =
-            restic.backup(listOf(source)) {
-                parent(first.snapshotId.orEmpty())
-                groupBy("host")
-                force()
-                noScan()
-                ignoreCtime()
-                ignoreInode()
-                withAtime()
-                readConcurrency(1)
-            }.summary
+            restic
+                .backup(listOf(source)) {
+                    parent(first.snapshotId.orEmpty())
+                    groupBy("host")
+                    force()
+                    noScan()
+                    ignoreCtime()
+                    ignoreInode()
+                    withAtime()
+                    readConcurrency(1)
+                }.summary
         assertNotNull(summary.snapshotId)
     }
 
@@ -209,10 +219,11 @@ class BackupTest {
     fun `command output is stored`() {
         val javaLauncher = Path.of(System.getProperty("java.home"), "bin", "java").toString()
         val summary =
-            restic.backupCommandOutput(
-                listOf(javaLauncher, "--version"),
-                BackupOptions.builder().stdinFilename("java.txt").build(),
-            ).summary
+            restic
+                .backupCommandOutput(
+                    listOf(javaLauncher, "--version"),
+                    BackupOptions.builder().stdinFilename("java.txt").build(),
+                ).summary
         assertEquals(1, summary.filesNew)
     }
 

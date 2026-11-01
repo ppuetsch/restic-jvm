@@ -31,6 +31,26 @@ class ErrorMessageTest {
     lateinit var temporaryDirectory: Path
 
     @Test
+    fun `backup and restore errors have the same readable line as listener output`() {
+        val backupError = BackupEvent.Error(item = "/home/me/locked.db", during = "archival", message = "permission denied")
+        val restoreError = RestoreEvent.Error(item = "/home/me/locked.db", during = "restore", message = "permission denied")
+        val listenerLine =
+            ErrorOutput.readableLine(
+                """{"message_type":"error","error":{"message":"permission denied"},"during":"archival","item":"/home/me/locked.db"}""",
+            )
+
+        assertEquals("/home/me/locked.db: permission denied", backupError.readable())
+        assertEquals(backupError.readable(), restoreError.readable())
+        assertEquals(listenerLine, backupError.readable())
+    }
+
+    @Test
+    fun `errors without a path are just the message`() {
+        assertEquals("scan failed", BackupEvent.Error(item = null, during = "scan", message = "scan failed").readable())
+        assertEquals("scan failed", BackupEvent.Error(item = "", during = "scan", message = "scan failed").readable())
+    }
+
+    @Test
     fun `exit_error line is reduced to its message`() {
         val exception = commandExceptionFor(12, WRONG_PASSWORD_STDERR)
 

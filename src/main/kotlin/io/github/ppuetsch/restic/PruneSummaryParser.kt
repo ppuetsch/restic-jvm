@@ -47,15 +47,28 @@ internal object PruneSummaryParser {
         VERBOSE_PACK_COUNT_LINE.matchEntire(line)?.let { it.groupValues[1] to it.groupValues[2].toInt() }
 
     private fun removedPacks(lines: List<String>): Int? =
-        lines.firstNotNullOfOrNull { REMOVING_PACKS_LINE.matchEntire(it)?.groupValues?.get(1)?.toInt() }
+        lines.firstNotNullOfOrNull {
+            REMOVING_PACKS_LINE
+                .matchEntire(it)
+                ?.groupValues
+                ?.get(1)
+                ?.toInt()
+        }
 
     private fun lastRepackProgress(lines: List<String>): Int? =
-        lines.mapNotNull { REPACK_PROGRESS_LINE.find(it)?.groupValues?.get(1)?.toInt() }.lastOrNull()
+        lines
+            .mapNotNull {
+                REPACK_PROGRESS_LINE
+                    .find(it)
+                    ?.groupValues
+                    ?.get(1)
+                    ?.toInt()
+            }.lastOrNull()
 
     private fun freedBytesOrNull(line: String): Long? {
         val match = TOTAL_PRUNE_LINE.matchEntire(line) ?: return null
-        val amount = match.groupValues[1].toDoubleOrNull() ?: return null
-        val bytesPerUnit = BYTES_PER_UNIT[match.groupValues[2]] ?: return null
-        return (amount * bytesPerUnit).roundToLong()
+        val amount = match.groupValues[1].toDoubleOrNull()
+        val bytesPerUnit = BYTES_PER_UNIT[match.groupValues[2]]
+        return if (amount == null || bytesPerUnit == null) null else (amount * bytesPerUnit).roundToLong()
     }
 }

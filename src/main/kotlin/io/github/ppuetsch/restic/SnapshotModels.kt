@@ -1,6 +1,6 @@
 package io.github.ppuetsch.restic
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import java.time.Instant
 
 public data class SnapshotSummary(
@@ -91,6 +91,6 @@ internal fun snapshotGroupFrom(node: JsonNode): SnapshotGroup {
     val key = node.get("group_key")
     return SnapshotGroup(
         key = SnapshotGroupKey(key?.textOrNull("hostname"), key?.textList("paths").orEmpty(), key?.textList("tags").orEmpty()),
-        snapshots = node.get("snapshots")?.map(::snapshotFrom).orEmpty(),
+        snapshots = node.get("snapshots")?.mapElements(::snapshotFrom).orEmpty(),
     )
 }

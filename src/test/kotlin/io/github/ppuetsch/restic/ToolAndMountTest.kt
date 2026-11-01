@@ -3,6 +3,7 @@ package io.github.ppuetsch.restic
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assumptions.assumeFalse
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -70,7 +71,14 @@ class ToolAndMountTest {
     fun `self update can write the binary to another file`() {
         val executableName = if (System.getProperty("os.name").startsWith("Windows")) "restic-new.exe" else "restic-new"
         val output = temporaryDirectory.resolve(executableName)
-        val result = restic.selfUpdate(output)
+        val result =
+            try {
+                restic.selfUpdate(output)
+            } catch (rejectedByGitHub: ResticFailedException) {
+                // Geteilte CI-Runner laufen ins Rate-Limit der GitHub-API; das prüft nicht die Library, sondern die Umgebung
+                assumeFalse(rejectedByGitHub.errorMessage.contains("403"), rejectedByGitHub.errorMessage)
+                throw rejectedByGitHub
+            }
         assertTrue(result.lines.isNotEmpty())
     }
 

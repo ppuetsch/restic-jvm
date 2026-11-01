@@ -73,7 +73,8 @@ class VersionAndInitTest {
         val repository = temporaryDirectory.resolve("nopw")
         val restic =
             Restic(
-                ResticConfiguration.builder()
+                ResticConfiguration
+                    .builder()
                     .binary(resticBinaryForTests)
                     .repository(repository.toString())
                     .insecureNoPassword()

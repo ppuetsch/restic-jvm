@@ -3,6 +3,7 @@ package io.github.ppuetsch.restic
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.ExecutorService
@@ -104,12 +105,16 @@ internal class ProcessRunner(
         onStandardOutputLine: (String) -> Unit,
     ): ProcessOutcome {
         val timedOut = AtomicBoolean(false)
-        val watchdog = startWatchdog(process, timedOut)
+        val watchdog = startWatchdog(process, configuration.timeout, timedOut)
         feedStandardInput(process, request.standardInput)
         val standardError = StandardErrorReader(process, request.onStandardErrorLine)
         try {
             consumeStandardOutput(process, request.standardOutput, onStandardOutputLine)
-        } catch (failure: Throwable) {
+        } catch (
+            // Listener dürfen alles werfen; nach einem Abbruch zählt der Abbruch
+            @Suppress("TooGenericExceptionCaught")
+            failure: Throwable,
+        ) {
             throwIfStoppedByUs(request.cancellation, timedOut.get())
             throw failure
         } finally {
@@ -131,52 +136,54 @@ internal class ProcessRunner(
         if (cancellation?.isCancelled == true) throw ResticCancelledException()
         if (timedOut) throw ResticTimeoutException("restic did not finish within ${configuration.timeout}")
     }
+}
 
-    private fun consumeStandardOutput(
-        process: Process,
-        binaryTarget: OutputStream?,
-        onLine: (String) -> Unit,
-    ) {
+private fun consumeStandardOutput(
+    process: Process,
+    binaryTarget: OutputStream?,
+    onLine: (String) -> Unit,
+) {
+    var consumedCompletely = false
+    try {
+        if (binaryTarget != null) {
+            process.inputStream.transferTo(binaryTarget)
+            binaryTarget.flush()
+        } else {
+            process.inputStream.bufferedReader().forEachLine(onLine)
+        }
+        consumedCompletely = true
+    } finally {
+        if (!consumedCompletely) ProcessTree.terminate(process)
+    }
+}
+
+private fun feedStandardInput(
+    process: Process,
+    standardInput: InputStream?,
+) {
+    if (standardInput == null) {
+        process.outputStream.close()
+        return
+    }
+    STREAM_READERS.execute {
         try {
-            if (binaryTarget != null) {
-                process.inputStream.transferTo(binaryTarget)
-                binaryTarget.flush()
-            } else {
-                process.inputStream.bufferedReader().forEachLine(onLine)
-            }
-        } catch (listenerOrStreamFailure: Throwable) {
-            ProcessTree.terminate(process)
-            throw listenerOrStreamFailure
+            process.outputStream.use { standardInput.transferTo(it) }
+        } catch (ignored: IOException) {
+            // restic hat sich beendet, bevor die Eingabe gelesen war; der Exit-Code erklärt den Grund
         }
     }
+}
 
-    private fun feedStandardInput(
-        process: Process,
-        standardInput: InputStream?,
-    ) {
-        if (standardInput == null) {
-            process.outputStream.close()
-            return
-        }
-        STREAM_READERS.execute {
-            try {
-                process.outputStream.use { standardInput.transferTo(it) }
-            } catch (ignored: IOException) {
-                // restic hat sich beendet, bevor die Eingabe gelesen war; der Exit-Code erklärt den Grund
-            }
-        }
-    }
-
-    private fun startWatchdog(
-        process: Process,
-        timedOut: AtomicBoolean,
-    ): ScheduledFuture<*>? {
-        val timeout = configuration.timeout ?: return null
-        return WATCHDOG.schedule({
-            timedOut.set(true)
-            ProcessTree.terminateForcibly(process)
-        }, timeout.toMillis(), TimeUnit.MILLISECONDS)
-    }
+private fun startWatchdog(
+    process: Process,
+    timeout: Duration?,
+    timedOut: AtomicBoolean,
+): ScheduledFuture<*>? {
+    if (timeout == null) return null
+    return WATCHDOG.schedule({
+        timedOut.set(true)
+        ProcessTree.terminateForcibly(process)
+    }, timeout.toMillis(), TimeUnit.MILLISECONDS)
 }
 
 /**
@@ -216,7 +223,11 @@ private class StandardErrorReader(
         if (listenerFailure.get() != null) return
         try {
             onLine?.invoke(line)
-        } catch (failure: Throwable) {
+        } catch (
+            // ein Listener darf alles werfen, stderr muss trotzdem weiter gelesen werden
+            @Suppress("TooGenericExceptionCaught")
+            failure: Throwable,
+        ) {
             listenerFailure.compareAndSet(null, failure)
         }
     }

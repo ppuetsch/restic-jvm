@@ -241,6 +241,10 @@ class JavaUsageTest {
         assertThrows(ResticCancelledException.class,
                 () -> restic.diffAll("a", "b", DiffOptions.builder().cancellationToken(cancelled).build()));
         assertFalse(restic.version(new CancellationToken()).getVersion().isEmpty());
+        BackupEvent backupEvent = new BackupEvent.Error("/home/me/locked.db", "archival", "permission denied");
+        if (backupEvent instanceof BackupEvent.Error error) {
+            assertEquals("/home/me/locked.db: permission denied", error.readable());
+        }
         assertThrows(ResticCancelledException.class,
                 () -> restic.listNodes(Restic.LATEST, LsOptions.builder().cancellationToken(cancelled).build()));
         assertThrows(ResticCancelledException.class,

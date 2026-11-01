@@ -1,17 +1,16 @@
 package io.github.ppuetsch.restic
 
-import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.attribute.PosixFilePermissions
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
-private val KEY_CREATED_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-private val NEW_KEY_ID_PATTERN = Regex("""saved new key with ID (\w+)""")
-private const val OWNER_ONLY_FILE_PERMISSIONS: String = "rw-------"
+private const val FEATURE_COLUMNS: Int = 4
+private val FEATURE_STABILITIES: Set<String> = setOf("stable", "beta", "alpha", "deprecated")
+private val COLUMN_SEPARATOR = Regex("""\s+""")
 
 /** Textausgabe eines Befehls ohne JSON-Unterstützung. */
-public data class CommandOutput(val lines: List<String>)
+public data class CommandOutput(
+    val lines: List<String>,
+)
 
 public data class KeyInfo(
     val id: String,
@@ -23,7 +22,9 @@ public data class KeyInfo(
 )
 
 /** Optionen für `restic key add` und `restic key passwd`. */
-public class NewKeyOptions private constructor(builder: Builder) {
+public class NewKeyOptions private constructor(
+    builder: Builder,
+) {
     public val host: String? = builder.host
     public val user: String? = builder.user
     public val newPasswordFile: Path? = builder.newPasswordFile
@@ -83,7 +84,9 @@ public data class FeatureFlag(
 )
 
 /** Optionen für `restic cache`. */
-public class CacheOptions private constructor(builder: Builder) {
+public class CacheOptions private constructor(
+    builder: Builder,
+) {
     public val cleanup: Boolean = builder.cleanup
     public val maxAgeDays: Int? = builder.maxAgeDays
     public val noSize: Boolean = builder.noSize
@@ -122,7 +125,9 @@ public class CacheOptions private constructor(builder: Builder) {
 }
 
 /** Optionen für `restic repair snapshots`. */
-public class RepairSnapshotsOptions private constructor(builder: Builder) {
+public class RepairSnapshotsOptions private constructor(
+    builder: Builder,
+) {
     public val filter: SnapshotFilter = builder.filter.build()
     public val snapshotIds: List<String> = builder.snapshotIds.toList()
     public val dryRun: Boolean = builder.dryRun
@@ -169,92 +174,48 @@ public class RepairSnapshotsOptions private constructor(builder: Builder) {
     }
 }
 
-internal class AdminCommands(private val runner: ProcessRunner) {
-    fun listKeys(): List<KeyInfo> {
-        val lines = mutableListOf<String>()
-        runner.runChecked(listOf("key", "list", "--json")) { lines += it }
-        return Json.parse(lines.joinToString("\n")).map { node ->
-            KeyInfo(
-                id = node.text("id"),
-                userName = node.text("userName"),
-                hostName = node.text("hostName"),
-                created = node.textOrNull("created")?.let { LocalDateTime.parse(it, KEY_CREATED_FORMAT) },
-                current = node.booleanOrNull("current") ?: false,
-            )
-        }
-    }
-
-    fun addKey(options: NewKeyOptions): KeyAddResult {
-        val lines = withPasswordFile(options) { passwordFile -> collect(listOf("key", "add") + options.arguments(passwordFile)) }
-        return KeyAddResult(lines.firstNotNullOfOrNull { NEW_KEY_ID_PATTERN.find(it)?.groupValues?.get(1) }, lines)
-    }
-
-    fun changePassword(options: NewKeyOptions): CommandOutput =
-        CommandOutput(withPasswordFile(options) { passwordFile -> collect(listOf("key", "passwd") + options.arguments(passwordFile)) })
-
-    fun removeKey(keyId: String): CommandOutput = CommandOutput(collect(listOf("key", "remove", keyId)))
-
-    fun unlock(removeAll: Boolean): CommandOutput =
-        CommandOutput(
-            collect(listOf("unlock") + if (removeAll) listOf("--remove-all") else emptyList()),
-        )
+internal class AdminCommands(
+    private val runner: ProcessRunner,
+) {
+    fun unlock(removeAll: Boolean): CommandOutput = output(listOf("unlock") + flagIf(removeAll, "--remove-all"))
 
     fun migrate(
         names: List<String>,
         force: Boolean,
-    ): CommandOutput = CommandOutput(collect(listOf("migrate") + (if (force) listOf("--force") else emptyList()) + names))
+    ): CommandOutput = output(listOf("migrate") + flagIf(force, "--force") + names)
 
-    fun cache(options: CacheOptions): CommandOutput = CommandOutput(collect(listOf("cache") + options.arguments()))
+    fun cache(options: CacheOptions): CommandOutput = output(listOf("cache") + options.arguments())
 
     fun features(): List<FeatureFlag> =
-        collect(listOf("features"))
-            .map { it.trim().split(Regex("""\s+"""), limit = FEATURE_COLUMNS) }
-            .filter { it.size == FEATURE_COLUMNS && (it[1] == "stable" || it[1] == "beta" || it[1] == "alpha" || it[1] == "deprecated") }
-            .map { FeatureFlag(it[0], it[1], it[2].toBoolean(), it[3]) }
+        runner
+            .collectNonBlankLines(listOf("features"))
+            .map { it.trim().split(COLUMN_SEPARATOR, limit = FEATURE_COLUMNS) }
+            .filter { columns -> columns.size == FEATURE_COLUMNS && columns[1] in FEATURE_STABILITIES }
+            .map(::featureFlagFrom)
 
-    fun recover(): CommandOutput = CommandOutput(collect(listOf("recover")))
+    fun recover(): CommandOutput = output(listOf("recover"))
 
-    fun repairIndex(readAllPacks: Boolean): CommandOutput =
-        CommandOutput(collect(listOf("repair", "index") + if (readAllPacks) listOf("--read-all-packs") else emptyList()))
+    fun repairIndex(readAllPacks: Boolean): CommandOutput = output(listOf("repair", "index") + flagIf(readAllPacks, "--read-all-packs"))
 
-    fun repairPacks(packIds: List<String>): CommandOutput = CommandOutput(collect(listOf("repair", "packs") + packIds))
+    fun repairPacks(packIds: List<String>): CommandOutput = output(listOf("repair", "packs") + packIds)
 
-    fun repairSnapshots(options: RepairSnapshotsOptions): CommandOutput =
-        CommandOutput(collect(listOf("repair", "snapshots") + options.arguments()))
+    fun repairSnapshots(options: RepairSnapshotsOptions): CommandOutput = output(listOf("repair", "snapshots") + options.arguments())
 
-    private fun collect(arguments: List<String>): List<String> {
-        val lines = mutableListOf<String>()
-        runner.runChecked(arguments) { if (it.isNotBlank()) lines += it }
-        return lines
-    }
+    private fun output(arguments: List<String>): CommandOutput = CommandOutput(runner.collectNonBlankLines(arguments))
 
-    private fun <T> withPasswordFile(
-        options: NewKeyOptions,
-        action: (Path?) -> T,
-    ): T {
-        val password = options.newPassword ?: return action(null)
-        val file = createProtectedTemporaryFile(password)
-        try {
-            return action(file)
-        } finally {
-            Files.deleteIfExists(file)
-        }
-    }
+    private fun flagIf(
+        enabled: Boolean,
+        flag: String,
+    ): List<String> = if (enabled) listOf(flag) else emptyList()
+}
 
-    private fun createProtectedTemporaryFile(content: String): Path {
-        val isPosix = Files.getFileStore(Path.of(System.getProperty("java.io.tmpdir"))).supportsFileAttributeView("posix")
-        val ownerOnly = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(OWNER_ONLY_FILE_PERMISSIONS))
-        val file =
-            if (isPosix) {
-                Files.createTempFile("restic-new-password", ".txt", ownerOnly)
-            } else {
-                Files.createTempFile("restic-new-password", ".txt")
-            }
-        Files.writeString(file, content)
-        return file
-    }
+private fun featureFlagFrom(columns: List<String>): FeatureFlag {
+    val (name, stability, enabled) = columns
+    return FeatureFlag(name, stability, enabled.toBoolean(), description = columns.last())
+}
 
-    private companion object {
-        const val FEATURE_COLUMNS: Int = 4
-    }
+internal fun ProcessRunner.collectNonBlankLines(arguments: List<String>): List<String> {
+    val lines = mutableListOf<String>()
+    runChecked(arguments) { if (it.isNotBlank()) lines += it }
+    return lines
 }

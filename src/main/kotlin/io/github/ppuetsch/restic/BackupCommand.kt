@@ -5,7 +5,9 @@ import java.io.InputStream
 /** Alles danach ist ein Pfad bzw. Kommando, auch wenn es mit `-` beginnt. */
 private const val END_OF_OPTIONS: String = "--"
 
-internal class BackupCommand(private val runner: ProcessRunner) {
+internal class BackupCommand(
+    private val runner: ProcessRunner,
+) {
     fun backupPaths(
         paths: List<String>,
         options: BackupOptions,
