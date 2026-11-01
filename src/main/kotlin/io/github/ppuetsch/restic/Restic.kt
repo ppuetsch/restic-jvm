@@ -127,6 +127,10 @@ public class Restic(public val configuration: ResticConfiguration) {
     }
 
     /** `restic ls --ncdu`: Export im NCDU-Format als Text. */
+    @Deprecated(
+        "Rohes JSON für das Werkzeug ncdu; für Programme liefert listNodes dieselben Daten getypt.",
+        ReplaceWith("listNodes(snapshotId, options)"),
+    )
     @JvmOverloads
     public fun lsNcdu(
         snapshotId: String = LATEST,
@@ -199,7 +203,50 @@ public class Restic(public val configuration: ResticConfiguration) {
         cancellationToken: CancellationToken? = null,
     ): Unit = DumpAndCatCommand(runner.cancellableBy(cancellationToken)).cat(type, id, output)
 
-    /** Wie [cat], liefert aber den Inhalt als Text (sinnvoll für JSON-Objekte wie config oder snapshot). */
+    @JvmOverloads
+    public fun catConfig(cancellationToken: CancellationToken? = null): RepositoryConfig =
+        repositoryConfigFrom(catJson(CatObjectType.CONFIG, null, cancellationToken))
+
+    /** Liefert geheimes Schlüsselmaterial; nicht protokollieren. */
+    @JvmOverloads
+    public fun catMasterKey(cancellationToken: CancellationToken? = null): MasterKey =
+        masterKeyFrom(catJson(CatObjectType.MASTERKEY, null, cancellationToken))
+
+    @JvmOverloads
+    public fun catSnapshot(
+        snapshotId: String,
+        cancellationToken: CancellationToken? = null,
+    ): Snapshot = DumpAndCatCommand(runner.cancellableBy(cancellationToken)).catSnapshot(snapshotId)
+
+    @JvmOverloads
+    public fun catKey(
+        keyId: String,
+        cancellationToken: CancellationToken? = null,
+    ): RepositoryKey = repositoryKeyFrom(catJson(CatObjectType.KEY, keyId, cancellationToken))
+
+    @JvmOverloads
+    public fun catLock(
+        lockId: String,
+        cancellationToken: CancellationToken? = null,
+    ): RepositoryLock = repositoryLockFrom(catJson(CatObjectType.LOCK, lockId, cancellationToken))
+
+    /** [snapshotAndSubfolder] hat die Form `snapshotId` oder `snapshotId:unterordner` und nennt den Tree dieses Verzeichnisses. */
+    @JvmOverloads
+    public fun catTree(
+        snapshotAndSubfolder: String,
+        cancellationToken: CancellationToken? = null,
+    ): TreeObject = treeObjectFrom(catJson(CatObjectType.TREE, snapshotAndSubfolder, cancellationToken))
+
+    @JvmOverloads
+    public fun catIndex(
+        indexId: String,
+        cancellationToken: CancellationToken? = null,
+    ): IndexObject = indexObjectFrom(catJson(CatObjectType.INDEX, indexId, cancellationToken))
+
+    /**
+     * Wie [cat], liefert aber den Inhalt als Text. Für JSON-Objekte stattdessen die getypten Varianten ([catConfig],
+     * [catSnapshot], [catKey], [catLock], [catTree], [catIndex], [catMasterKey]) verwenden; dies hier ist für den Rest gedacht.
+     */
     @JvmOverloads
     public fun catText(
         type: CatObjectType,
@@ -396,6 +443,12 @@ public class Restic(public val configuration: ResticConfiguration) {
         mountpoint: Path,
         options: MountOptions = MountOptions.DEFAULT,
     ): MountHandle = mountCommand.mount(mountpoint, options)
+
+    private fun catJson(
+        type: CatObjectType,
+        id: String?,
+        cancellationToken: CancellationToken?,
+    ): JsonNode = DumpAndCatCommand(runner.cancellableBy(cancellationToken)).catJson(type, id)
 
     private fun lastJsonLine(
         arguments: List<String>,

@@ -46,6 +46,24 @@ public class CheckOptions private constructor(builder: Builder) {
     }
 }
 
+/** Eine Meldung aus der JSON-Ausgabe von `restic check`. */
+public sealed interface CheckMessage {
+    public data class Summary(
+        val errorCount: Long,
+        val brokenPacks: List<String>,
+        val suggestRepairIndex: Boolean,
+        val suggestPrune: Boolean,
+    ) : CheckMessage
+
+    public data class Error(val message: String) : CheckMessage
+
+    /** Eine Zeile, die kein JSON war. */
+    public data class Text(val line: String) : CheckMessage
+
+    /** Ein JSON-Objekt mit einem Meldungstyp, den die Library nicht kennt. */
+    public data class Other(val messageType: String) : CheckMessage
+}
+
 /** Ergebnis von `check`: Ein Repository mit Fehlern führt nicht zu einer Exception, sondern zu [isHealthy] = false. */
 public data class CheckResult
     @JvmOverloads
@@ -55,10 +73,12 @@ public data class CheckResult
         val suggestRepairIndex: Boolean,
         val suggestPrune: Boolean,
         val errorMessages: List<String>,
-        /** Alle Zeilen der Standardausgabe in der Reihenfolge, in der restic sie schrieb. */
+        /** Die Standardausgabe in Lesbarkeit aufbereitet (nie rohes JSON), in der Reihenfolge, in der restic sie schrieb. */
         val outputLines: List<String> = emptyList(),
         /** Alle Zeilen der Fehlerausgabe. */
         val errorOutputLines: List<String> = emptyList(),
+        /** Die Meldungen von restic als Typen, in Ausgabereihenfolge. */
+        val messages: List<CheckMessage> = emptyList(),
     ) {
         public fun isHealthy(): Boolean = errorCount == 0L && errorMessages.isEmpty()
     }
@@ -123,17 +143,16 @@ public data class StatsResult(
 )
 
 private class CheckCollector {
-    private var summary: JsonNode? = null
-    private val errorMessages = mutableListOf<String>()
-    private val outputLines = mutableListOf<String>()
+    private var summary: CheckMessage.Summary? = null
+    private val messages = mutableListOf<CheckMessage>()
+    private val readableLines = mutableListOf<String>()
 
-    fun accept(line: String) {
-        outputLines += line
-        val node = Json.parseOrNull(line) ?: return
-        when (node.messageType()) {
-            "summary" -> summary = node
-            "error" -> errorMessages += (node.get("error")?.get("message")?.asText() ?: node.text("message"))
-        }
+    /** Liefert die lesbare Zeile zur gelesenen Meldung, damit Listener nie rohes JSON sehen. */
+    fun accept(line: String): String {
+        val message = checkMessageFrom(line)
+        messages += message
+        if (message is CheckMessage.Summary) summary = message
+        return message.readableLine().also(readableLines::add)
     }
 
     fun resultOrThrow(
@@ -142,16 +161,40 @@ private class CheckCollector {
     ): CheckResult {
         val checkSummary = summary ?: throw commandExceptionFor(outcome.exitCode, outcome.standardError)
         return CheckResult(
-            errorCount = checkSummary.long("num_errors"),
-            brokenPacks = checkSummary.textList("broken_packs"),
-            suggestRepairIndex = checkSummary.booleanOrNull("suggest_repair_index") ?: false,
-            suggestPrune = checkSummary.booleanOrNull("suggest_prune") ?: false,
-            errorMessages = errorMessages,
-            outputLines = outputLines,
+            errorCount = checkSummary.errorCount,
+            brokenPacks = checkSummary.brokenPacks,
+            suggestRepairIndex = checkSummary.suggestRepairIndex,
+            suggestPrune = checkSummary.suggestPrune,
+            errorMessages = messages.filterIsInstance<CheckMessage.Error>().map(CheckMessage.Error::message),
+            outputLines = readableLines,
             errorOutputLines = errorLines,
+            messages = messages,
         )
     }
 }
+
+private fun checkMessageFrom(line: String): CheckMessage {
+    val node = Json.parseOrNull(line)?.takeIf(JsonNode::isObject) ?: return CheckMessage.Text(line)
+    return when (val type = node.messageType()) {
+        "summary" ->
+            CheckMessage.Summary(
+                errorCount = node.long("num_errors"),
+                brokenPacks = node.textList("broken_packs"),
+                suggestRepairIndex = node.booleanOrNull("suggest_repair_index") ?: false,
+                suggestPrune = node.booleanOrNull("suggest_prune") ?: false,
+            )
+        "error" -> CheckMessage.Error(node.get("error")?.get("message")?.asText() ?: node.text("message"))
+        else -> CheckMessage.Other(type.orEmpty())
+    }
+}
+
+private fun CheckMessage.readableLine(): String =
+    when (this) {
+        is CheckMessage.Summary -> "check finished: $errorCount errors, ${brokenPacks.size} broken packs"
+        is CheckMessage.Error -> "error: $message"
+        is CheckMessage.Text -> line
+        is CheckMessage.Other -> "check message: $messageType"
+    }
 
 internal class CheckAndStatsCommand(private val runner: ProcessRunner) {
     fun check(
@@ -171,8 +214,10 @@ internal class CheckAndStatsCommand(private val runner: ProcessRunner) {
             )
         val outcome =
             runner.run(request) { line ->
-                collector.accept(line)
-                listener?.onLine(line)
+                if (line.isNotBlank()) {
+                    val readableLine = collector.accept(line)
+                    listener?.onLine(readableLine)
+                }
             }
         return collector.resultOrThrow(outcome, errorLines)
     }
