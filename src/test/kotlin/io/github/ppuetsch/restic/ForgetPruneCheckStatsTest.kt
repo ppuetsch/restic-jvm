@@ -153,7 +153,8 @@ class ForgetPruneCheckStatsTest {
     }
 
     @Test
-    fun `forget with prune returns the prune output`() {
+    fun `forget with prune removes data and forwards whatever prune prints`() {
+        val packsBefore = restic.list(ListObjectType.PACKS).size
         val lines = mutableListOf<String>()
         val result =
             restic.forget(
@@ -162,12 +163,12 @@ class ForgetPruneCheckStatsTest {
                     .keepLast(1)
                     .prune()
                     .maxUnused("0")
-                    .repackSmall()
                     .build(),
                 lines::add,
             )
+
         assertEquals(2, result.removedSnapshots().size)
-        assertTrue(result.pruneOutputLines.isNotEmpty())
+        assertTrue(restic.list(ListObjectType.PACKS).size < packsBefore)
         assertEquals(result.pruneOutputLines, lines)
     }
 

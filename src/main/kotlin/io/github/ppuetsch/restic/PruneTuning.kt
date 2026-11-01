@@ -37,6 +37,7 @@ public class PruneTuning private constructor(
         @JvmOverloads
         public fun repackCacheableOnly(enabled: Boolean = true): Builder = apply { repackCacheableOnly = enabled }
 
+        /** Seit restic 0.19 veraltet, kleine Packs werden dort immer neu gepackt; siehe [repackSmallerThan]. */
         @JvmOverloads
         public fun repackSmall(enabled: Boolean = true): Builder = apply { repackSmall = enabled }
 
