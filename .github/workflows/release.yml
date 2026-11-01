@@ -4,6 +4,9 @@ on:
   push:
     tags: ["v*"]
 
+permissions:
+  contents: read
+
 env:
   RESTIC_VERSION: "0.19.1"
 
