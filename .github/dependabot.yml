@@ -1,0 +1,11 @@
+version: 2
+updates:
+  # Hält die auf Commit-SHAs festgelegten Actions aktuell. Gradle-Abhängigkeiten bleiben manuell,
+  # weil Updates dort Lockdateien und verification-metadata.xml neu schreiben müssen.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

@@ -214,7 +214,7 @@ class JavaUsageTest {
     }
 
     @Test
-    void cancellationErrorsAndListenersAreUsableFromJava(@TempDir Path temporaryDirectory) throws Exception {
+    void cancellationErrorsAndListenersAreUsableFromJava(@TempDir Path temporaryDirectory) {
         String binary = System.getenv("RESTIC_BINARY") != null ? System.getenv("RESTIC_BINARY") : "restic";
         Restic restic = new Restic(ResticConfiguration.builder()
                 .binary(binary)
@@ -237,30 +237,33 @@ class JavaUsageTest {
         cancelled.cancel();
         assertThrows(ResticCancelledException.class, () -> restic.unlock(false, cancelled));
         assertThrows(ResticCancelledException.class, () -> restic.features(cancelled));
-        assertThrows(ResticCancelledException.class, () -> restic.help(java.util.List.of("backup"), cancelled));
-        assertThrows(ResticCancelledException.class,
-                () -> restic.diffAll("a", "b", DiffOptions.builder().cancellationToken(cancelled).build()));
+        java.util.List<String> helpPath = java.util.List.of("backup");
+        assertThrows(ResticCancelledException.class, () -> restic.help(helpPath, cancelled));
+        DiffOptions cancelledDiff = DiffOptions.builder().cancellationToken(cancelled).build();
+        assertThrows(ResticCancelledException.class, () -> restic.diffAll("a", "b", cancelledDiff));
         assertFalse(restic.version(new CancellationToken()).getVersion().isEmpty());
         BackupEvent backupEvent = new BackupEvent.Error("/home/me/locked.db", "archival", "permission denied");
         if (backupEvent instanceof BackupEvent.Error error) {
             assertEquals("/home/me/locked.db: permission denied", error.readable());
         }
-        assertThrows(ResticCancelledException.class,
-                () -> restic.listNodes(Restic.LATEST, LsOptions.builder().cancellationToken(cancelled).build()));
-        assertThrows(ResticCancelledException.class,
-                () -> restic.snapshots(SnapshotsOptions.builder().cancellationToken(cancelled).build()));
-        assertThrows(ResticCancelledException.class,
-                () -> restic.find(java.util.List.of("*.txt"), FindOptions.builder().cancellationToken(cancelled).build()));
-        assertThrows(ResticCancelledException.class,
-                () -> restic.stats(StatsOptions.builder().cancellationToken(cancelled).build()));
-        LsOptions withCancelledToken = LsOptions.builder().cancellationToken(cancelled).build();
-        assertEquals(cancelled, withCancelledToken.getCancellationToken());
+        LsOptions cancelledLs = LsOptions.builder().cancellationToken(cancelled).build();
+        assertEquals(cancelled, cancelledLs.getCancellationToken());
+        assertThrows(ResticCancelledException.class, () -> restic.listNodes(Restic.LATEST, cancelledLs));
+        SnapshotsOptions cancelledSnapshots = SnapshotsOptions.builder().cancellationToken(cancelled).build();
+        assertThrows(ResticCancelledException.class, () -> restic.snapshots(cancelledSnapshots));
+        java.util.List<String> patterns = java.util.List.of("*.txt");
+        FindOptions cancelledFind = FindOptions.builder().cancellationToken(cancelled).build();
+        assertThrows(ResticCancelledException.class, () -> restic.find(patterns, cancelledFind));
+        StatsOptions cancelledStats = StatsOptions.builder().cancellationToken(cancelled).build();
+        assertThrows(ResticCancelledException.class, () -> restic.stats(cancelledStats));
         assertThrows(ResticCancelledException.class, () -> restic.ls(Restic.LATEST, LsOptions.DEFAULT, cancelled, null));
 
+        java.util.List<String> outputLines = new java.util.ArrayList<>();
         java.util.List<String> errorLines = new java.util.ArrayList<>();
-        restic.prune(PruneOptions.DEFAULT, new OutputLineListener() {
+        PruneResult prunedAgain = restic.prune(PruneOptions.DEFAULT, new OutputLineListener() {
             @Override
             public void onLine(String line) {
+                outputLines.add(line);
             }
 
             @Override
@@ -268,6 +271,8 @@ class JavaUsageTest {
                 errorLines.add(line);
             }
         });
+        assertEquals(prunedAgain.getOutputLines(), outputLines);
+        errorLines.forEach(line -> assertFalse(line.isBlank(), "readable error lines are never blank"));
 
         Restic wrongPassword = new Restic(ResticConfiguration.builder()
                 .binary(binary)

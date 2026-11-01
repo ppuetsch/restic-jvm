@@ -5,6 +5,8 @@ import java.io.InputStream
 /** Alles danach ist ein Pfad bzw. Kommando, auch wenn es mit `-` beginnt. */
 private const val END_OF_OPTIONS: String = "--"
 
+private val BACKUP_WITH_JSON_OUTPUT: List<String> = listOf("backup", "--json")
+
 internal class BackupCommand(
     private val runner: ProcessRunner,
 ) {
@@ -12,13 +14,13 @@ internal class BackupCommand(
         paths: List<String>,
         options: BackupOptions,
         listener: BackupListener?,
-    ): BackupResult = execute(listOf("backup", "--json") + options.arguments() + END_OF_OPTIONS + paths, options, null, listener)
+    ): BackupResult = execute(BACKUP_WITH_JSON_OUTPUT + options.arguments() + END_OF_OPTIONS + paths, options, null, listener)
 
     fun backupStandardInput(
         input: InputStream,
         options: BackupOptions,
         listener: BackupListener?,
-    ): BackupResult = execute(listOf("backup", "--json", "--stdin") + options.arguments(), options, input, listener)
+    ): BackupResult = execute(BACKUP_WITH_JSON_OUTPUT + "--stdin" + options.arguments(), options, input, listener)
 
     fun backupCommandOutput(
         command: List<String>,
@@ -26,7 +28,7 @@ internal class BackupCommand(
         listener: BackupListener?,
     ): BackupResult =
         execute(
-            listOf("backup", "--json", "--stdin-from-command") + options.arguments() + END_OF_OPTIONS + command,
+            BACKUP_WITH_JSON_OUTPUT + "--stdin-from-command" + options.arguments() + END_OF_OPTIONS + command,
             options,
             null,
             listener,
