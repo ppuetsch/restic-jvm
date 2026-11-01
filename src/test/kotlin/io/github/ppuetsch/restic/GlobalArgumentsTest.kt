@@ -52,4 +52,18 @@ class GlobalArgumentsTest {
         assertEquals(emptyList<String>(), configuration.globalArguments())
         assertEquals("geheim", configuration.processEnvironment()["RESTIC_PASSWORD"])
     }
+
+    @Test
+    fun `durations below a second are passed in milliseconds instead of being cut to zero`() {
+        val configuration =
+            ResticConfiguration.builder()
+                .retryLock(Duration.ofMillis(1500))
+                .stuckRequestTimeout(Duration.ofMillis(500))
+                .build()
+
+        assertEquals(
+            listOf("--retry-lock", "1500ms", "--stuck-request-timeout", "500ms"),
+            configuration.globalArguments(),
+        )
+    }
 }

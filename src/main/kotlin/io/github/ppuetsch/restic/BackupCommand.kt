@@ -2,12 +2,15 @@ package io.github.ppuetsch.restic
 
 import java.io.InputStream
 
+/** Alles danach ist ein Pfad bzw. Kommando, auch wenn es mit `-` beginnt. */
+private const val END_OF_OPTIONS: String = "--"
+
 internal class BackupCommand(private val runner: ProcessRunner) {
     fun backupPaths(
         paths: List<String>,
         options: BackupOptions,
         listener: BackupListener?,
-    ): BackupResult = execute(listOf("backup", "--json") + options.arguments() + paths, options, null, listener)
+    ): BackupResult = execute(listOf("backup", "--json") + options.arguments() + END_OF_OPTIONS + paths, options, null, listener)
 
     fun backupStandardInput(
         input: InputStream,
@@ -20,7 +23,12 @@ internal class BackupCommand(private val runner: ProcessRunner) {
         options: BackupOptions,
         listener: BackupListener?,
     ): BackupResult =
-        execute(listOf("backup", "--json", "--stdin-from-command") + options.arguments() + "--" + command, options, null, listener)
+        execute(
+            listOf("backup", "--json", "--stdin-from-command") + options.arguments() + END_OF_OPTIONS + command,
+            options,
+            null,
+            listener,
+        )
 
     private fun execute(
         arguments: List<String>,

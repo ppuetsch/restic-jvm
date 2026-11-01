@@ -55,6 +55,16 @@ class BackupTest {
     }
 
     @Test
+    fun `a relative path starting with a dash is backed up instead of being read as a flag`() {
+        temporaryDirectory.resolve("-dash").createDirectories().resolve("c.txt").writeText("dash")
+        val inWorkDirectory = resticFor(repository) { workingDirectory(temporaryDirectory) }
+
+        val summary = inWorkDirectory.backup(listOf(Path.of("-dash"))).summary
+
+        assertEquals(1, summary.filesNew)
+    }
+
+    @Test
     fun `listener receives events and ends with the summary`() {
         val events = mutableListOf<BackupEvent>()
         val result = restic.backup(listOf(source), BackupOptions.DEFAULT, events::add)
