@@ -3,6 +3,7 @@ package io.github.ppuetsch.restic;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -210,5 +211,39 @@ class JavaUsageTest {
         Path completionFile = temporaryDirectory.resolve("c.bash");
         restic.generate(GenerateOptions.builder().bashCompletion(completionFile).build());
         assertTrue(Files.size(completionFile) > 0);
+    }
+
+    @Test
+    void cancellationErrorsAndListenersAreUsableFromJava(@TempDir Path temporaryDirectory) throws Exception {
+        String binary = System.getenv("RESTIC_BINARY") != null ? System.getenv("RESTIC_BINARY") : "restic";
+        Restic restic = new Restic(ResticConfiguration.builder()
+                .binary(binary)
+                .repository(temporaryDirectory.resolve("repo").toString())
+                .password("pw")
+                .build());
+        restic.init(InitOptions.DEFAULT, new CancellationToken());
+        assertTrue(restic.snapshots(SnapshotsOptions.DEFAULT, new CancellationToken()).isEmpty());
+        assertTrue(restic.list(ListObjectType.SNAPSHOTS, null).isEmpty());
+
+        java.util.List<String> lines = new java.util.ArrayList<>();
+        CheckResult checked = restic.check(CheckOptions.DEFAULT, lines::add);
+        assertTrue(checked.isHealthy());
+        assertEquals(checked.getOutputLines(), lines);
+
+        PruneResult pruned = restic.prune(PruneOptions.DEFAULT, line -> {});
+        assertNotNull(pruned.getBytesFreed());
+
+        CancellationToken cancelled = new CancellationToken();
+        cancelled.cancel();
+        assertThrows(ResticCancelledException.class, () -> restic.unlock(false, cancelled));
+
+        Restic wrongPassword = new Restic(ResticConfiguration.builder()
+                .binary(binary)
+                .repository(temporaryDirectory.resolve("repo").toString())
+                .password("falsch")
+                .build());
+        WrongPasswordException failure = assertThrows(WrongPasswordException.class, wrongPassword::snapshots);
+        assertEquals(ResticErrorKind.WRONG_PASSWORD, failure.getKind());
+        assertEquals("Fatal: wrong password or no key found", failure.getErrorMessage());
     }
 }

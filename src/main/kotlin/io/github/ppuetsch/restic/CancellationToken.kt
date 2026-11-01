@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Bricht einen laufenden restic-Aufruf von einem anderen Thread aus ab.
- * Der Aufruf wirft dann [ResticCancelledException].
+ * Der Aufruf wirft dann [ResticCancelledException]. Beendet werden restic und alle seine Kindprozesse.
  */
 public class CancellationToken {
     private val runningProcess = AtomicReference<Process?>(null)
@@ -15,11 +15,11 @@ public class CancellationToken {
 
     public fun cancel() {
         isCancelled = true
-        runningProcess.get()?.destroy()
+        runningProcess.get()?.let(ProcessTree::terminate)
     }
 
     internal fun attach(process: Process) {
         runningProcess.set(process)
-        if (isCancelled) process.destroy()
+        if (isCancelled) ProcessTree.terminate(process)
     }
 }

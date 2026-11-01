@@ -10,6 +10,8 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
+private const val LINE_FEED: Char = '\n'
+
 internal class ProcessOutcome(
     val exitCode: Int,
     val standardError: String,
@@ -21,24 +23,39 @@ internal class ProcessRequest(
     val standardInput: InputStream? = null,
     val cancellation: CancellationToken? = null,
     val standardOutput: OutputStream? = null,
-)
+    val onStandardErrorLine: ((String) -> Unit)? = null,
+) {
+    fun withDefaultCancellation(token: CancellationToken?): ProcessRequest =
+        if (cancellation != null || token == null) {
+            this
+        } else {
+            ProcessRequest(arguments, extraEnvironment, standardInput, token, standardOutput, onStandardErrorLine)
+        }
+}
 
-internal class ProcessRunner(private val configuration: ResticConfiguration) {
+internal class ProcessRunner(
+    private val configuration: ResticConfiguration,
+    private val defaultCancellation: CancellationToken? = null,
+) {
+    /** Ein Runner, dessen Aufrufe über [token] abbrechbar sind, sofern sie nicht schon ein eigenes Token tragen. */
+    fun cancellableBy(token: CancellationToken?): ProcessRunner = if (token == null) this else ProcessRunner(configuration, token)
+
     fun run(
         arguments: List<String>,
         onStandardOutputLine: (String) -> Unit = {},
     ): ProcessOutcome = run(ProcessRequest(arguments), onStandardOutputLine)
 
     fun run(
-        request: ProcessRequest,
+        plainRequest: ProcessRequest,
         onStandardOutputLine: (String) -> Unit = {},
     ): ProcessOutcome {
+        val request = plainRequest.withDefaultCancellation(defaultCancellation)
         val process = start(request)
         request.cancellation?.attach(process)
         val timedOut = AtomicBoolean(false)
         val watchdog = startWatchdog(process, timedOut)
         feedStandardInput(process, request.standardInput)
-        val standardError = CompletableFuture.supplyAsync { process.errorStream.bufferedReader().readText() }
+        val standardError = CompletableFuture.supplyAsync { readStandardError(process, request.onStandardErrorLine) }
         try {
             consumeStandardOutput(process, request.standardOutput, onStandardOutputLine)
             process.waitFor()
@@ -47,7 +64,7 @@ internal class ProcessRunner(private val configuration: ResticConfiguration) {
             if (!wasStoppedByUs) throw failure
         } finally {
             watchdog?.cancel(false)
-            process.destroy()
+            if (process.isAlive) ProcessTree.terminate(process)
         }
         if (request.cancellation?.isCancelled == true) throw ResticCancelledException()
         if (timedOut.get()) throw ResticTimeoutException("restic did not finish within ${configuration.timeout}")
@@ -82,6 +99,20 @@ internal class ProcessRunner(private val configuration: ResticConfiguration) {
         } catch (failure: IOException) {
             throw ResticNotAvailableException("Cannot start '${configuration.binary}': ${failure.message}", failure)
         }
+    }
+
+    private fun readStandardError(
+        process: Process,
+        onLine: ((String) -> Unit)?,
+    ): String {
+        val reader = process.errorStream.bufferedReader()
+        if (onLine == null) return reader.readText()
+        val collected = StringBuilder()
+        reader.forEachLine { line ->
+            collected.append(line).append(LINE_FEED)
+            onLine(line)
+        }
+        return collected.toString()
     }
 
     private fun consumeStandardOutput(
@@ -121,7 +152,7 @@ internal class ProcessRunner(private val configuration: ResticConfiguration) {
         val timeout = configuration.timeout ?: return null
         return WATCHDOG.schedule({
             timedOut.set(true)
-            process.destroyForcibly()
+            ProcessTree.terminateForcibly(process)
         }, timeout.toMillis(), TimeUnit.MILLISECONDS)
     }
 

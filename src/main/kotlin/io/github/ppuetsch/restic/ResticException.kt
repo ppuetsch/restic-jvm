@@ -28,8 +28,14 @@ public class ResticOutputException(message: String, cause: Throwable?) : ResticE
 /** restic wurde gestartet, beendete sich aber mit einem Fehler-Exit-Code. */
 public sealed class ResticCommandException(
     public val exitCode: Int,
+    /** Die unveränderte Fehlerausgabe von restic, bei `--json` also JSON-Zeilen. */
     public val standardError: String,
-) : ResticException("restic exited with code $exitCode: ${standardError.trim()}")
+) : ResticException("restic exited with code $exitCode: ${ErrorOutput.readableMessage(standardError)}") {
+    /** Die Fehlermeldung als Klartext: bei `exit_error`-Zeilen deren `message`, andere Zeilen unverändert, ohne Leerzeilen. */
+    public val errorMessage: String = ErrorOutput.readableMessage(standardError)
+
+    public val kind: ResticErrorKind = ErrorOutput.classify(exitCode, errorMessage)
+}
 
 public class ResticFailedException(exitCode: Int, standardError: String) : ResticCommandException(exitCode, standardError)
 

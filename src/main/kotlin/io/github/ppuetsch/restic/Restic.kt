@@ -9,8 +9,6 @@ import java.nio.file.Path
 public class Restic(public val configuration: ResticConfiguration) {
     private val runner = ProcessRunner(configuration)
     private val backupCommand = BackupCommand(runner)
-    private val snapshotsCommand = SnapshotsCommand(runner)
-    private val lsCommand = LsCommand(runner)
     private val findCommand = FindCommand(runner)
     private val restoreCommand = RestoreCommand(runner)
     private val dumpAndCatCommand = DumpAndCatCommand(runner)
@@ -20,7 +18,6 @@ public class Restic(public val configuration: ResticConfiguration) {
     private val diffCommand = DiffCommand(runner)
     private val tagCommand = TagCommand(runner)
     private val rewriteAndCopyCommand = RewriteAndCopyCommand(runner)
-    private val listCommand = ListCommand(runner)
     private val adminCommands = AdminCommands(runner)
     private val toolCommands = ToolCommands(runner)
     private val mountCommand = MountCommand(runner)
@@ -31,8 +28,11 @@ public class Restic(public val configuration: ResticConfiguration) {
     }
 
     @JvmOverloads
-    public fun init(options: InitOptions = InitOptions.DEFAULT): InitResult {
-        val node = lastJsonLine(listOf("init", "--json") + options.arguments(), options.environment())
+    public fun init(
+        options: InitOptions = InitOptions.DEFAULT,
+        cancellationToken: CancellationToken? = null,
+    ): InitResult {
+        val node = lastJsonLine(listOf("init", "--json") + options.arguments(), options.environment(), cancellationToken)
         return InitResult(node.text("id"), node.text("repository"))
     }
 
@@ -72,7 +72,10 @@ public class Restic(public val configuration: ResticConfiguration) {
 
     /** Alle passenden Snapshots als flache Liste, auch wenn `groupBy` gesetzt ist. */
     @JvmOverloads
-    public fun snapshots(options: SnapshotsOptions = SnapshotsOptions.DEFAULT): List<Snapshot> = snapshotsCommand.snapshots(options)
+    public fun snapshots(
+        options: SnapshotsOptions = SnapshotsOptions.DEFAULT,
+        cancellationToken: CancellationToken? = null,
+    ): List<Snapshot> = SnapshotsCommand(runner.cancellableBy(cancellationToken)).snapshots(options)
 
     @JvmSynthetic
     public fun snapshots(configure: SnapshotsOptions.Builder.() -> Unit): List<Snapshot> =
@@ -80,8 +83,10 @@ public class Restic(public val configuration: ResticConfiguration) {
 
     /** Snapshots gruppiert; ohne `groupBy` wird nach `host,paths` gruppiert. */
     @JvmOverloads
-    public fun snapshotGroups(options: SnapshotsOptions = SnapshotsOptions.DEFAULT): List<SnapshotGroup> =
-        snapshotsCommand.snapshotGroups(options)
+    public fun snapshotGroups(
+        options: SnapshotsOptions = SnapshotsOptions.DEFAULT,
+        cancellationToken: CancellationToken? = null,
+    ): List<SnapshotGroup> = SnapshotsCommand(runner.cancellableBy(cancellationToken)).snapshotGroups(options)
 
     /** Listet den Inhalt eines Snapshots (`latest` oder eine ID) und meldet jeden Eintrag an den Listener. */
     @JvmOverloads
@@ -89,7 +94,18 @@ public class Restic(public val configuration: ResticConfiguration) {
         snapshotId: String = LATEST,
         options: LsOptions = LsOptions.DEFAULT,
         listener: LsListener? = null,
-    ): Snapshot = lsCommand.ls(snapshotId, options, listener)
+    ): Snapshot = ls(snapshotId, options, null, listener)
+
+    /**
+     * Wie [ls], abbrechbar über [cancellationToken]. Der Listener steht zuletzt, damit ein Lambda am Ende des Aufrufs
+     * weiterhin der Listener bleibt; deshalb sind hier alle Parameter Pflicht.
+     */
+    public fun ls(
+        snapshotId: String,
+        options: LsOptions,
+        cancellationToken: CancellationToken?,
+        listener: LsListener?,
+    ): Snapshot = LsCommand(runner.cancellableBy(cancellationToken)).ls(snapshotId, options, listener)
 
     @JvmSynthetic
     public fun ls(
@@ -103,9 +119,10 @@ public class Restic(public val configuration: ResticConfiguration) {
     public fun listNodes(
         snapshotId: String = LATEST,
         options: LsOptions = LsOptions.DEFAULT,
+        cancellationToken: CancellationToken? = null,
     ): LsResult {
         val nodes = mutableListOf<LsNode>()
-        val snapshot = ls(snapshotId, options) { nodes += it }
+        val snapshot = ls(snapshotId, options, cancellationToken) { nodes += it }
         return LsResult(snapshot, nodes)
     }
 
@@ -114,7 +131,8 @@ public class Restic(public val configuration: ResticConfiguration) {
     public fun lsNcdu(
         snapshotId: String = LATEST,
         options: LsOptions = LsOptions.DEFAULT,
-    ): String = lsCommand.ncdu(snapshotId, options)
+        cancellationToken: CancellationToken? = null,
+    ): String = LsCommand(runner.cancellableBy(cancellationToken)).ncdu(snapshotId, options)
 
     /** Sucht Dateien oder Verzeichnisse nach Namensmuster in den Snapshots. */
     @JvmOverloads
@@ -178,14 +196,16 @@ public class Restic(public val configuration: ResticConfiguration) {
         type: CatObjectType,
         id: String? = null,
         output: OutputStream,
-    ): Unit = dumpAndCatCommand.cat(type, id, output)
+        cancellationToken: CancellationToken? = null,
+    ): Unit = DumpAndCatCommand(runner.cancellableBy(cancellationToken)).cat(type, id, output)
 
     /** Wie [cat], liefert aber den Inhalt als Text (sinnvoll für JSON-Objekte wie config oder snapshot). */
     @JvmOverloads
     public fun catText(
         type: CatObjectType,
         id: String? = null,
-    ): String = dumpAndCatCommand.catText(type, id)
+        cancellationToken: CancellationToken? = null,
+    ): String = DumpAndCatCommand(runner.cancellableBy(cancellationToken)).catText(type, id)
 
     /** Entfernt Snapshots nach Aufbewahrungsregeln oder gezielt per ID. */
     @JvmOverloads
@@ -209,13 +229,22 @@ public class Restic(public val configuration: ResticConfiguration) {
 
     /** Prüft das Repository; Fehler im Repository führen zu [CheckResult.isHealthy] = false statt zu einer Exception. */
     @JvmOverloads
-    public fun check(options: CheckOptions = CheckOptions.DEFAULT): CheckResult = checkAndStatsCommand.check(options)
+    public fun check(
+        options: CheckOptions = CheckOptions.DEFAULT,
+        listener: OutputLineListener? = null,
+    ): CheckResult = checkAndStatsCommand.check(options, listener)
 
     @JvmSynthetic
-    public fun check(configure: CheckOptions.Builder.() -> Unit): CheckResult = check(CheckOptions.builder().apply(configure).build())
+    public fun check(
+        listener: OutputLineListener? = null,
+        configure: CheckOptions.Builder.() -> Unit,
+    ): CheckResult = check(CheckOptions.builder().apply(configure).build(), listener)
 
     @JvmOverloads
-    public fun stats(options: StatsOptions = StatsOptions.DEFAULT): StatsResult = checkAndStatsCommand.stats(options)
+    public fun stats(
+        options: StatsOptions = StatsOptions.DEFAULT,
+        cancellationToken: CancellationToken? = null,
+    ): StatsResult = CheckAndStatsCommand(runner.cancellableBy(cancellationToken)).stats(options)
 
     @JvmSynthetic
     public fun stats(configure: StatsOptions.Builder.() -> Unit): StatsResult = stats(StatsOptions.builder().apply(configure).build())
@@ -269,11 +298,19 @@ public class Restic(public val configuration: ResticConfiguration) {
     public fun copy(configure: CopyOptions.Builder.() -> Unit): CopyResult = copy(CopyOptions.builder().apply(configure).build())
 
     /** Zählt Objekt-IDs des Repositorys auf (`restic list`). */
-    public fun list(type: ListObjectType): List<String> = listCommand.list(type)
+    @JvmOverloads
+    public fun list(
+        type: ListObjectType,
+        cancellationToken: CancellationToken? = null,
+    ): List<String> = ListCommand(runner.cancellableBy(cancellationToken)).list(type)
 
-    public fun listBlobs(): List<BlobEntry> = listCommand.listBlobs()
+    @JvmOverloads
+    public fun listBlobs(cancellationToken: CancellationToken? = null): List<BlobEntry> =
+        ListCommand(runner.cancellableBy(cancellationToken)).listBlobs()
 
-    public fun listKeys(): List<KeyInfo> = adminCommands.listKeys()
+    @JvmOverloads
+    public fun listKeys(cancellationToken: CancellationToken? = null): List<KeyInfo> =
+        AdminCommands(runner.cancellableBy(cancellationToken)).listKeys()
 
     /** Fügt dem Repository einen weiteren Schlüssel (Passwort) hinzu. */
     @JvmOverloads
@@ -294,7 +331,10 @@ public class Restic(public val configuration: ResticConfiguration) {
 
     /** Entfernt veraltete Sperren; mit `removeAll` auch aktive. */
     @JvmOverloads
-    public fun unlock(removeAll: Boolean = false): CommandOutput = adminCommands.unlock(removeAll)
+    public fun unlock(
+        removeAll: Boolean = false,
+        cancellationToken: CancellationToken? = null,
+    ): CommandOutput = AdminCommands(runner.cancellableBy(cancellationToken)).unlock(removeAll)
 
     /** Ohne Namen werden die verfügbaren Migrationen aufgelistet. */
     @JvmOverloads
@@ -360,9 +400,12 @@ public class Restic(public val configuration: ResticConfiguration) {
     private fun lastJsonLine(
         arguments: List<String>,
         environment: Map<String, String> = emptyMap(),
+        cancellationToken: CancellationToken? = null,
     ): JsonNode {
         var lastLine = ""
-        runner.runChecked(ProcessRequest(arguments, environment)) { line -> if (line.isNotBlank()) lastLine = line }
+        runner.cancellableBy(
+            cancellationToken,
+        ).runChecked(ProcessRequest(arguments, environment)) { line -> if (line.isNotBlank()) lastLine = line }
         return Json.parse(lastLine)
     }
 
