@@ -126,18 +126,6 @@ public class Restic(public val configuration: ResticConfiguration) {
         return LsResult(snapshot, nodes)
     }
 
-    /** `restic ls --ncdu`: Export im NCDU-Format als Text. */
-    @Deprecated(
-        "Rohes JSON für das Werkzeug ncdu; für Programme liefert listNodes dieselben Daten getypt.",
-        ReplaceWith("listNodes(snapshotId, options)"),
-    )
-    @JvmOverloads
-    public fun lsNcdu(
-        snapshotId: String = LATEST,
-        options: LsOptions = LsOptions.DEFAULT,
-        cancellationToken: CancellationToken? = null,
-    ): String = LsCommand(runner.cancellableBy(cancellationToken)).ncdu(snapshotId, options)
-
     /** Sucht Dateien oder Verzeichnisse nach Namensmuster in den Snapshots. */
     @JvmOverloads
     public fun find(

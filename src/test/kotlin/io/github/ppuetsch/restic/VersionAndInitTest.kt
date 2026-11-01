@@ -52,7 +52,7 @@ class VersionAndInitTest {
         val restic = resticFor(temporaryDirectory.resolve("repo"))
         restic.init()
         val failure = assertThrows<ResticFailedException> { restic.init() }
-        assertTrue(failure.standardError.contains("config file already exists"), failure.standardError)
+        assertTrue(failure.errorMessage.contains("config file already exists"), failure.errorMessage)
     }
 
     @Test

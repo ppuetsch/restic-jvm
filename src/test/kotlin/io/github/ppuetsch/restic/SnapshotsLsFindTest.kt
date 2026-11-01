@@ -153,14 +153,6 @@ class SnapshotsLsFindTest {
     }
 
     @Test
-    fun `ncdu export is returned as text`() {
-        fixture.backup()
-        val export = restic.lsNcdu()
-        assertTrue(export.startsWith("[1, 2,"), export.take(40))
-        assertTrue(export.contains("a.txt"))
-    }
-
-    @Test
     fun `find by name pattern`() {
         val id = fixture.backup().snapshotId.orEmpty()
         val result = restic.find(listOf("*.txt")).single()

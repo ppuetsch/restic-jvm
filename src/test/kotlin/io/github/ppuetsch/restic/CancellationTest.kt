@@ -28,7 +28,6 @@ class CancellationTest {
         mapOf(
             "ls" to { restic, token -> restic.ls(Restic.LATEST, LsOptions.DEFAULT, token, null) },
             "listNodes" to { restic, token -> restic.listNodes(cancellationToken = token) },
-            "lsNcdu" to { restic, token -> restic.lsNcdu(cancellationToken = token) },
             "init" to { restic, token -> restic.init(cancellationToken = token) },
             "unlock" to { restic, token -> restic.unlock(cancellationToken = token) },
             "list" to { restic, token -> restic.list(ListObjectType.SNAPSHOTS, token) },
