@@ -18,14 +18,14 @@ internal object ProcessTree {
         Executors.newSingleThreadScheduledExecutor { task -> Thread(task, "restic-process-reaper").apply { isDaemon = true } }
 
     fun terminate(process: Process) {
-        val descendants = process.descendants().toList()
+        val descendants = descendantsOf(process)
         process.destroy()
         descendants.forEach(ProcessHandle::destroy)
         scheduler.schedule({ killSurvivors(process, descendants) }, FORCIBLE_KILL_DELAY_MILLIS, TimeUnit.MILLISECONDS)
     }
 
     fun terminateForcibly(process: Process) {
-        val descendants = process.descendants().toList()
+        val descendants = descendantsOf(process)
         process.destroyForcibly()
         descendants.forEach(ProcessHandle::destroyForcibly)
         scheduler.schedule({ killSurvivors(process, descendants) }, FORCIBLE_KILL_DELAY_MILLIS, TimeUnit.MILLISECONDS)
@@ -35,8 +35,10 @@ internal object ProcessTree {
         process: Process,
         knownDescendants: List<ProcessHandle>,
     ) {
-        val lateDescendants = process.descendants().toList()
+        val lateDescendants = descendantsOf(process)
         if (process.isAlive) process.destroyForcibly()
         (knownDescendants + lateDescendants).filter(ProcessHandle::isAlive).forEach(ProcessHandle::destroyForcibly)
     }
+
+    private fun descendantsOf(process: Process): List<ProcessHandle> = process.descendants().toList()
 }

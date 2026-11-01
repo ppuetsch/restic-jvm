@@ -176,4 +176,13 @@ Global flags (`--no-lock`, `--compression`, `--limit-upload`, `--option`, ...) a
 CI runs this on Linux and Windows against restic 0.18 and 0.19, uploads detekt and dependency-check findings to GitHub
 code scanning, sends the analysis to SonarCloud and repeats everything weekly to catch newly published vulnerabilities.
 
+Versions live in `gradle/libs.versions.toml`. Resolved versions are locked (`*.lockfile`) and every artifact is checked
+against its SHA-256 in `gradle/verification-metadata.xml`. After changing a version, rewrite both:
+
+```
+./gradlew --write-locks --write-verification-metadata sha256 build javadocJar sourcesJar
+```
+
+GitHub Actions are pinned to commit SHAs; Dependabot keeps them current.
+
 Apache License 2.0.

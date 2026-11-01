@@ -231,9 +231,8 @@ internal class ForgetCommand(
                 onStandardErrorLine = readableErrorLines(outputListener),
             )
         runner.runChecked(request) { line ->
+            if (line.isBlank()) return@runChecked
             when {
-                line.isBlank() -> {}
-
                 groups == null && isGroupDocument(line) -> {
                     groups = Json.parse(line).mapElements(::forgetGroupFrom)
                 }

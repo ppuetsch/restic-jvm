@@ -136,5 +136,7 @@ public fun interface OutputLineListener {
     public fun onLine(line: String)
 
     /** Eine Zeile der Fehlerausgabe; standardmäßig ignoriert. */
-    public fun onErrorLine(line: String) {}
+    public fun onErrorLine(line: String) {
+        // Absichtlich leer: Wer nur die Standardausgabe braucht, implementiert allein onLine.
+    }
 }

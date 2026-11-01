@@ -1,14 +1,20 @@
+buildscript {
+    configurations.classpath {
+        resolutionStrategy.activateDependencyLocking()
+    }
+}
+
 plugins {
-    kotlin("jvm") version "2.4.21"
+    alias(libs.plugins.kotlin.jvm)
     `java-library`
     `maven-publish`
     signing
-    id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
-    id("org.jetbrains.dokka") version "2.2.0"
-    id("org.jetbrains.dokka-javadoc") version "2.2.0"
-    id("dev.detekt") version "2.0.0-alpha.6"
-    id("org.owasp.dependencycheck") version "13.0.0"
-    id("org.sonarqube") version "7.5.0.8588"
+    alias(libs.plugins.ktlint)
+    alias(libs.plugins.dokka)
+    alias(libs.plugins.dokka.javadoc)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.dependency.check)
+    alias(libs.plugins.sonarqube)
     jacoco
 }
 
@@ -22,15 +28,19 @@ repositories {
 }
 
 dependencies {
-    implementation("tools.jackson.core:jackson-databind:3.2.4")
+    implementation(libs.jackson.databind)
 
-    testImplementation(platform("org.junit:junit-bom:6.1.3"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
+}
+
+dependencyLocking {
+    lockAllConfigurations()
 }
 
 ktlint {
-    version.set("1.8.0")
+    version.set(libs.versions.ktlint.engine)
 }
 
 detekt {
@@ -40,7 +50,7 @@ detekt {
 }
 
 jacoco {
-    toolVersion = "0.8.16"
+    toolVersion = libs.versions.jacoco.get()
 }
 
 dependencyCheck {
@@ -71,6 +81,8 @@ java {
 
 val javadocJar =
     tasks.register<Jar>("javadocJar") {
+        group = "documentation"
+        description = "Packages the Dokka Javadoc as the javadoc jar of the publication."
         archiveClassifier.set("javadoc")
         from(tasks.named("dokkaGeneratePublicationJavadoc"))
     }
@@ -104,6 +116,8 @@ tasks.named("check") {
 }
 
 tasks.register("printVersion") {
+    group = "help"
+    description = "Prints the project version; the release workflow compares it with the tag."
     val projectVersion = project.version.toString()
     doLast { println(projectVersion) }
 }
