@@ -9,6 +9,18 @@ import java.time.OffsetDateTime
 internal object Json {
     private val mapper = ObjectMapper()
 
+    /** `null` für Zeilen, die kein JSON sind, z.B. Fortschrittstext zwischen den JSON-Zeilen. */
+    fun parseOrNull(text: String): JsonNode? =
+        if (text.isBlank()) {
+            null
+        } else {
+            try {
+                mapper.readTree(text)
+            } catch (notJson: JsonProcessingException) {
+                null
+            }
+        }
+
     fun parse(text: String): JsonNode =
         try {
             mapper.readTree(text) ?: throw ResticOutputException("Empty output from restic", null)

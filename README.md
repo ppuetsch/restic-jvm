@@ -17,7 +17,7 @@ Releases are published to GitHub Packages (`https://maven.pkg.github.com/ppuetsc
 
 ```kotlin
 dependencies {
-    implementation("io.github.ppuetsch:restic-jvm:0.1.0")
+    implementation("io.github.ppuetsch:restic-jvm:0.2.0")
 }
 ```
 
@@ -65,8 +65,64 @@ for (Snapshot snapshot : restic.snapshots()) {
 }
 ```
 
-Long running calls take a `CancellationToken`; errors are a sealed `ResticException` hierarchy
+Errors are a sealed `ResticException` hierarchy
 (`RepositoryNotFoundException`, `WrongPasswordException`, `RepositoryLockedException`, ...).
+
+### Cancelling
+
+Every command that starts a restic process accepts an optional `CancellationToken`
+(`backup`, `restore`, `ls`, `init`, `unlock`, `list`, `cat`, `snapshots`, `stats`, ...; `check` and `prune` take it through their options).
+`cancel()` ends restic **and all its child processes** (for example `rclone` behind an `rclone:` repository),
+first politely and after two seconds forcibly, on Linux and Windows. The call throws `ResticCancelledException`.
+A configured `timeout` ends the process tree the same way.
+
+```kotlin
+val token = CancellationToken()
+val listing = executor.submit { restic.ls(Restic.LATEST, LsOptions.DEFAULT, token, null) }
+token.cancel() // from any thread; the call above throws ResticCancelledException
+```
+
+### Error messages and classification
+
+`ResticCommandException.standardError` is the raw output. `errorMessage` is the readable text:
+the `message` of restic's `exit_error` JSON line, other lines unchanged, blank lines removed.
+`kind` classifies the failure by exit code and message.
+
+```kotlin
+try {
+    restic.snapshots()
+} catch (failure: ResticCommandException) {
+    when (failure.kind) {
+        ResticErrorKind.WRONG_PASSWORD -> askForPasswordAgain()
+        ResticErrorKind.NETWORK, ResticErrorKind.AUTHENTICATION -> showBackendProblem(failure.errorMessage)
+        else -> log(failure.errorMessage)
+    }
+}
+```
+
+`NETWORK` and `AUTHENTICATION` are recognised from typical Go, SSH and S3 messages; anything else with exit code 1 is `OTHER`.
+
+### Check and prune with a live log
+
+`check` and `prune` accept an `OutputLineListener` that receives standard output (`onLine`) and standard error
+(`onErrorLine`) line by line while the command runs. The results keep the lines as well.
+
+```kotlin
+val listener = object : OutputLineListener {
+    override fun onLine(line: String) = log.info(line)
+    override fun onErrorLine(line: String) = log.warn(line)
+}
+val check = restic.check(CheckOptions.builder().readDataSubset("10%").build(), listener)
+println("healthy=${check.isHealthy()}, ${check.outputLines.size} lines")
+
+val prune = restic.prune(PruneOptions.DEFAULT, listener)
+println("freed ${prune.bytesFreed} bytes, deleted ${prune.packsDeleted} packs, repacked ${prune.packsRepacked} packs")
+```
+
+`restic prune` has no JSON output, so `PruneResult` is read from the text summary (tested with restic 0.18):
+`bytesFreed` comes from `total prune:` and is rounded to the displayed precision (`1.234 KiB`);
+pack counts come from `removing N old packs`, the `N / M packs repacked` progress line or, with `verbose`, `to delete: N packs`.
+If restic prints no summary the figures are `null`; the raw `outputLines` are always available.
 
 ## Command coverage
 
@@ -88,7 +144,7 @@ Global flags (`--no-lock`, `--compression`, `--limit-upload`, `--option`, ...) a
 
 ## Notes
 
-- Commands without JSON output (`prune`, `copy`, `rewrite`, `recover`, `repair`, ...) return their text lines.
+- Commands without JSON output (`copy`, `rewrite`, `recover`, `repair`, ...) return their text lines.
 - On Windows, restoring a snapshot that contains ancestors such as `C:\Users` fails when restic cannot set their timestamps; restore a sub folder (`latest:/C/Users/me/docs`) instead.
 - `check` reports repository damage in `CheckResult.isHealthy()` instead of throwing.
 

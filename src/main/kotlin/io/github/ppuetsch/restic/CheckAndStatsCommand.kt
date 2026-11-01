@@ -1,5 +1,7 @@
 package io.github.ppuetsch.restic
 
+import com.fasterxml.jackson.databind.JsonNode
+
 /** Optionen für `restic check`. */
 public class CheckOptions private constructor(builder: Builder) {
     public val readData: Boolean = builder.readData
@@ -45,15 +47,21 @@ public class CheckOptions private constructor(builder: Builder) {
 }
 
 /** Ergebnis von `check`: Ein Repository mit Fehlern führt nicht zu einer Exception, sondern zu [isHealthy] = false. */
-public data class CheckResult(
-    val errorCount: Long,
-    val brokenPacks: List<String>,
-    val suggestRepairIndex: Boolean,
-    val suggestPrune: Boolean,
-    val errorMessages: List<String>,
-) {
-    public fun isHealthy(): Boolean = errorCount == 0L && errorMessages.isEmpty()
-}
+public data class CheckResult
+    @JvmOverloads
+    constructor(
+        val errorCount: Long,
+        val brokenPacks: List<String>,
+        val suggestRepairIndex: Boolean,
+        val suggestPrune: Boolean,
+        val errorMessages: List<String>,
+        /** Alle Zeilen der Standardausgabe in der Reihenfolge, in der restic sie schrieb. */
+        val outputLines: List<String> = emptyList(),
+        /** Alle Zeilen der Fehlerausgabe. */
+        val errorOutputLines: List<String> = emptyList(),
+    ) {
+        public fun isHealthy(): Boolean = errorCount == 0L && errorMessages.isEmpty()
+    }
 
 public enum class StatsMode(internal val cliValue: String) {
     RESTORE_SIZE("restore-size"),
@@ -114,30 +122,59 @@ public data class StatsResult(
     val compressionSpaceSaving: Double?,
 )
 
-internal class CheckAndStatsCommand(private val runner: ProcessRunner) {
-    fun check(options: CheckOptions): CheckResult {
-        var summary: com.fasterxml.jackson.databind.JsonNode? = null
-        val errorMessages = mutableListOf<String>()
-        val request = ProcessRequest(listOf("check", "--json") + options.arguments(), cancellation = options.cancellationToken)
-        val outcome =
-            runner.run(request) { line ->
-                if (line.isNotBlank()) {
-                    val node = Json.parse(line)
-                    when (node.messageType()) {
-                        "summary" -> summary = node
-                        "error" -> errorMessages += (node.get("error")?.get("message")?.asText() ?: node.text("message"))
-                    }
-                }
-            }
-        val checkSummary = summary
-        if (checkSummary == null) throw commandExceptionFor(outcome.exitCode, outcome.standardError)
+private class CheckCollector {
+    private var summary: JsonNode? = null
+    private val errorMessages = mutableListOf<String>()
+    private val outputLines = mutableListOf<String>()
+
+    fun accept(line: String) {
+        outputLines += line
+        val node = Json.parseOrNull(line) ?: return
+        when (node.messageType()) {
+            "summary" -> summary = node
+            "error" -> errorMessages += (node.get("error")?.get("message")?.asText() ?: node.text("message"))
+        }
+    }
+
+    fun resultOrThrow(
+        outcome: ProcessOutcome,
+        errorLines: List<String>,
+    ): CheckResult {
+        val checkSummary = summary ?: throw commandExceptionFor(outcome.exitCode, outcome.standardError)
         return CheckResult(
             errorCount = checkSummary.long("num_errors"),
             brokenPacks = checkSummary.textList("broken_packs"),
             suggestRepairIndex = checkSummary.booleanOrNull("suggest_repair_index") ?: false,
             suggestPrune = checkSummary.booleanOrNull("suggest_prune") ?: false,
             errorMessages = errorMessages,
+            outputLines = outputLines,
+            errorOutputLines = errorLines,
         )
+    }
+}
+
+internal class CheckAndStatsCommand(private val runner: ProcessRunner) {
+    fun check(
+        options: CheckOptions,
+        listener: OutputLineListener?,
+    ): CheckResult {
+        val collector = CheckCollector()
+        val errorLines = mutableListOf<String>()
+        val request =
+            ProcessRequest(
+                listOf("check", "--json") + options.arguments(),
+                cancellation = options.cancellationToken,
+                onStandardErrorLine = { line ->
+                    errorLines += line
+                    listener?.onErrorLine(line)
+                },
+            )
+        val outcome =
+            runner.run(request) { line ->
+                collector.accept(line)
+                listener?.onLine(line)
+            }
+        return collector.resultOrThrow(outcome, errorLines)
     }
 
     fun stats(options: StatsOptions): StatsResult {
@@ -163,11 +200,16 @@ internal class PruneCommand(private val runner: ProcessRunner) {
         listener: OutputLineListener?,
     ): PruneResult {
         val lines = mutableListOf<String>()
-        val request = ProcessRequest(listOf("prune") + options.arguments(), cancellation = options.cancellationToken)
+        val request =
+            ProcessRequest(
+                listOf("prune") + options.arguments(),
+                cancellation = options.cancellationToken,
+                onStandardErrorLine = { listener?.onErrorLine(it) },
+            )
         runner.runChecked(request) { line ->
             lines += line
             listener?.onLine(line)
         }
-        return PruneResult(lines)
+        return PruneSummaryParser.parse(lines)
     }
 }

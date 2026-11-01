@@ -110,9 +110,26 @@ public class PruneOptions private constructor(builder: Builder) {
     }
 }
 
-/** `restic prune` kennt kein JSON; die Textausgabe wird zeilenweise geliefert. */
-public data class PruneResult(val outputLines: List<String>)
+/**
+ * `restic prune` kennt kein JSON; die Kennzahlen werden aus der Textzusammenfassung gelesen und sind `null`,
+ * wenn restic sie nicht ausgibt (z.B. bei einem anderen Wortlaut künftiger Versionen). Größen stammen aus
+ * Angaben wie „1.234 KiB“ und sind daher auf die angezeigte Genauigkeit gerundet.
+ */
+public data class PruneResult
+    @JvmOverloads
+    constructor(
+        val outputLines: List<String>,
+        val packsToKeep: Int? = null,
+        val packsRepacked: Int? = null,
+        val packsDeleted: Int? = null,
+        val bytesFreed: Long? = null,
+    )
 
+/** Empfängt die Ausgabe eines Befehls zeilenweise, während er läuft. */
 public fun interface OutputLineListener {
+    /** Eine Zeile der Standardausgabe. */
     public fun onLine(line: String)
+
+    /** Eine Zeile der Fehlerausgabe; standardmäßig ignoriert. */
+    public fun onErrorLine(line: String) {}
 }
