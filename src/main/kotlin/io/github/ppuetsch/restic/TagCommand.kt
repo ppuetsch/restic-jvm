@@ -1,7 +1,9 @@
 package io.github.ppuetsch.restic
 
 /** Optionen für `restic tag`. Mindestens eine der Aktionen `add`, `remove` oder `set` ist nötig. */
-public class TagOptions private constructor(builder: Builder) {
+public class TagOptions private constructor(
+    builder: Builder,
+) {
     public val filter: SnapshotFilter = builder.filter.build()
     public val snapshotIds: List<String> = builder.snapshotIds.toList()
     public val addTagGroups: List<List<String>> = builder.addTagGroups.map { it.toList() }
@@ -61,7 +63,9 @@ public data class TagResult(
     val changedSnapshots: Long,
 )
 
-internal class TagCommand(private val runner: ProcessRunner) {
+internal class TagCommand(
+    private val runner: ProcessRunner,
+) {
     fun tag(options: TagOptions): TagResult {
         val changes = mutableListOf<TagChange>()
         var changedSnapshots = 0L

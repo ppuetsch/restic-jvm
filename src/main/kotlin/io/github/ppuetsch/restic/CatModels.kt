@@ -1,6 +1,6 @@
 package io.github.ppuetsch.restic
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import java.time.Instant
 
 public data class RepositoryConfig(
@@ -55,7 +55,9 @@ public data class TreeNode(
     val subtree: String?,
 )
 
-public data class TreeObject(val nodes: List<TreeNode>)
+public data class TreeObject(
+    val nodes: List<TreeNode>,
+)
 
 public data class IndexBlob(
     val id: String,
@@ -105,7 +107,7 @@ internal fun repositoryLockFrom(node: JsonNode) =
         gid = node.longOrNull("gid"),
     )
 
-internal fun treeObjectFrom(node: JsonNode) = TreeObject(node.get("nodes")?.map(::treeNodeFrom).orEmpty())
+internal fun treeObjectFrom(node: JsonNode) = TreeObject(node.get("nodes")?.mapElements(::treeNodeFrom).orEmpty())
 
 private fun treeNodeFrom(node: JsonNode) =
     TreeNode(
@@ -122,9 +124,10 @@ private fun treeNodeFrom(node: JsonNode) =
         subtree = node.textOrNull("subtree"),
     )
 
-internal fun indexObjectFrom(node: JsonNode) = IndexObject(node.textList("supersedes"), node.get("packs")?.map(::indexPackFrom).orEmpty())
+internal fun indexObjectFrom(node: JsonNode) =
+    IndexObject(node.textList("supersedes"), node.get("packs")?.mapElements(::indexPackFrom).orEmpty())
 
-private fun indexPackFrom(node: JsonNode) = IndexPack(node.text("id"), node.get("blobs")?.map(::indexBlobFrom).orEmpty())
+private fun indexPackFrom(node: JsonNode) = IndexPack(node.text("id"), node.get("blobs")?.mapElements(::indexBlobFrom).orEmpty())
 
 private fun indexBlobFrom(node: JsonNode) =
     IndexBlob(node.text("id"), node.text("type"), node.long("offset"), node.long("length"), node.longOrNull("uncompressed_length"))

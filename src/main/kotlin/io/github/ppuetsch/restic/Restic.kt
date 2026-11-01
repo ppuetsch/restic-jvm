@@ -1,12 +1,15 @@
 package io.github.ppuetsch.restic
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.file.Path
 
 /** Einstiegspunkt: eine Instanz pro Repository-Konfiguration; thread-safe, da zustandslos. */
-public class Restic(public val configuration: ResticConfiguration) {
+@Suppress("TooManyFunctions") // Fassade mit einer Methode je restic-Befehl; die Logik liegt in den *Command-Klassen
+public class Restic(
+    public val configuration: ResticConfiguration,
+) {
     private val runner = ProcessRunner(configuration)
     private val backupCommand = BackupCommand(runner)
     private val restoreCommand = RestoreCommand(runner)
@@ -348,14 +351,14 @@ public class Restic(public val configuration: ResticConfiguration) {
         ListCommand(runner.cancellableBy(cancellationToken)).listBlobs()
 
     @JvmOverloads
-    public fun listKeys(cancellationToken: CancellationToken? = null): List<KeyInfo> = admin(cancellationToken).listKeys()
+    public fun listKeys(cancellationToken: CancellationToken? = null): List<KeyInfo> = keys(cancellationToken).listKeys()
 
     /** Fügt dem Repository einen weiteren Schlüssel (Passwort) hinzu. */
     @JvmOverloads
     public fun addKey(
         options: NewKeyOptions = NewKeyOptions.DEFAULT,
         cancellationToken: CancellationToken? = null,
-    ): KeyAddResult = admin(cancellationToken).addKey(options)
+    ): KeyAddResult = keys(cancellationToken).addKey(options)
 
     @JvmSynthetic
     public fun addKey(configure: NewKeyOptions.Builder.() -> Unit): KeyAddResult = addKey(NewKeyOptions.builder().apply(configure).build())
@@ -365,7 +368,7 @@ public class Restic(public val configuration: ResticConfiguration) {
     public fun changePassword(
         options: NewKeyOptions = NewKeyOptions.DEFAULT,
         cancellationToken: CancellationToken? = null,
-    ): CommandOutput = admin(cancellationToken).changePassword(options)
+    ): CommandOutput = keys(cancellationToken).changePassword(options)
 
     @JvmSynthetic
     public fun changePassword(configure: NewKeyOptions.Builder.() -> Unit): CommandOutput =
@@ -375,7 +378,7 @@ public class Restic(public val configuration: ResticConfiguration) {
     public fun removeKey(
         keyId: String,
         cancellationToken: CancellationToken? = null,
-    ): CommandOutput = admin(cancellationToken).removeKey(keyId)
+    ): CommandOutput = keys(cancellationToken).removeKey(keyId)
 
     /** Entfernt veraltete Sperren; mit `removeAll` auch aktive. */
     @JvmOverloads
@@ -487,6 +490,8 @@ public class Restic(public val configuration: ResticConfiguration) {
 
     private fun admin(cancellationToken: CancellationToken?): AdminCommands = AdminCommands(runner.cancellableBy(cancellationToken))
 
+    private fun keys(cancellationToken: CancellationToken?): KeyCommands = KeyCommands(runner.cancellableBy(cancellationToken))
+
     private fun tools(cancellationToken: CancellationToken?): ToolCommands = ToolCommands(runner.cancellableBy(cancellationToken))
 
     private fun catJson(
@@ -501,9 +506,10 @@ public class Restic(public val configuration: ResticConfiguration) {
         cancellationToken: CancellationToken? = null,
     ): JsonNode {
         var lastLine = ""
-        runner.cancellableBy(
-            cancellationToken,
-        ).runChecked(ProcessRequest(arguments, environment)) { line -> if (line.isNotBlank()) lastLine = line }
+        runner
+            .cancellableBy(
+                cancellationToken,
+            ).runChecked(ProcessRequest(arguments, environment)) { line -> if (line.isNotBlank()) lastLine = line }
         return Json.parse(lastLine)
     }
 

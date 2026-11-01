@@ -12,7 +12,10 @@ private val IS_WINDOWS: Boolean = System.getProperty("os.name").startsWith("Wind
 private val PID_POLL_INTERVAL: Duration = Duration.ofMillis(100)
 
 /** Ein scriptbares Ersatzprogramm für restic, siehe `FakeRestic.java` für die Anweisungen. */
-internal class FakeRestic(private val directory: Path, vararg scenario: String) {
+internal class FakeRestic(
+    private val directory: Path,
+    vararg scenario: String,
+) {
     private val source: Path = directory.resolve("FakeRestic.java")
     private val scenarioFile: Path = directory.resolve("scenario.txt")
     private val launcher: Path = directory.resolve(if (IS_WINDOWS) "fake-restic.cmd" else "fake-restic.sh")
@@ -25,7 +28,8 @@ internal class FakeRestic(private val directory: Path, vararg scenario: String) 
 
     fun restic(configure: ResticConfiguration.Builder.() -> Unit = {}): Restic =
         Restic(
-            ResticConfiguration.builder()
+            ResticConfiguration
+                .builder()
                 .binary(launcher.toString())
                 .environment("FAKE_RESTIC_SCENARIO", scenarioFile.toString())
                 .environment("FAKE_RESTIC_SOURCE", source.toString())

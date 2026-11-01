@@ -39,9 +39,12 @@ class RestoreDumpCatTest {
     private fun sourceSpec(): String = "latest:" + snapshotPathOf("source")
 
     private fun snapshotPathOf(name: String): String =
-        restic.listNodes("latest", LsOptions.builder().recursive().build()).nodes.first {
-            it.name == name
-        }.path
+        restic
+            .listNodes("latest", LsOptions.builder().recursive().build())
+            .nodes
+            .first {
+                it.name == name
+            }.path
 
     @Test
     fun `restore writes all files with their content`() {
@@ -177,7 +180,12 @@ class RestoreDumpCatTest {
     @Test
     fun `dump to a target file with host path and tag filters`() {
         val out = temporaryDirectory.resolve("dumped.txt")
-        val options = DumpOptions.builder().host(restic.snapshots().single().hostname).path(fixture.source.toString()).build()
+        val options =
+            DumpOptions
+                .builder()
+                .host(restic.snapshots().single().hostname)
+                .path(fixture.source.toString())
+                .build()
         restic.dumpToFile("latest", snapshotPathOf("a.txt"), out, options)
         assertEquals("hello", out.readText())
     }

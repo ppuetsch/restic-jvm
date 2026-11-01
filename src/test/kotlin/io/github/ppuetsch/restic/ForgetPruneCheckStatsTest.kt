@@ -39,8 +39,18 @@ class ForgetPruneCheckStatsTest {
                 dryRun()
             }
         assertEquals(2, result.removedSnapshots().size)
-        assertEquals(1, result.groups.single().keep.size)
-        assertTrue(result.groups.single().reasons.isNotEmpty())
+        assertEquals(
+            1,
+            result.groups
+                .single()
+                .keep.size,
+        )
+        assertTrue(
+            result.groups
+                .single()
+                .reasons
+                .isNotEmpty(),
+        )
         assertEquals(3, restic.snapshots().size)
     }
 
@@ -145,7 +155,17 @@ class ForgetPruneCheckStatsTest {
     @Test
     fun `forget with prune returns the prune output`() {
         val lines = mutableListOf<String>()
-        val result = restic.forget(ForgetOptions.builder().keepLast(1).prune().maxUnused("0").repackSmall().build(), lines::add)
+        val result =
+            restic.forget(
+                ForgetOptions
+                    .builder()
+                    .keepLast(1)
+                    .prune()
+                    .maxUnused("0")
+                    .repackSmall()
+                    .build(),
+                lines::add,
+            )
         assertEquals(2, result.removedSnapshots().size)
         assertTrue(result.pruneOutputLines.isNotEmpty())
         assertEquals(result.pruneOutputLines, lines)
@@ -160,7 +180,14 @@ class ForgetPruneCheckStatsTest {
                 "out [0:00] 100.00%  3 / 3 snapshots",
             )
 
-        val result = fake.restic().forget(ForgetOptions.builder().keepLast(1).prune().build())
+        val result =
+            fake.restic().forget(
+                ForgetOptions
+                    .builder()
+                    .keepLast(1)
+                    .prune()
+                    .build(),
+            )
 
         assertEquals(listOf("[0:00] 100.00%  3 / 3 snapshots"), result.pruneOutputLines)
     }
@@ -190,7 +217,16 @@ class ForgetPruneCheckStatsTest {
     fun `prune dry run and tuning flags`() {
         restic.forget { keepLast(1) }
         val lines = mutableListOf<String>()
-        restic.prune(PruneOptions.builder().dryRun().maxUnused("5%").maxRepackSize("10M").repackSmall().build(), lines::add)
+        restic.prune(
+            PruneOptions
+                .builder()
+                .dryRun()
+                .maxUnused("5%")
+                .maxRepackSize("10M")
+                .repackSmall()
+                .build(),
+            lines::add,
+        )
         assertTrue(lines.isNotEmpty())
         restic.prune {
             repackCacheableOnly()
@@ -255,10 +291,11 @@ class ForgetPruneCheckStatsTest {
         assertEquals(1, restic.stats { tag("new") }.snapshotsCount)
         assertEquals(
             3,
-            restic.stats {
-                host(first.hostname)
-                path(fixture.source.toString())
-            }.snapshotsCount,
+            restic
+                .stats {
+                    host(first.hostname)
+                    path(fixture.source.toString())
+                }.snapshotsCount,
         )
     }
 }

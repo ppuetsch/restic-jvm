@@ -20,7 +20,8 @@ class ProcessRunnerTest {
         password: String = "secret",
     ): ProcessRunner =
         ProcessRunner(
-            ResticConfiguration.builder()
+            ResticConfiguration
+                .builder()
                 .binary(resticBinary)
                 .repository(temporaryDirectory.resolve(repositoryName).toString())
                 .password(password)
@@ -63,7 +64,12 @@ class ProcessRunnerTest {
         val hangingProgram = temporaryDirectory.resolve("Hang.java")
         hangingProgram.writeText("public class Hang { public static void main(String[] a) throws Exception { Thread.sleep(60000); } }")
         val javaLauncher = Path.of(System.getProperty("java.home"), "bin", "java").toString()
-        val configuration = ResticConfiguration.builder().binary(javaLauncher).timeout(Duration.ofSeconds(2)).build()
+        val configuration =
+            ResticConfiguration
+                .builder()
+                .binary(javaLauncher)
+                .timeout(Duration.ofSeconds(2))
+                .build()
         assertThrows<ResticTimeoutException> { ProcessRunner(configuration).run(listOf(hangingProgram.toString())) }
     }
 }

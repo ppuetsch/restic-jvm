@@ -61,17 +61,19 @@ class SnapshotsLsFindTest {
         assertEquals(0, restic.snapshots { tag("weekly", "daily") }.size)
         assertEquals(
             3,
-            restic.snapshots {
-                tag("weekly")
-                tag("daily")
-            }.size,
+            restic
+                .snapshots {
+                    tag("weekly")
+                    tag("daily")
+                }.size,
         )
         assertEquals(
             1,
-            restic.snapshots {
-                host("beta")
-                latest(1)
-            }.size,
+            restic
+                .snapshots {
+                    host("beta")
+                    latest(1)
+                }.size,
         )
         assertEquals(3, restic.snapshots { path(fixture.source.toString()) }.size)
         assertEquals(0, restic.snapshots { path("/gibt/es/nicht") }.size)
@@ -105,7 +107,11 @@ class SnapshotsLsFindTest {
     fun `ls recursive lists every entry`() {
         fixture.backup()
         val result = restic.listNodes(Restic.LATEST, LsOptions.builder().recursive().build())
-        val files = result.nodes.filter { it.isFile() }.map { it.name }.toSet()
+        val files =
+            result.nodes
+                .filter { it.isFile() }
+                .map { it.name }
+                .toSet()
         assertEquals(setOf("a.txt", "debug.log", "b.txt"), files)
         assertTrue(result.nodes.any { it.isDirectory() && it.name == "sub" })
         assertEquals(5L, result.nodes.first { it.name == "a.txt" }.size)
@@ -124,13 +130,39 @@ class SnapshotsLsFindTest {
     @Test
     fun `ls restricted to a directory sorted and reversed`() {
         fixture.backup()
-        val directory = restic.listNodes("latest", LsOptions.builder().recursive().build()).nodes.first { it.name == "sub" }.path
+        val directory =
+            restic
+                .listNodes("latest", LsOptions.builder().recursive().build())
+                .nodes
+                .first { it.name == "sub" }
+                .path
         val inside = restic.listNodes("latest", LsOptions.builder().directory(directory).build()).nodes
         assertEquals(listOf("sub", "b.txt"), inside.map { it.name })
 
-        val bySize = restic.listNodes("latest", LsOptions.builder().recursive().sort(LsSort.SIZE).build()).nodes.filter { it.isFile() }
+        val bySize =
+            restic
+                .listNodes(
+                    "latest",
+                    LsOptions
+                        .builder()
+                        .recursive()
+                        .sort(LsSort.SIZE)
+                        .build(),
+                ).nodes
+                .filter { it.isFile() }
         assertEquals(bySize.sortedBy { it.size }.map { it.name }, bySize.map { it.name })
-        val reversed = restic.listNodes("latest", LsOptions.builder().recursive().reverse().long().humanReadable().build()).nodes
+        val reversed =
+            restic
+                .listNodes(
+                    "latest",
+                    LsOptions
+                        .builder()
+                        .recursive()
+                        .reverse()
+                        .long()
+                        .humanReadable()
+                        .build(),
+                ).nodes
         assertTrue(reversed.isNotEmpty())
     }
 
@@ -183,9 +215,16 @@ class SnapshotsLsFindTest {
             tag("x")
         }
         val options =
-            FindOptions.builder().host(
-                "alpha",
-            ).tag("x").path(fixture.source.toString()).newest("2999-01-01").oldest("2000-01-01").reverse().build()
+            FindOptions
+                .builder()
+                .host(
+                    "alpha",
+                ).tag("x")
+                .path(fixture.source.toString())
+                .newest("2999-01-01")
+                .oldest("2000-01-01")
+                .reverse()
+                .build()
         assertEquals(1, restic.find(listOf("a.txt"), options).size)
         assertEquals(0, restic.find(listOf("a.txt"), FindOptions.builder().host("nobody").build()).size)
     }
@@ -199,7 +238,13 @@ class SnapshotsLsFindTest {
         val blobId = listBlobIds("data").first()
         val blobs = restic.findObjects(FindObjectKind.BLOB, listOf(blobId))
         assertEquals(blobId, blobs.first().id)
-        assertTrue(blobs.first().path.orEmpty().isNotEmpty())
+        assertTrue(
+            blobs
+                .first()
+                .path
+                .orEmpty()
+                .isNotEmpty(),
+        )
     }
 
     private fun listBlobIds(type: String): List<String> {

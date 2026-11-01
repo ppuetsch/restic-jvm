@@ -1,9 +1,11 @@
 package io.github.ppuetsch.restic
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 
 /** Optionen für `restic check`. */
-public class CheckOptions private constructor(builder: Builder) {
+public class CheckOptions private constructor(
+    builder: Builder,
+) {
     public val readData: Boolean = builder.readData
     public val readDataSubset: String? = builder.readDataSubset
     public val withCache: Boolean = builder.withCache
@@ -55,13 +57,19 @@ public sealed interface CheckMessage {
         val suggestPrune: Boolean,
     ) : CheckMessage
 
-    public data class Error(val message: String) : CheckMessage
+    public data class Error(
+        val message: String,
+    ) : CheckMessage
 
     /** Eine Zeile, die kein JSON war. */
-    public data class Text(val line: String) : CheckMessage
+    public data class Text(
+        val line: String,
+    ) : CheckMessage
 
     /** Ein JSON-Objekt mit einem Meldungstyp, den die Library nicht kennt. */
-    public data class Other(val messageType: String) : CheckMessage
+    public data class Other(
+        val messageType: String,
+    ) : CheckMessage
 }
 
 /** Ergebnis von `check`: Ein Repository mit Fehlern führt nicht zu einer Exception, sondern zu [isHealthy] = false. */
@@ -83,7 +91,9 @@ public data class CheckResult
         public fun isHealthy(): Boolean = errorCount == 0L && errorMessages.isEmpty()
     }
 
-public enum class StatsMode(internal val cliValue: String) {
+public enum class StatsMode(
+    internal val cliValue: String,
+) {
     RESTORE_SIZE("restore-size"),
     FILES_BY_CONTENTS("files-by-contents"),
     BLOBS_PER_FILE("blobs-per-file"),
@@ -91,7 +101,9 @@ public enum class StatsMode(internal val cliValue: String) {
 }
 
 /** Optionen für `restic stats`. */
-public class StatsOptions private constructor(builder: Builder) {
+public class StatsOptions private constructor(
+    builder: Builder,
+) {
     public val cancellationToken: CancellationToken? = builder.cancellationToken
     public val filter: SnapshotFilter = builder.filter.build()
     public val mode: StatsMode? = builder.mode
@@ -181,15 +193,22 @@ private class CheckCollector {
 private fun checkMessageFrom(line: String): CheckMessage {
     val node = Json.parseOrNull(line)?.takeIf(JsonNode::isObject) ?: return CheckMessage.Text(line)
     return when (val type = node.messageType()) {
-        "summary" ->
+        "summary" -> {
             CheckMessage.Summary(
                 errorCount = node.long("num_errors"),
                 brokenPacks = node.textList("broken_packs"),
                 suggestRepairIndex = node.booleanOrNull("suggest_repair_index") ?: false,
                 suggestPrune = node.booleanOrNull("suggest_prune") ?: false,
             )
-        "error" -> CheckMessage.Error(node.get("error")?.get("message")?.asText() ?: node.text("message"))
-        else -> CheckMessage.Other(type.orEmpty())
+        }
+
+        "error" -> {
+            CheckMessage.Error(node.get("error")?.get("message")?.asString() ?: node.text("message"))
+        }
+
+        else -> {
+            CheckMessage.Other(type.orEmpty())
+        }
     }
 }
 
@@ -201,7 +220,9 @@ private fun CheckMessage.readableLine(): String =
         is CheckMessage.Other -> "check message: $messageType"
     }
 
-internal class CheckAndStatsCommand(private val runner: ProcessRunner) {
+internal class CheckAndStatsCommand(
+    private val runner: ProcessRunner,
+) {
     fun check(
         options: CheckOptions,
         listener: OutputLineListener?,
@@ -241,7 +262,9 @@ internal class CheckAndStatsCommand(private val runner: ProcessRunner) {
     }
 }
 
-internal class PruneCommand(private val runner: ProcessRunner) {
+internal class PruneCommand(
+    private val runner: ProcessRunner,
+) {
     fun prune(
         options: PruneOptions,
         listener: OutputLineListener?,

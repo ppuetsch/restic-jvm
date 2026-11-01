@@ -5,7 +5,9 @@ package io.github.ppuetsch.restic
  * Mehrere Hosts oder Pfade sind eine ODER-Auswahl; innerhalb einer Tag-Gruppe müssen alle Tags zutreffen,
  * mehrere Tag-Gruppen sind ODER-verknüpft.
  */
-public class SnapshotFilter private constructor(builder: Builder) {
+public class SnapshotFilter private constructor(
+    builder: Builder,
+) {
     public val hosts: List<String> = builder.hosts.toList()
     public val paths: List<String> = builder.paths.toList()
     public val tagGroups: List<List<String>> = builder.tagGroups.map { it.toList() }

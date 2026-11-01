@@ -1,9 +1,11 @@
 package io.github.ppuetsch.restic
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import java.nio.file.Path
 
-public enum class OverwriteBehavior(internal val cliValue: String) {
+public enum class OverwriteBehavior(
+    internal val cliValue: String,
+) {
     ALWAYS("always"),
     IF_CHANGED("if-changed"),
     IF_NEWER("if-newer"),
@@ -11,7 +13,9 @@ public enum class OverwriteBehavior(internal val cliValue: String) {
 }
 
 /** Optionen für `restic restore`. */
-public class RestoreOptions private constructor(builder: Builder) {
+public class RestoreOptions private constructor(
+    builder: Builder,
+) {
     public val filter: SnapshotFilter = builder.filter.build()
     public val delete: Boolean = builder.delete
     public val dryRun: Boolean = builder.dryRun
@@ -52,6 +56,7 @@ public class RestoreOptions private constructor(builder: Builder) {
             repeat(verbosity) { add("--verbose") }
         }
 
+    @Suppress("TooManyFunctions") // eine Methode je restic-Flag; das Builder-API bildet die CLI vollständig ab
     public class Builder internal constructor() {
         internal val filter: SnapshotFilter.Builder = SnapshotFilter.builder()
         internal var delete: Boolean = false
@@ -134,7 +139,7 @@ public class RestoreOptions private constructor(builder: Builder) {
     }
 }
 
-public sealed class RestoreEvent {
+public sealed interface RestoreEvent {
     public data class Status(
         val percentDone: Double,
         val totalFiles: Long,
@@ -143,21 +148,26 @@ public sealed class RestoreEvent {
         val totalBytes: Long,
         val bytesRestored: Long,
         val bytesSkipped: Long,
-    ) : RestoreEvent()
+    ) : RestoreEvent
 
     public data class FileAction(
         val action: String,
         val item: String?,
         val size: Long?,
-    ) : RestoreEvent()
+    ) : RestoreEvent
 
     public data class Error(
         val item: String?,
         val during: String?,
         val message: String,
-    ) : RestoreEvent()
+    ) : RestoreEvent {
+        /** Die Meldung als eine Zeile `pfad: meldung`, wie sie auch Listener und Fehlermeldungen anderer Befehle zeigen. */
+        public fun readable(): String = readableError(item, message)
+    }
 
-    public data class Summary(val summary: RestoreSummary) : RestoreEvent()
+    public data class Summary(
+        val summary: RestoreSummary,
+    ) : RestoreEvent
 }
 
 public data class RestoreSummary(
@@ -176,7 +186,7 @@ public fun interface RestoreListener {
 
 private fun restoreEventFrom(node: JsonNode): RestoreEvent? =
     when (node.messageType()) {
-        "status" ->
+        "status" -> {
             RestoreEvent.Status(
                 percentDone = node.doubleOrNull("percent_done") ?: 0.0,
                 totalFiles = node.long("total_files"),
@@ -186,14 +196,21 @@ private fun restoreEventFrom(node: JsonNode): RestoreEvent? =
                 bytesRestored = node.long("bytes_restored"),
                 bytesSkipped = node.long("bytes_skipped"),
             )
-        "verbose_status" -> RestoreEvent.FileAction(node.text("action"), node.textOrNull("item"), node.longOrNull("size"))
-        "error" ->
+        }
+
+        "verbose_status" -> {
+            RestoreEvent.FileAction(node.text("action"), node.textOrNull("item"), node.longOrNull("size"))
+        }
+
+        "error" -> {
             RestoreEvent.Error(
-                node.get("error")?.get("item")?.asText() ?: node.textOrNull("item"),
+                node.get("error")?.get("item")?.asString() ?: node.textOrNull("item"),
                 node.textOrNull("during"),
-                node.get("error")?.get("message")?.asText() ?: node.text("message"),
+                node.get("error")?.get("message")?.asString() ?: node.text("message"),
             )
-        "summary" ->
+        }
+
+        "summary" -> {
             RestoreEvent.Summary(
                 RestoreSummary(
                     totalFiles = node.long("total_files"),
@@ -205,10 +222,16 @@ private fun restoreEventFrom(node: JsonNode): RestoreEvent? =
                     bytesSkipped = node.long("bytes_skipped"),
                 ),
             )
-        else -> null
+        }
+
+        else -> {
+            null
+        }
     }
 
-internal class RestoreCommand(private val runner: ProcessRunner) {
+internal class RestoreCommand(
+    private val runner: ProcessRunner,
+) {
     fun restore(
         snapshotId: String,
         target: Path,

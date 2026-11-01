@@ -33,7 +33,12 @@ class DiffTagRewriteCopyListTest {
     }
 
     private fun namesIn(snapshotId: String): Set<String> =
-        restic.listNodes(snapshotId, LsOptions.builder().recursive().build()).nodes.filter { it.isFile() }.map { it.name }.toSet()
+        restic
+            .listNodes(snapshotId, LsOptions.builder().recursive().build())
+            .nodes
+            .filter { it.isFile() }
+            .map { it.name }
+            .toSet()
 
     @Test
     fun `diff reports modified added and removed entries`() {
@@ -69,13 +74,27 @@ class DiffTagRewriteCopyListTest {
             }
         assertEquals(1, added.changedSnapshots)
         assertEquals(id, added.changes.single().oldSnapshotId)
-        assertEquals(listOf("one", "three", "two"), restic.snapshots().single().tags.sorted())
+        assertEquals(
+            listOf("one", "three", "two"),
+            restic
+                .snapshots()
+                .single()
+                .tags
+                .sorted(),
+        )
 
         restic.tag {
             remove("one")
             snapshotId(restic.snapshots().single().id)
         }
-        assertEquals(listOf("three", "two"), restic.snapshots().single().tags.sorted())
+        assertEquals(
+            listOf("three", "two"),
+            restic
+                .snapshots()
+                .single()
+                .tags
+                .sorted(),
+        )
 
         restic.tag {
             set("only")
@@ -96,11 +115,30 @@ class DiffTagRewriteCopyListTest {
         }
         val result =
             restic.tag(
-                TagOptions.builder().host("beta").tag("b").path(fixture.source.toString()).add("marked").build(),
+                TagOptions
+                    .builder()
+                    .host("beta")
+                    .tag("b")
+                    .path(fixture.source.toString())
+                    .add("marked")
+                    .build(),
             )
         assertEquals(1, result.changedSnapshots)
-        assertEquals(listOf("marked"), restic.snapshots { host("beta") }.single().tags.filter { it == "marked" })
-        assertFalse(restic.snapshots { host("alpha") }.single().tags.contains("marked"))
+        assertEquals(
+            listOf("marked"),
+            restic
+                .snapshots { host("beta") }
+                .single()
+                .tags
+                .filter { it == "marked" },
+        )
+        assertFalse(
+            restic
+                .snapshots { host("alpha") }
+                .single()
+                .tags
+                .contains("marked"),
+        )
     }
 
     @Test
@@ -122,7 +160,15 @@ class DiffTagRewriteCopyListTest {
     fun `rewrite dry run changes nothing`() {
         val id = fixture.backup().snapshotId.orEmpty()
         val lines = mutableListOf<String>()
-        restic.rewrite(RewriteOptions.builder().dryRun().exclude("*.txt").snapshotId(id).build(), lines::add)
+        restic.rewrite(
+            RewriteOptions
+                .builder()
+                .dryRun()
+                .exclude("*.txt")
+                .snapshotId(id)
+                .build(),
+            lines::add,
+        )
         assertTrue(lines.any { it.contains("would") }, lines.toString())
         assertEquals(listOf(id), restic.snapshots().map { it.id })
     }
@@ -218,7 +264,8 @@ class DiffTagRewriteCopyListTest {
         val target = secondRepository()
         val lines = mutableListOf<String>()
         target.copy(
-            CopyOptions.builder()
+            CopyOptions
+                .builder()
                 .fromRepositoryFile(repositoryFile)
                 .fromPasswordCommand("echo $TEST_PASSWORD")
                 .host("alpha")
@@ -236,9 +283,13 @@ class DiffTagRewriteCopyListTest {
         val insecureSource = temporaryDirectory.resolve("insecure-source")
         val insecure =
             Restic(
-                ResticConfiguration.builder().binary(
-                    resticBinaryForTests,
-                ).repository(insecureSource.toString()).insecureNoPassword().build(),
+                ResticConfiguration
+                    .builder()
+                    .binary(
+                        resticBinaryForTests,
+                    ).repository(insecureSource.toString())
+                    .insecureNoPassword()
+                    .build(),
             )
         insecure.init()
         insecure.backup(listOf(fixture.source))

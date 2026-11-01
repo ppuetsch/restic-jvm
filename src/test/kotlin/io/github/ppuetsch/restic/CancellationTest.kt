@@ -30,15 +30,17 @@ class CancellationTest {
     private fun hangingScenario(directory: Path): Array<String> =
         arrayOf("self ${directory.resolve("restic.pid")}", "child ${directory.resolve("child.pid")}", "sleep")
 
-    private fun allCommands(): Map<String, CancellableCommand> =
+    private fun allCommands(): Map<String, CancellableCommand> = readingCommands() + maintenanceCommands() + administrationCommands()
+
+    private fun readingCommands(): Map<String, CancellableCommand> =
         mapOf(
             "version" to { restic, token, _ -> restic.version(token) },
             "init" to { restic, token, _ -> restic.init(cancellationToken = token) },
             "backup" to { restic, token, directory -> restic.backup(listOf(directory), backupOptions(token)) },
             "backupStandardInput" to {
-                    restic,
-                    token,
-                    _,
+                restic,
+                token,
+                _,
                 ->
                 restic.backupStandardInput(ByteArrayInputStream(ByteArray(1)), backupOptions(token))
             },
@@ -50,17 +52,17 @@ class CancellationTest {
             "find" to { restic, token, _ -> restic.find(listOf("*.txt"), FindOptions.DEFAULT, token) },
             "findObjects" to { restic, token, _ -> restic.findObjects(FindObjectKind.BLOB, listOf("abc"), FindOptions.DEFAULT, token) },
             "restore" to {
-                    restic,
-                    token,
-                    directory,
+                restic,
+                token,
+                directory,
                 ->
                 restic.restore(Restic.LATEST, directory, RestoreOptions.builder().cancellationToken(token).build())
             },
             "dump" to { restic, token, _ -> restic.dump(Restic.LATEST, "/a", ByteArrayOutputStream(), DumpOptions.DEFAULT, token) },
             "dumpToFile" to {
-                    restic,
-                    token,
-                    directory,
+                restic,
+                token,
+                directory,
                 ->
                 restic.dumpToFile(Restic.LATEST, "/a", directory.resolve("out"), DumpOptions.DEFAULT, token)
             },
@@ -73,7 +75,19 @@ class CancellationTest {
             "catLock" to { restic, token, _ -> restic.catLock("abc", token) },
             "catTree" to { restic, token, _ -> restic.catTree("abc", token) },
             "catIndex" to { restic, token, _ -> restic.catIndex("abc", token) },
-            "forget" to { restic, token, _ -> restic.forget(ForgetOptions.builder().keepLast(1).cancellationToken(token).build()) },
+        )
+
+    private fun maintenanceCommands(): Map<String, CancellableCommand> =
+        mapOf(
+            "forget" to { restic, token, _ ->
+                restic.forget(
+                    ForgetOptions
+                        .builder()
+                        .keepLast(1)
+                        .cancellationToken(token)
+                        .build(),
+                )
+            },
             "prune" to { restic, token, _ -> restic.prune(PruneOptions.builder().cancellationToken(token).build()) },
             "check" to { restic, token, _ -> restic.check(CheckOptions.builder().cancellationToken(token).build()) },
             "stats" to { restic, token, _ -> restic.stats(cancellationToken = token) },
@@ -81,7 +95,19 @@ class CancellationTest {
             "diffAll" to { restic, token, _ -> restic.diffAll("a", "b", DiffOptions.builder().cancellationToken(token).build()) },
             "tag" to { restic, token, _ -> restic.tag(TagOptions.builder().add("x").build(), token) },
             "rewrite" to { restic, token, _ -> restic.rewrite(RewriteOptions.builder().cancellationToken(token).build()) },
-            "copy" to { restic, token, _ -> restic.copy(CopyOptions.builder().fromRepository("other").cancellationToken(token).build()) },
+            "copy" to { restic, token, _ ->
+                restic.copy(
+                    CopyOptions
+                        .builder()
+                        .fromRepository("other")
+                        .cancellationToken(token)
+                        .build(),
+                )
+            },
+        )
+
+    private fun administrationCommands(): Map<String, CancellableCommand> =
+        mapOf(
             "list" to { restic, token, _ -> restic.list(ListObjectType.SNAPSHOTS, token) },
             "listBlobs" to { restic, token, _ -> restic.listBlobs(token) },
             "listKeys" to { restic, token, _ -> restic.listKeys(token) },

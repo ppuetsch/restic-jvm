@@ -1,11 +1,11 @@
 package io.github.ppuetsch.restic
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import java.time.Duration
 import java.time.Instant
 
 /** Ereignisse, die `restic backup --json` während des Laufs meldet. */
-public sealed class BackupEvent {
+public sealed interface BackupEvent {
     public data class Status(
         val percentDone: Double,
         val totalFiles: Long,
@@ -14,7 +14,7 @@ public sealed class BackupEvent {
         val bytesDone: Long,
         val errorCount: Long,
         val currentFiles: List<String>,
-    ) : BackupEvent()
+    ) : BackupEvent
 
     /** Nur mit `verbose`: was mit einer einzelnen Datei oder Verzeichnis passiert ist. */
     public data class FileAction(
@@ -22,15 +22,20 @@ public sealed class BackupEvent {
         val item: String?,
         val dataSize: Long,
         val dataSizeInRepository: Long,
-    ) : BackupEvent()
+    ) : BackupEvent
 
     public data class Error(
         val item: String?,
         val during: String?,
         val message: String,
-    ) : BackupEvent()
+    ) : BackupEvent {
+        /** Die Meldung als eine Zeile `pfad: meldung`, wie sie auch Listener und Fehlermeldungen anderer Befehle zeigen. */
+        public fun readable(): String = readableError(item, message)
+    }
 
-    public data class Summary(val summary: BackupSummary) : BackupEvent()
+    public data class Summary(
+        val summary: BackupSummary,
+    ) : BackupEvent
 }
 
 public data class BackupSummary(
@@ -95,9 +100,9 @@ private fun fileActionFrom(node: JsonNode) =
 
 private fun errorFrom(node: JsonNode) =
     BackupEvent.Error(
-        item = node.get("error")?.get("item")?.asText() ?: node.textOrNull("item"),
+        item = node.get("error")?.get("item")?.asString() ?: node.textOrNull("item"),
         during = node.textOrNull("during"),
-        message = node.get("error")?.get("message")?.asText() ?: node.text("message"),
+        message = node.get("error")?.get("message")?.asString() ?: node.text("message"),
     )
 
 private fun summaryFrom(node: JsonNode) =

@@ -1,15 +1,19 @@
 plugins {
-    kotlin("jvm") version "2.3.0"
+    kotlin("jvm") version "2.4.21"
     `java-library`
     `maven-publish`
     signing
-    id("org.jlleitschuh.gradle.ktlint") version "12.1.2"
-    id("org.jetbrains.dokka") version "2.1.0"
-    id("org.jetbrains.dokka-javadoc") version "2.1.0"
+    id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
+    id("org.jetbrains.dokka") version "2.2.0"
+    id("org.jetbrains.dokka-javadoc") version "2.2.0"
+    id("dev.detekt") version "2.0.0-alpha.6"
+    id("org.owasp.dependencycheck") version "13.0.0"
+    id("org.sonarqube") version "7.5.0.8588"
+    jacoco
 }
 
 group = "io.github.ppuetsch"
-version = "0.5.0"
+version = "0.6.0"
 
 val repositoryUrl = "https://github.com/ppuetsch/restic-jvm"
 
@@ -18,11 +22,42 @@ repositories {
 }
 
 dependencies {
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
+    implementation("tools.jackson.core:jackson-databind:3.2.4")
 
-    testImplementation(platform("org.junit:junit-bom:5.11.4"))
+    testImplementation(platform("org.junit:junit-bom:6.1.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+ktlint {
+    version.set("1.8.0")
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(files("config/detekt/detekt.yml"))
+    parallel = true
+}
+
+jacoco {
+    toolVersion = "0.8.16"
+}
+
+dependencyCheck {
+    failBuildOnCVSS = 7.0f
+    formats = listOf("HTML", "SARIF")
+    scanConfigurations = listOf("runtimeClasspath")
+    nvd.apiKey = providers.environmentVariable("NVD_API_KEY").orNull
+    analyzers.ossIndex.enabled = false
+}
+
+sonar {
+    properties {
+        property("sonar.projectKey", "ppuetsch_restic-jvm")
+        property("sonar.organization", "ppuetsch")
+        property("sonar.host.url", "https://sonarcloud.io")
+        property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
+    }
 }
 
 kotlin {
@@ -34,10 +69,11 @@ java {
     withSourcesJar()
 }
 
-val javadocJar by tasks.registering(Jar::class) {
-    archiveClassifier.set("javadoc")
-    from(tasks.named("dokkaGeneratePublicationJavadoc"))
-}
+val javadocJar =
+    tasks.register<Jar>("javadocJar") {
+        archiveClassifier.set("javadoc")
+        from(tasks.named("dokkaGeneratePublicationJavadoc"))
+    }
 
 tasks.jar {
     manifest {
@@ -47,10 +83,24 @@ tasks.jar {
 
 tasks.test {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
     testLogging {
         events("passed", "failed", "skipped")
         showStandardStreams = false
     }
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+}
+
+// detektMain und detektTest analysieren mit Typauflösung; das einfache `detekt` sähe weniger.
+tasks.named("check") {
+    dependsOn("detektMain", "detektTest")
 }
 
 tasks.register("printVersion") {

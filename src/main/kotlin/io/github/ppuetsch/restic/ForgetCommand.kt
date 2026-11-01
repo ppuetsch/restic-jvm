@@ -1,9 +1,11 @@
 package io.github.ppuetsch.restic
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 
 /** Optionen für `restic forget`. Ohne Aufbewahrungsregel und ohne Snapshot-IDs lehnt restic den Aufruf ab. */
-public class ForgetOptions private constructor(builder: Builder) {
+public class ForgetOptions private constructor(
+    builder: Builder,
+) {
     public val filter: SnapshotFilter = builder.filter.build()
     public val snapshotIds: List<String> = builder.snapshotIds.toList()
     public val keepLast: String? = builder.keepLast
@@ -52,6 +54,7 @@ public class ForgetOptions private constructor(builder: Builder) {
             addAll(snapshotIds)
         }
 
+    @Suppress("TooManyFunctions") // eine Methode je restic-Flag; das Builder-API bildet die CLI vollständig ab
     public class Builder internal constructor() {
         internal val filter: SnapshotFilter.Builder = SnapshotFilter.builder()
         internal val snapshotIds: MutableList<String> = mutableListOf()
@@ -195,18 +198,22 @@ private fun forgetGroupFrom(node: JsonNode) =
         host = node.textOrNull("host"),
         paths = node.textList("paths"),
         tags = node.textList("tags"),
-        keep = node.get("keep")?.map(::snapshotFrom).orEmpty(),
-        remove = node.get("remove")?.map(::snapshotFrom).orEmpty(),
+        keep = node.get("keep")?.mapElements(::snapshotFrom).orEmpty(),
+        remove = node.get("remove")?.mapElements(::snapshotFrom).orEmpty(),
         reasons =
-            node.get("reasons")?.map { reason ->
-                ForgetReason(reason.get("snapshot")?.textOrNull("id").orEmpty(), reason.textList("matches"))
-            }.orEmpty(),
+            node
+                .get("reasons")
+                ?.mapElements { reason ->
+                    ForgetReason(reason.get("snapshot")?.textOrNull("id").orEmpty(), reason.textList("matches"))
+                }.orEmpty(),
     )
 
 /** Prune-Fortschritt wie `[0:00] 100.00%` beginnt ebenfalls mit `[`, ist aber kein JSON. */
 private fun isGroupDocument(line: String): Boolean = Json.parseOrNull(line)?.isArray == true
 
-internal class ForgetCommand(private val runner: ProcessRunner) {
+internal class ForgetCommand(
+    private val runner: ProcessRunner,
+) {
     fun forget(
         options: ForgetOptions,
         outputListener: OutputLineListener?,
@@ -221,8 +228,12 @@ internal class ForgetCommand(private val runner: ProcessRunner) {
             )
         runner.runChecked(request) { line ->
             when {
-                line.isBlank() -> Unit
-                groups == null && isGroupDocument(line) -> groups = Json.parse(line).map(::forgetGroupFrom)
+                line.isBlank() -> {}
+
+                groups == null && isGroupDocument(line) -> {
+                    groups = Json.parse(line).mapElements(::forgetGroupFrom)
+                }
+
                 else -> {
                     pruneOutput += line
                     outputListener?.onLine(line)

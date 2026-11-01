@@ -1,9 +1,11 @@
 package io.github.ppuetsch.restic
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import java.time.Instant
 
-public enum class LsSort(internal val cliValue: String) {
+public enum class LsSort(
+    internal val cliValue: String,
+) {
     NAME("name"),
     SIZE("size"),
     MODIFICATION_TIME("time"),
@@ -13,7 +15,9 @@ public enum class LsSort(internal val cliValue: String) {
 }
 
 /** Optionen für `restic ls`. */
-public class LsOptions private constructor(builder: Builder) {
+public class LsOptions private constructor(
+    builder: Builder,
+) {
     public val cancellationToken: CancellationToken? = builder.cancellationToken
     public val filter: SnapshotFilter = builder.filter.build()
     public val directories: List<String> = builder.directories.toList()
@@ -134,7 +138,9 @@ private fun lsNodeFrom(node: JsonNode) =
         changeTime = node.instantOrNull("ctime"),
     )
 
-internal class LsCommand(private val runner: ProcessRunner) {
+internal class LsCommand(
+    private val runner: ProcessRunner,
+) {
     fun ls(
         snapshotId: String,
         options: LsOptions,
@@ -144,7 +150,7 @@ internal class LsCommand(private val runner: ProcessRunner) {
         val arguments = listOf("ls", "--json") + options.arguments() + snapshotId + options.directories
         runner.runChecked(arguments) { line ->
             Json.parseOrNull(line)?.let { node ->
-                when (node.get("struct_type")?.asText() ?: node.messageType()) {
+                when (node.get("struct_type")?.asString() ?: node.messageType()) {
                     "snapshot" -> snapshot = snapshotFrom(node)
                     "node" -> listener?.onNode(lsNodeFrom(node))
                 }

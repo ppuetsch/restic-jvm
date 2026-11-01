@@ -194,7 +194,7 @@ class CheckAndPruneOutputTest {
             object : OutputLineListener {
                 override fun onLine(line: String) = Unit
 
-                override fun onErrorLine(line: String): Unit = throw IllegalStateException("listener broke")
+                override fun onErrorLine(line: String): Unit = error("listener broke")
             }
         val fake = FakeRestic(temporaryDirectory, "errflood 20000", "out total prune: 0 blobs / 0 B")
 
@@ -223,7 +223,10 @@ class CheckAndPruneOutputTest {
     fun `prune against a real repository reports freed bytes`() {
         val repository = RepositoryFixture(temporaryDirectory)
         repository.backup()
-        repository.source.resolve("c.txt").toFile().writeText("neu")
+        repository.source
+            .resolve("c.txt")
+            .toFile()
+            .writeText("neu")
         repository.backup()
         repository.restic.forget { keepLast(1) }
 

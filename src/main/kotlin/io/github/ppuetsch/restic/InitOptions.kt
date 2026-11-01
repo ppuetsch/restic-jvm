@@ -3,7 +3,9 @@ package io.github.ppuetsch.restic
 import java.nio.file.Path
 
 /** Optionen für `restic init`. */
-public class InitOptions private constructor(builder: Builder) {
+public class InitOptions private constructor(
+    builder: Builder,
+) {
     public val repositoryVersion: String? = builder.repositoryVersion
     public val copyChunkerParams: Boolean = builder.copyChunkerParams
     public val fromRepository: String? = builder.fromRepository
@@ -26,7 +28,7 @@ public class InitOptions private constructor(builder: Builder) {
             optionalFlag("--from-insecure-no-password", fromInsecureNoPassword)
         }
 
-    internal fun environment(): Map<String, String> = fromPassword?.let { mapOf("RESTIC_FROM_PASSWORD" to it) } ?: emptyMap()
+    internal fun environment(): Map<String, String> = fromPassword?.let { mapOf("RESTIC_FROM_PASSWORD" to it) }.orEmpty()
 
     public class Builder internal constructor() {
         internal var repositoryVersion: String? = null

@@ -1,16 +1,20 @@
 package io.github.ppuetsch.restic
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import java.time.Instant
 
-public enum class FindObjectKind(internal val flag: String) {
+public enum class FindObjectKind(
+    internal val flag: String,
+) {
     BLOB("--blob"),
     TREE("--tree"),
     PACK("--pack"),
 }
 
 /** Optionen für `restic find`. */
-public class FindOptions private constructor(builder: Builder) {
+public class FindOptions private constructor(
+    builder: Builder,
+) {
     public val cancellationToken: CancellationToken? = builder.cancellationToken
     public val filter: SnapshotFilter = builder.filter.build()
     public val snapshotIds: List<String> = builder.snapshotIds.toList()
@@ -35,6 +39,7 @@ public class FindOptions private constructor(builder: Builder) {
             optionalFlag("--show-pack-id", showPackId)
         }
 
+    @Suppress("TooManyFunctions") // eine Methode je restic-Flag; das Builder-API bildet die CLI vollständig ab
     public class Builder internal constructor() {
         internal var cancellationToken: CancellationToken? = null
         internal val filter: SnapshotFilter.Builder = SnapshotFilter.builder()
@@ -117,7 +122,9 @@ public data class FindObject(
     val time: Instant?,
 )
 
-internal class FindCommand(private val runner: ProcessRunner) {
+internal class FindCommand(
+    private val runner: ProcessRunner,
+) {
     fun findNames(
         patterns: List<String>,
         options: FindOptions,
@@ -126,7 +133,7 @@ internal class FindCommand(private val runner: ProcessRunner) {
             FindSnapshotMatches(
                 snapshotId = node.text("snapshot"),
                 hits = node.long("hits"),
-                matches = node.get("matches")?.map(::matchFrom).orEmpty(),
+                matches = node.get("matches")?.mapElements(::matchFrom).orEmpty(),
             )
         }
 
@@ -158,7 +165,6 @@ internal class FindCommand(private val runner: ProcessRunner) {
     private fun readDocument(arguments: List<String>): List<JsonNode> {
         val lines = mutableListOf<String>()
         runner.runChecked(listOf("find", "--json") + arguments) { lines += it }
-        val text = lines.joinToString("\n").trim()
-        return if (text.isEmpty() || text == "null") emptyList() else Json.parse(text).toList()
+        return Json.arrayElements(lines)
     }
 }

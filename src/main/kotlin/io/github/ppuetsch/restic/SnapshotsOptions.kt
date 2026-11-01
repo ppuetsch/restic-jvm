@@ -1,7 +1,9 @@
 package io.github.ppuetsch.restic
 
 /** Optionen für `restic snapshots`. */
-public class SnapshotsOptions private constructor(builder: Builder) {
+public class SnapshotsOptions private constructor(
+    builder: Builder,
+) {
     public val cancellationToken: CancellationToken? = builder.cancellationToken
     public val filter: SnapshotFilter = builder.filter.build()
     public val groupBy: String? = builder.groupBy

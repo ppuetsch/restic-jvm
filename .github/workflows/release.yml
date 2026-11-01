@@ -5,7 +5,7 @@ on:
     tags: ["v*"]
 
 env:
-  RESTIC_VERSION: "0.18.1"
+  RESTIC_VERSION: "0.19.1"
 
 jobs:
   release:
@@ -14,12 +14,12 @@ jobs:
       contents: write
       packages: write
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-java@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "25"
-      - uses: gradle/actions/setup-gradle@v5
+      - uses: gradle/actions/setup-gradle@v6
       - name: Install FUSE for mount tests
         run: sudo apt-get update && sudo apt-get install -y fuse3
       - name: Install restic

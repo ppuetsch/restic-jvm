@@ -15,15 +15,26 @@ public sealed class ResticException(
 ) : RuntimeException(message, cause)
 
 /** Die restic-Binary konnte nicht gestartet werden. */
-public class ResticNotAvailableException(message: String, cause: Throwable) : ResticException(message, cause)
+public class ResticNotAvailableException(
+    message: String,
+    cause: Throwable,
+) : ResticException(message, cause)
 
-public class ResticTimeoutException(message: String) : ResticException(message)
+public class ResticTimeoutException
+    @JvmOverloads
+    constructor(
+        message: String,
+        cause: Throwable? = null,
+    ) : ResticException(message, cause)
 
 /** Der Aufruf wurde über ein [CancellationToken] abgebrochen. */
 public class ResticCancelledException : ResticException("restic call was cancelled")
 
 /** restic hat Ausgabe geliefert, die die Library nicht als JSON lesen konnte. */
-public class ResticOutputException(message: String, cause: Throwable?) : ResticException(message, cause)
+public class ResticOutputException(
+    message: String,
+    cause: Throwable?,
+) : ResticException(message, cause)
 
 /** restic wurde gestartet, beendete sich aber mit einem Fehler-Exit-Code. */
 public sealed class ResticCommandException(
@@ -36,23 +47,31 @@ public sealed class ResticCommandException(
     public val kind: ResticErrorKind = ErrorOutput.classify(exitCode, errorMessage)
 }
 
-public class ResticFailedException(exitCode: Int, standardError: String) : ResticCommandException(exitCode, standardError)
+public class ResticFailedException(
+    exitCode: Int,
+    standardError: String,
+) : ResticCommandException(exitCode, standardError)
 
 /** Exit-Code 3: Ein Snapshot wurde erzeugt, einzelne Quelldateien waren aber nicht lesbar. */
-public class SourceUnreadableException(standardError: String) :
-    ResticCommandException(ExitCodes.SOURCE_UNREADABLE, standardError)
+public class SourceUnreadableException(
+    standardError: String,
+) : ResticCommandException(ExitCodes.SOURCE_UNREADABLE, standardError)
 
-public class RepositoryNotFoundException(standardError: String) :
-    ResticCommandException(ExitCodes.REPOSITORY_NOT_FOUND, standardError)
+public class RepositoryNotFoundException(
+    standardError: String,
+) : ResticCommandException(ExitCodes.REPOSITORY_NOT_FOUND, standardError)
 
-public class RepositoryLockedException(standardError: String) :
-    ResticCommandException(ExitCodes.REPOSITORY_LOCKED, standardError)
+public class RepositoryLockedException(
+    standardError: String,
+) : ResticCommandException(ExitCodes.REPOSITORY_LOCKED, standardError)
 
-public class WrongPasswordException(standardError: String) :
-    ResticCommandException(ExitCodes.WRONG_PASSWORD, standardError)
+public class WrongPasswordException(
+    standardError: String,
+) : ResticCommandException(ExitCodes.WRONG_PASSWORD, standardError)
 
-public class ResticInterruptedException(standardError: String) :
-    ResticCommandException(ExitCodes.INTERRUPTED, standardError)
+public class ResticInterruptedException(
+    standardError: String,
+) : ResticCommandException(ExitCodes.INTERRUPTED, standardError)
 
 internal fun commandExceptionFor(
     exitCode: Int,

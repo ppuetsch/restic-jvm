@@ -9,7 +9,9 @@ private val SAVED_SNAPSHOT_PATTERN = Regex("""snapshot (\w+) saved""")
 private val SAVED_REWRITE_PATTERN = Regex("""saved new snapshot (\w+)""")
 
 /** Optionen für `restic rewrite`. */
-public class RewriteOptions private constructor(builder: Builder) {
+public class RewriteOptions private constructor(
+    builder: Builder,
+) {
     public val filter: SnapshotFilter = builder.filter.build()
     public val snapshotIds: List<String> = builder.snapshotIds.toList()
     public val dryRun: Boolean = builder.dryRun
@@ -38,6 +40,7 @@ public class RewriteOptions private constructor(builder: Builder) {
             addAll(snapshotIds)
         }
 
+    @Suppress("TooManyFunctions") // eine Methode je restic-Flag; das Builder-API bildet die CLI vollständig ab
     public class Builder internal constructor() {
         internal val filter: SnapshotFilter.Builder = SnapshotFilter.builder()
         internal val snapshotIds: MutableList<String> = mutableListOf()
@@ -101,7 +104,9 @@ public data class RewriteResult(
 )
 
 /** Optionen für `restic copy`; die Quelle wird über die `from*`-Einstellungen angegeben. */
-public class CopyOptions private constructor(builder: Builder) {
+public class CopyOptions private constructor(
+    builder: Builder,
+) {
     public val filter: SnapshotFilter = builder.filter.build()
     public val snapshotIds: List<String> = builder.snapshotIds.toList()
     public val fromRepository: String? = builder.fromRepository
@@ -125,8 +130,9 @@ public class CopyOptions private constructor(builder: Builder) {
             addAll(snapshotIds)
         }
 
-    internal fun environment(): Map<String, String> = fromPassword?.let { mapOf("RESTIC_FROM_PASSWORD" to it) } ?: emptyMap()
+    internal fun environment(): Map<String, String> = fromPassword?.let { mapOf("RESTIC_FROM_PASSWORD" to it) }.orEmpty()
 
+    @Suppress("TooManyFunctions") // eine Methode je restic-Flag; das Builder-API bildet die CLI vollständig ab
     public class Builder internal constructor() {
         internal val filter: SnapshotFilter.Builder = SnapshotFilter.builder()
         internal val snapshotIds: MutableList<String> = mutableListOf()
@@ -182,7 +188,9 @@ public data class CopyResult(
     val newSnapshotIds: List<String>,
 )
 
-internal class RewriteAndCopyCommand(private val runner: ProcessRunner) {
+internal class RewriteAndCopyCommand(
+    private val runner: ProcessRunner,
+) {
     fun rewrite(
         options: RewriteOptions,
         listener: OutputLineListener?,

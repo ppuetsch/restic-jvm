@@ -1,18 +1,22 @@
 package io.github.ppuetsch.restic
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 
-public enum class ArchiveFormat(internal val cliValue: String) {
+public enum class ArchiveFormat(
+    internal val cliValue: String,
+) {
     TAR("tar"),
     ZIP("zip"),
 }
 
 /** Optionen für `restic dump`. */
-public class DumpOptions private constructor(builder: Builder) {
+public class DumpOptions private constructor(
+    builder: Builder,
+) {
     public val filter: SnapshotFilter = builder.filter.build()
     public val archiveFormat: ArchiveFormat? = builder.archiveFormat
 
@@ -51,7 +55,10 @@ public class DumpOptions private constructor(builder: Builder) {
 }
 
 /** Objekttypen, die `restic cat` ausgeben kann. */
-public enum class CatObjectType(internal val cliValue: String, internal val needsId: Boolean) {
+public enum class CatObjectType(
+    internal val cliValue: String,
+    internal val needsId: Boolean,
+) {
     MASTERKEY("masterkey", false),
     CONFIG("config", false),
     PACK("pack", true),
@@ -67,7 +74,9 @@ public enum class CatObjectType(internal val cliValue: String, internal val need
 
 private const val SHORT_ID_LENGTH: Int = 8
 
-internal class DumpAndCatCommand(private val runner: ProcessRunner) {
+internal class DumpAndCatCommand(
+    private val runner: ProcessRunner,
+) {
     fun dump(
         snapshotId: String,
         file: String,

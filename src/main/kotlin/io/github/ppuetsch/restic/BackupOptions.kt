@@ -7,7 +7,9 @@ import java.time.format.DateTimeFormatter
 private val RESTIC_TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
 /** Optionen für `restic backup`. Alle Flags der CLI sind abgedeckt. */
-public class BackupOptions private constructor(builder: Builder) {
+public class BackupOptions private constructor(
+    builder: Builder,
+) {
     public val dryRun: Boolean = builder.dryRun
     public val excludes: List<String> = builder.excludes.toList()
     public val caseInsensitiveExcludes: List<String> = builder.caseInsensitiveExcludes.toList()
@@ -70,6 +72,7 @@ public class BackupOptions private constructor(builder: Builder) {
             optionalFlag("--verbose", verbose)
         }
 
+    @Suppress("TooManyFunctions") // eine Methode je restic-Flag; das Builder-API bildet die CLI vollständig ab
     public class Builder internal constructor() {
         internal var dryRun: Boolean = false
         internal val excludes: MutableList<String> = mutableListOf()

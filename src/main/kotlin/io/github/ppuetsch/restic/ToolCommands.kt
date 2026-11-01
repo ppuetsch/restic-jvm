@@ -3,7 +3,9 @@ package io.github.ppuetsch.restic
 import java.nio.file.Path
 
 /** Optionen für `restic generate`; jedes gesetzte Ziel wird erzeugt. */
-public class GenerateOptions private constructor(builder: Builder) {
+public class GenerateOptions private constructor(
+    builder: Builder,
+) {
     public val bashCompletion: Path? = builder.bashCompletion
     public val fishCompletion: Path? = builder.fishCompletion
     public val zshCompletion: Path? = builder.zshCompletion
@@ -46,7 +48,9 @@ public class GenerateOptions private constructor(builder: Builder) {
 }
 
 /** Shells, für die restic Auto-Vervollständigung erzeugen kann. */
-public enum class CompletionShell(internal val flag: String) {
+public enum class CompletionShell(
+    internal val flag: String,
+) {
     BASH("--bash-completion"),
     FISH("--fish-completion"),
     ZSH("--zsh-completion"),
@@ -61,7 +65,9 @@ public data class ExtendedOption(
 private const val STANDARD_OUTPUT_TARGET: String = "-"
 private const val EXTENDED_OPTIONS_HEADER: String = "All Extended Options:"
 
-internal class ToolCommands(private val runner: ProcessRunner) {
+internal class ToolCommands(
+    private val runner: ProcessRunner,
+) {
     fun generate(options: GenerateOptions): CommandOutput = CommandOutput(collect(listOf("generate") + options.arguments()))
 
     fun completion(shell: CompletionShell): String =
@@ -71,7 +77,7 @@ internal class ToolCommands(private val runner: ProcessRunner) {
         ).joinToString("\n")
 
     fun selfUpdate(output: Path?): CommandOutput =
-        CommandOutput(collect(listOf("self-update") + (output?.let { listOf("--output", it.toString()) } ?: emptyList())))
+        CommandOutput(collect(listOf("self-update") + output?.let { listOf("--output", it.toString()) }.orEmpty()))
 
     fun help(commandPath: List<String>): String = collect(listOf("help") + commandPath, keepBlankLines = true).joinToString("\n")
 

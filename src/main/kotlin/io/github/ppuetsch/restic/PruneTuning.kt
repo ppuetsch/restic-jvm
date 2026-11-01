@@ -1,7 +1,9 @@
 package io.github.ppuetsch.restic
 
 /** Gemeinsame Stellschrauben von `restic prune` und `restic forget --prune`. */
-public class PruneTuning private constructor(builder: Builder) {
+public class PruneTuning private constructor(
+    builder: Builder,
+) {
     public val maxUnused: String? = builder.maxUnused
     public val maxRepackSize: String? = builder.maxRepackSize
     public val repackCacheableOnly: Boolean = builder.repackCacheableOnly
@@ -56,7 +58,9 @@ public class PruneTuning private constructor(builder: Builder) {
 }
 
 /** Optionen für `restic prune`. */
-public class PruneOptions private constructor(builder: Builder) {
+public class PruneOptions private constructor(
+    builder: Builder,
+) {
     public val tuning: PruneTuning = builder.tuning.build()
     public val dryRun: Boolean = builder.dryRun
     public val unsafeRecoverNoFreeSpace: String? = builder.unsafeRecoverNoFreeSpace

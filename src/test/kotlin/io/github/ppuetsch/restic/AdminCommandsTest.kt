@@ -27,7 +27,8 @@ class AdminCommandsTest {
 
     private fun resticWithPassword(password: String): Restic =
         Restic(
-            ResticConfiguration.builder()
+            ResticConfiguration
+                .builder()
                 .binary(resticBinaryForTests)
                 .repository(fixture.repository.toString())
                 .password(password)
@@ -72,9 +73,13 @@ class AdminCommandsTest {
         restic.addKey { newInsecureNoPassword() }
         val noPassword =
             Restic(
-                ResticConfiguration.builder().binary(
-                    resticBinaryForTests,
-                ).repository(fixture.repository.toString()).insecureNoPassword().build(),
+                ResticConfiguration
+                    .builder()
+                    .binary(
+                        resticBinaryForTests,
+                    ).repository(fixture.repository.toString())
+                    .insecureNoPassword()
+                    .build(),
             )
         assertEquals(2, noPassword.listKeys().size)
     }
