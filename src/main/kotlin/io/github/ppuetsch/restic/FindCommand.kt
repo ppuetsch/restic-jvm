@@ -11,6 +11,7 @@ public enum class FindObjectKind(internal val flag: String) {
 
 /** Optionen für `restic find`. */
 public class FindOptions private constructor(builder: Builder) {
+    public val cancellationToken: CancellationToken? = builder.cancellationToken
     public val filter: SnapshotFilter = builder.filter.build()
     public val snapshotIds: List<String> = builder.snapshotIds.toList()
     public val ignoreCase: Boolean = builder.ignoreCase
@@ -35,6 +36,7 @@ public class FindOptions private constructor(builder: Builder) {
         }
 
     public class Builder internal constructor() {
+        internal var cancellationToken: CancellationToken? = null
         internal val filter: SnapshotFilter.Builder = SnapshotFilter.builder()
         internal val snapshotIds: MutableList<String> = mutableListOf()
         internal var ignoreCase: Boolean = false
@@ -74,6 +76,9 @@ public class FindOptions private constructor(builder: Builder) {
 
         @JvmOverloads
         public fun showPackId(enabled: Boolean = true): Builder = apply { showPackId = enabled }
+
+        /** Bricht den Aufruf ab; ein direkt an [Restic] übergebenes Token hat Vorrang. */
+        public fun cancellationToken(token: CancellationToken): Builder = apply { cancellationToken = token }
 
         public fun build(): FindOptions = FindOptions(this)
     }

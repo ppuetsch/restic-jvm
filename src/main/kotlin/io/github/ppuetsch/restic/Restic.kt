@@ -71,7 +71,7 @@ public class Restic(public val configuration: ResticConfiguration) {
     public fun snapshots(
         options: SnapshotsOptions = SnapshotsOptions.DEFAULT,
         cancellationToken: CancellationToken? = null,
-    ): List<Snapshot> = SnapshotsCommand(runner.cancellableBy(cancellationToken)).snapshots(options)
+    ): List<Snapshot> = SnapshotsCommand(runnerFor(cancellationToken, options.cancellationToken)).snapshots(options)
 
     @JvmSynthetic
     public fun snapshots(configure: SnapshotsOptions.Builder.() -> Unit): List<Snapshot> =
@@ -82,7 +82,7 @@ public class Restic(public val configuration: ResticConfiguration) {
     public fun snapshotGroups(
         options: SnapshotsOptions = SnapshotsOptions.DEFAULT,
         cancellationToken: CancellationToken? = null,
-    ): List<SnapshotGroup> = SnapshotsCommand(runner.cancellableBy(cancellationToken)).snapshotGroups(options)
+    ): List<SnapshotGroup> = SnapshotsCommand(runnerFor(cancellationToken, options.cancellationToken)).snapshotGroups(options)
 
     /** Listet den Inhalt eines Snapshots (`latest` oder eine ID) und meldet jeden Eintrag an den Listener. */
     @JvmOverloads
@@ -93,15 +93,15 @@ public class Restic(public val configuration: ResticConfiguration) {
     ): Snapshot = ls(snapshotId, options, null, listener)
 
     /**
-     * Wie [ls], abbrechbar über [cancellationToken]. Der Listener steht zuletzt, damit ein Lambda am Ende des Aufrufs
-     * weiterhin der Listener bleibt; deshalb sind hier alle Parameter Pflicht.
+     * Wie [ls], abbrechbar über [cancellationToken]; ist es `null`, gilt das Token aus [options]. Der Listener steht
+     * zuletzt, damit ein Lambda am Ende des Aufrufs weiterhin der Listener bleibt; deshalb sind hier alle Parameter Pflicht.
      */
     public fun ls(
         snapshotId: String,
         options: LsOptions,
         cancellationToken: CancellationToken?,
         listener: LsListener?,
-    ): Snapshot = LsCommand(runner.cancellableBy(cancellationToken)).ls(snapshotId, options, listener)
+    ): Snapshot = LsCommand(runnerFor(cancellationToken, options.cancellationToken)).ls(snapshotId, options, listener)
 
     @JvmSynthetic
     public fun ls(
@@ -128,7 +128,7 @@ public class Restic(public val configuration: ResticConfiguration) {
         patterns: List<String>,
         options: FindOptions = FindOptions.DEFAULT,
         cancellationToken: CancellationToken? = null,
-    ): List<FindSnapshotMatches> = FindCommand(runner.cancellableBy(cancellationToken)).findNames(patterns, options)
+    ): List<FindSnapshotMatches> = FindCommand(runnerFor(cancellationToken, options.cancellationToken)).findNames(patterns, options)
 
     @JvmSynthetic
     public fun find(
@@ -143,7 +143,7 @@ public class Restic(public val configuration: ResticConfiguration) {
         ids: List<String>,
         options: FindOptions = FindOptions.DEFAULT,
         cancellationToken: CancellationToken? = null,
-    ): List<FindObject> = FindCommand(runner.cancellableBy(cancellationToken)).findObjects(kind, ids, options)
+    ): List<FindObject> = FindCommand(runnerFor(cancellationToken, options.cancellationToken)).findObjects(kind, ids, options)
 
     /** Stellt einen Snapshot (`latest`, ID oder `id:unterordner`) im Zielverzeichnis wieder her. */
     @JvmOverloads
@@ -279,7 +279,7 @@ public class Restic(public val configuration: ResticConfiguration) {
     public fun stats(
         options: StatsOptions = StatsOptions.DEFAULT,
         cancellationToken: CancellationToken? = null,
-    ): StatsResult = CheckAndStatsCommand(runner.cancellableBy(cancellationToken)).stats(options)
+    ): StatsResult = CheckAndStatsCommand(runnerFor(cancellationToken, options.cancellationToken)).stats(options)
 
     @JvmSynthetic
     public fun stats(configure: StatsOptions.Builder.() -> Unit): StatsResult = stats(StatsOptions.builder().apply(configure).build())
@@ -478,6 +478,12 @@ public class Restic(public val configuration: ResticConfiguration) {
         mountpoint: Path,
         options: MountOptions = MountOptions.DEFAULT,
     ): MountHandle = mountCommand.mount(mountpoint, options)
+
+    /** Ein direkt übergebenes Token hat Vorrang vor dem aus den Optionen. */
+    private fun runnerFor(
+        explicitToken: CancellationToken?,
+        optionsToken: CancellationToken?,
+    ): ProcessRunner = runner.cancellableBy(explicitToken ?: optionsToken)
 
     private fun admin(cancellationToken: CancellationToken?): AdminCommands = AdminCommands(runner.cancellableBy(cancellationToken))
 

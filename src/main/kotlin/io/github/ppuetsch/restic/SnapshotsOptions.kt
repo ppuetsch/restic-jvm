@@ -2,6 +2,7 @@ package io.github.ppuetsch.restic
 
 /** Optionen für `restic snapshots`. */
 public class SnapshotsOptions private constructor(builder: Builder) {
+    public val cancellationToken: CancellationToken? = builder.cancellationToken
     public val filter: SnapshotFilter = builder.filter.build()
     public val groupBy: String? = builder.groupBy
     public val latest: Int? = builder.latest
@@ -18,6 +19,7 @@ public class SnapshotsOptions private constructor(builder: Builder) {
         }
 
     public class Builder internal constructor() {
+        internal var cancellationToken: CancellationToken? = null
         internal val filter: SnapshotFilter.Builder = SnapshotFilter.builder()
         internal var groupBy: String? = null
         internal var latest: Int? = null
@@ -41,6 +43,9 @@ public class SnapshotsOptions private constructor(builder: Builder) {
 
         /** Beschränkt die Ausgabe auf bestimmte Snapshots (ID, Kurz-ID oder `latest`). */
         public fun snapshotId(id: String): Builder = apply { snapshotIds.add(id) }
+
+        /** Bricht den Aufruf ab; ein direkt an [Restic] übergebenes Token hat Vorrang. */
+        public fun cancellationToken(token: CancellationToken): Builder = apply { cancellationToken = token }
 
         public fun build(): SnapshotsOptions = SnapshotsOptions(this)
     }

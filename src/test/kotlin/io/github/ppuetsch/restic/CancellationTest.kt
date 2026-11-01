@@ -144,6 +144,44 @@ class CancellationTest {
         assertTrue(childProcess.awaitExit(EXIT_TIMEOUT), "child process still alive")
     }
 
+    private fun commandsWithTokenInOptions(): Map<String, CancellableCommand> =
+        mapOf(
+            "ls" to { restic, token, _ -> restic.ls(Restic.LATEST, LsOptions.builder().cancellationToken(token).build()) },
+            "listNodes" to { restic, token, _ -> restic.listNodes(Restic.LATEST, LsOptions.builder().cancellationToken(token).build()) },
+            "snapshots" to { restic, token, _ -> restic.snapshots(SnapshotsOptions.builder().cancellationToken(token).build()) },
+            "snapshotGroups" to { restic, token, _ -> restic.snapshotGroups(SnapshotsOptions.builder().cancellationToken(token).build()) },
+            "find" to { restic, token, _ -> restic.find(listOf("*.txt"), FindOptions.builder().cancellationToken(token).build()) },
+            "findObjects" to { restic, token, _ ->
+                restic.findObjects(FindObjectKind.BLOB, listOf("abc"), FindOptions.builder().cancellationToken(token).build())
+            },
+            "stats" to { restic, token, _ -> restic.stats(StatsOptions.builder().cancellationToken(token).build()) },
+        )
+
+    @TestFactory
+    fun `a token in the options cancels the call`(): List<DynamicTest> =
+        commandsWithTokenInOptions().map { (name, command) ->
+            DynamicTest.dynamicTest(name) {
+                val directory = temporaryDirectory.resolve("options-$name").createDirectories()
+                val fake = FakeRestic(directory, "out never reached", "exit 0")
+                val cancelled = CancellationToken().also(CancellationToken::cancel)
+
+                assertThrows<ResticCancelledException> { command(fake.restic(), cancelled, directory) }
+            }
+        }
+
+    @Test
+    fun `an explicit token takes precedence over the one in the options`() {
+        val fake = FakeRestic(temporaryDirectory, "out not a snapshot header", "exit 0")
+        val cancelledInOptions = LsOptions.builder().cancellationToken(CancellationToken().also(CancellationToken::cancel)).build()
+        val cancelledExplicitly = CancellationToken().also(CancellationToken::cancel)
+
+        assertThrows<ResticOutputException> { fake.restic().ls(Restic.LATEST, cancelledInOptions, CancellationToken(), null) }
+        assertThrows<ResticCancelledException> {
+            fake.restic().ls(Restic.LATEST, LsOptions.builder().cancellationToken(CancellationToken()).build(), cancelledExplicitly, null)
+        }
+        assertThrows<ResticCancelledException> { fake.restic().listNodes(Restic.LATEST, LsOptions.DEFAULT, cancelledExplicitly) }
+    }
+
     @Test
     fun `one token cancels all calls running in parallel`() {
         val calls =
