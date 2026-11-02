@@ -6,9 +6,9 @@ Typen ab.
 
 ## Einstieg
 
-Alles beginnt bei [io.github.ppuetsch.restic.Restic]: eine Instanz je Repository, erzeugt aus einer
-[io.github.ppuetsch.restic.ResticConfiguration]. Jeder restic-Befehl ist eine Methode; seine Flags stellt ein
-Options-Builder zusammen, z.B. [io.github.ppuetsch.restic.BackupOptions].
+Alles beginnt bei [Restic][io.github.ppuetsch.restic.Restic]: eine Instanz je Repository, erzeugt aus einer
+[ResticConfiguration][io.github.ppuetsch.restic.ResticConfiguration]. Jeder restic-Befehl ist eine Methode; seine Flags stellt ein
+Options-Builder zusammen, z.B. [BackupOptions][io.github.ppuetsch.restic.BackupOptions].
 
 ```kotlin
 val restic = Restic(
@@ -39,13 +39,13 @@ BackupResult result = restic.backup(
 ## Grundregeln
 
 - **Passwörter** landen nie auf der Kommandozeile, sondern in Umgebungsvariablen, Dateien oder Kommandos.
-- **Fehler** sind eine versiegelte Hierarchie unter [io.github.ppuetsch.restic.ResticException]; der Exit-Code von
-  restic bestimmt die Unterklasse, [io.github.ppuetsch.restic.ResticErrorKind] grenzt die Ursache weiter ein.
-- **Abbrechen** geht über ein [io.github.ppuetsch.restic.CancellationToken], das restic samt Kindprozessen beendet.
+- **Fehler** sind eine versiegelte Hierarchie unter [ResticException][io.github.ppuetsch.restic.ResticException]; der Exit-Code von
+  restic bestimmt die Unterklasse, [ResticErrorKind][io.github.ppuetsch.restic.ResticErrorKind] grenzt die Ursache weiter ein.
+- **Abbrechen** geht über ein [CancellationToken][io.github.ppuetsch.restic.CancellationToken], das restic samt Kindprozessen beendet.
 - **Laufende Ausgabe** (Fortschritt, Einträge von `ls`, Änderungen von `diff`) kommt über Listener, ohne alles im
   Speicher zu sammeln.
 
 # Package io.github.ppuetsch.restic
 
-Die gesamte öffentliche API: die Fassade [io.github.ppuetsch.restic.Restic], die Konfiguration, je Befehl ein
+Die gesamte öffentliche API: die Fassade [Restic][io.github.ppuetsch.restic.Restic], die Konfiguration, je Befehl ein
 Options-Builder und die Ergebnistypen.
