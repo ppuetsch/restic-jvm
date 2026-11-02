@@ -2,7 +2,15 @@ package io.github.ppuetsch.restic
 
 import java.nio.file.Path
 
-/** Optionen für `restic generate`; jedes gesetzte Ziel wird erzeugt. */
+/**
+ * Optionen für [Restic.generate] (`restic generate`); jedes gesetzte Ziel wird erzeugt.
+ *
+ * @property bashCompletion Zieldatei der Bash-Vervollständigung (`--bash-completion`).
+ * @property fishCompletion Zieldatei der Fish-Vervollständigung (`--fish-completion`).
+ * @property zshCompletion Zieldatei der Zsh-Vervollständigung (`--zsh-completion`).
+ * @property powershellCompletion Zieldatei der PowerShell-Vervollständigung (`--powershell-completion`).
+ * @property manDirectory Zielverzeichnis der Man-Pages (`--man`).
+ */
 public class GenerateOptions private constructor(
     builder: Builder,
 ) {
@@ -21,6 +29,7 @@ public class GenerateOptions private constructor(
             optionalValue("--man", manDirectory)
         }
 
+    /** Stellt [GenerateOptions] zusammen; jede Methode setzt ein Ziel und gibt den Builder zurück. */
     public class Builder internal constructor() {
         internal var bashCompletion: Path? = null
         internal var fishCompletion: Path? = null
@@ -28,20 +37,28 @@ public class GenerateOptions private constructor(
         internal var powershellCompletion: Path? = null
         internal var manDirectory: Path? = null
 
+        /** Schreibt die Bash-Vervollständigung in diese Datei (`--bash-completion`). */
         public fun bashCompletion(file: Path): Builder = apply { bashCompletion = file }
 
+        /** Schreibt die Fish-Vervollständigung in diese Datei (`--fish-completion`). */
         public fun fishCompletion(file: Path): Builder = apply { fishCompletion = file }
 
+        /** Schreibt die Zsh-Vervollständigung in diese Datei (`--zsh-completion`). */
         public fun zshCompletion(file: Path): Builder = apply { zshCompletion = file }
 
+        /** Schreibt die PowerShell-Vervollständigung in diese Datei (`--powershell-completion`). */
         public fun powershellCompletion(file: Path): Builder = apply { powershellCompletion = file }
 
+        /** Schreibt die Man-Pages in dieses Verzeichnis (`--man`). */
         public fun manDirectory(directory: Path): Builder = apply { manDirectory = directory }
 
+        /** Erzeugt die unveränderlichen Optionen. */
         public fun build(): GenerateOptions = GenerateOptions(this)
     }
 
+    /** Einstieg in den [Builder]. */
     public companion object {
+        /** Ein neuer [Builder] ohne Ziele. */
         @JvmStatic
         public fun builder(): Builder = Builder()
     }
@@ -51,12 +68,25 @@ public class GenerateOptions private constructor(
 public enum class CompletionShell(
     internal val flag: String,
 ) {
+    /** Bash. */
     BASH("--bash-completion"),
+
+    /** Fish. */
     FISH("--fish-completion"),
+
+    /** Zsh. */
     ZSH("--zsh-completion"),
+
+    /** PowerShell. */
     POWERSHELL("--powershell-completion"),
 }
 
+/**
+ * Eine erweiterte Backend-Option, setzbar mit [ResticConfiguration.Builder.extendedOption].
+ *
+ * @property name Name wie `s3.storage-class`.
+ * @property description Beschreibung von restic.
+ */
 public data class ExtendedOption(
     val name: String,
     val description: String,

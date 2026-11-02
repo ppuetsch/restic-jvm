@@ -10,10 +10,12 @@ import java.util.concurrent.ConcurrentHashMap
 public class CancellationToken {
     private val runningProcesses: MutableSet<Process> = ConcurrentHashMap.newKeySet()
 
+    /** `true`, sobald [cancel] aufgerufen wurde. */
     @Volatile
     public var isCancelled: Boolean = false
         private set
 
+    /** Bricht alle laufenden und künftigen Aufrufe mit diesem Token ab; mehrfaches Aufrufen schadet nicht. */
     public fun cancel() {
         isCancelled = true
         runningProcesses.forEach(ProcessTree::terminate)

@@ -4,10 +4,19 @@ import tools.jackson.databind.JsonNode
 
 /** Grobe Ursache eines fehlgeschlagenen restic-Aufrufs, abgeleitet aus Exit-Code und Meldung. */
 public enum class ResticErrorKind {
+    /** Das Passwort passt zu keinem Schlüssel des Repositorys (Exit-Code 12). */
     WRONG_PASSWORD,
+
+    /** Ein anderer Prozess hält eine Sperre (Exit-Code 11). */
     REPOSITORY_LOCKED,
+
+    /** Unter der Adresse liegt kein Repository (Exit-Code 10). */
     REPOSITORY_NOT_FOUND,
+
+    /** Einzelne Quelldateien waren nicht lesbar (Exit-Code 3). */
     SOURCE_UNREADABLE,
+
+    /** restic wurde durch ein Signal unterbrochen (Exit-Code 130). */
     INTERRUPTED,
 
     /** Backend nicht erreichbar: Verbindung verweigert, Host unbekannt, Zeitüberschreitung. */
@@ -15,6 +24,8 @@ public enum class ResticErrorKind {
 
     /** Backend lehnt die Zugangsdaten oder Berechtigung ab. */
     AUTHENTICATION,
+
+    /** Keine der übrigen Ursachen erkennbar; Details stehen in [ResticCommandException.errorMessage]. */
     OTHER,
 }
 

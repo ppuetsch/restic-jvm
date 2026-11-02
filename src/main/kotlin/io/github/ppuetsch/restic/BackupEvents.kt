@@ -4,8 +4,19 @@ import tools.jackson.databind.JsonNode
 import java.time.Duration
 import java.time.Instant
 
-/** Ereignisse, die `restic backup --json` während des Laufs meldet. */
+/** Ereignisse, die `restic backup --json` während des Laufs meldet; empfangen über [BackupListener]. */
 public sealed interface BackupEvent {
+    /**
+     * Fortschritt, etwa einmal pro Sekunde.
+     *
+     * @property percentDone Anteil von 0.0 bis 1.0; ohne Vorab-Scan (`noScan`) nur grob.
+     * @property totalFiles Gesamtzahl der Dateien laut Scan.
+     * @property filesDone Bereits verarbeitete Dateien.
+     * @property totalBytes Gesamtgröße laut Scan.
+     * @property bytesDone Bereits verarbeitete Bytes.
+     * @property errorCount Bisher aufgetretene Fehler, siehe [Error].
+     * @property currentFiles Dateien, die gerade gelesen werden.
+     */
     public data class Status(
         val percentDone: Double,
         val totalFiles: Long,
@@ -16,7 +27,14 @@ public sealed interface BackupEvent {
         val currentFiles: List<String>,
     ) : BackupEvent
 
-    /** Nur mit `verbose`: was mit einer einzelnen Datei oder Verzeichnis passiert ist. */
+    /**
+     * Nur mit [BackupOptions.Builder.verbose]: was mit einer einzelnen Datei oder einem Verzeichnis passiert ist.
+     *
+     * @property action `new`, `unchanged`, `modified` oder `scan_finished`.
+     * @property item Pfad der Datei oder des Verzeichnisses.
+     * @property dataSize Größe der Datei.
+     * @property dataSizeInRepository Davon neu ins Repository geschriebene Bytes.
+     */
     public data class FileAction(
         val action: String,
         val item: String?,
@@ -24,6 +42,13 @@ public sealed interface BackupEvent {
         val dataSizeInRepository: Long,
     ) : BackupEvent
 
+    /**
+     * Eine Datei oder ein Verzeichnis konnte nicht gesichert werden; das Backup läuft weiter.
+     *
+     * @property item Betroffener Pfad, falls bekannt.
+     * @property during Arbeitsschritt, in dem der Fehler auftrat, z.B. `scan` oder `archival`.
+     * @property message Fehlermeldung von restic.
+     */
     public data class Error(
         val item: String?,
         val during: String?,
@@ -33,11 +58,37 @@ public sealed interface BackupEvent {
         public fun readable(): String = readableError(item, message)
     }
 
+    /**
+     * Abschluss des Backups; die Zahlen stehen auch in [BackupResult.summary].
+     *
+     * @property summary Die Zusammenfassung des Laufs.
+     */
     public data class Summary(
         val summary: BackupSummary,
     ) : BackupEvent
 }
 
+/**
+ * Zusammenfassung eines Backups.
+ *
+ * @property filesNew Neu hinzugekommene Dateien.
+ * @property filesChanged Geänderte Dateien.
+ * @property filesUnmodified Unveränderte Dateien.
+ * @property directoriesNew Neu hinzugekommene Verzeichnisse.
+ * @property directoriesChanged Geänderte Verzeichnisse.
+ * @property directoriesUnmodified Unveränderte Verzeichnisse.
+ * @property dataBlobs Neu geschriebene Daten-Blobs.
+ * @property treeBlobs Neu geschriebene Tree-Blobs.
+ * @property dataAdded Neu hinzugefügte Bytes vor Kompression.
+ * @property dataAddedPacked Neu hinzugefügte Bytes nach Kompression, wie sie im Repository landen.
+ * @property totalFilesProcessed Alle verarbeiteten Dateien.
+ * @property totalBytesProcessed Größe aller verarbeiteten Dateien.
+ * @property duration Laufzeit des Backups.
+ * @property backupStart Startzeitpunkt; fehlt bei restic vor 0.17.
+ * @property backupEnd Endzeitpunkt; fehlt bei restic vor 0.17.
+ * @property snapshotId ID des neuen Snapshots; `null` bei `skipIfUnchanged`, wenn kein neuer Snapshot entstand.
+ * @property dryRun `true`, wenn nur probehalber gesichert wurde.
+ */
 public data class BackupSummary(
     val filesNew: Long,
     val filesChanged: Long,
@@ -54,19 +105,27 @@ public data class BackupSummary(
     val duration: Duration,
     val backupStart: Instant?,
     val backupEnd: Instant?,
-    /** `null` bei `skipIfUnchanged`, wenn kein neuer Snapshot entstand. */
     val snapshotId: String?,
     val dryRun: Boolean,
 )
 
-/** Ergebnis eines Backups. Bei [hasUnreadableSources] wurde trotzdem ein Snapshot angelegt (restic-Exit-Code 3). */
+/**
+ * Ergebnis eines Backups.
+ *
+ * @property summary Die Zusammenfassung des Laufs.
+ * @property errors Alle Dateien, die nicht gesichert werden konnten.
+ * @property hasUnreadableSources `true`, wenn einzelne Quellen unlesbar waren (restic-Exit-Code 3); der Snapshot
+ *   wurde trotzdem angelegt und enthält alles Lesbare.
+ */
 public data class BackupResult(
     val summary: BackupSummary,
     val errors: List<BackupEvent.Error>,
     val hasUnreadableSources: Boolean,
 )
 
+/** Empfängt die Ereignisse eines laufenden Backups; wird im Thread aufgerufen, der die restic-Ausgabe liest. */
 public fun interface BackupListener {
+    /** Ein neues Ereignis; sollte schnell zurückkehren, sonst staut sich die Ausgabe von restic. */
     public fun onEvent(event: BackupEvent)
 }
 

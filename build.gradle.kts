@@ -4,6 +4,13 @@ buildscript {
     configurations.classpath {
         resolutionStrategy.activateDependencyLocking()
     }
+    dependencies {
+        constraints {
+            classpath(libs.floor.jackson2.bom)
+            classpath(libs.floor.guava)
+            classpath(libs.floor.jsoup)
+        }
+    }
 }
 
 plugins {
@@ -66,6 +73,50 @@ dependencies {
 dependencyLocking {
     lockAllConfigurations()
 }
+
+/**
+ * Die Werkzeug-Konfigurationen (Dokka-Generator, ktlint, BouncyCastle des Kotlin-Plugins) sind nur auflösbar, nicht
+ * deklarierbar; Constraints lassen sich dort nicht eintragen. Angehoben wird nur, nie abgesenkt, und nichts davon
+ * landet in den veröffentlichten Metadaten.
+ */
+val buildToolSecurityFloors =
+    listOf(
+        libs.floor.jackson2.bom,
+        libs.floor.jsoup,
+        libs.floor.freemarker,
+        libs.floor.logback.classic,
+        libs.floor.logback.core,
+        libs.floor.bouncycastle.prov,
+        libs.floor.bouncycastle.pg,
+        libs.floor.bouncycastle.pkix,
+        libs.floor.bouncycastle.util,
+    ).map { it.get() }
+
+configurations.configureEach {
+    resolutionStrategy.eachDependency { raiseToSecurityFloor(this) }
+}
+
+fun raiseToSecurityFloor(details: DependencyResolveDetails) {
+    val floor = buildToolSecurityFloors.find { it.module == details.requested.module } ?: return
+    val floorVersion = floor.version ?: return
+    val requestedVersion = details.requested.version ?: return
+    if (isOlderThan(requestedVersion, floorVersion)) {
+        details.useVersion(floorVersion)
+        details.because("versions below $floorVersion have known vulnerabilities")
+    }
+}
+
+fun isOlderThan(
+    version: String,
+    floor: String,
+): Boolean {
+    val versionParts = numericVersionParts(version)
+    val floorParts = numericVersionParts(floor)
+    val firstDifference = versionParts.zip(floorParts).firstOrNull { (versionPart, floorPart) -> versionPart != floorPart }
+    return firstDifference?.let { (versionPart, floorPart) -> versionPart < floorPart } ?: (versionParts.size < floorParts.size)
+}
+
+fun numericVersionParts(version: String): List<Int> = version.split('.', '-').mapNotNull(String::toIntOrNull)
 
 ktlint {
     version.set(libs.versions.ktlint.engine)
@@ -130,6 +181,23 @@ pitest {
     outputFormats.set(listOf("HTML", "XML"))
     timestampedReports.set(false)
     mutationThreshold.set(minimumMutationScorePercent)
+}
+
+// Jede öffentliche Deklaration braucht KDoc: Fehlt sie, scheitert die Doku und damit der Build.
+dokka {
+    moduleName.set("restic-jvm")
+    dokkaPublications.configureEach {
+        failOnWarning.set(true)
+    }
+    dokkaSourceSets.configureEach {
+        reportUndocumented.set(true)
+        includes.from("docs/module.md")
+        sourceLink {
+            localDirectory.set(file("src/main/kotlin"))
+            remoteUrl("$repositoryUrl/blob/v$version/src/main/kotlin")
+            remoteLineSuffix.set("#L")
+        }
+    }
 }
 
 java {

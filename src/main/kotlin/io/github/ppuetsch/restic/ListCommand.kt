@@ -4,15 +4,29 @@ package io.github.ppuetsch.restic
 public enum class ListObjectType(
     internal val cliValue: String,
 ) {
+    /** Pack-Dateien mit den eigentlichen Daten. */
     PACKS("packs"),
+
+    /** Indexdateien. */
     INDEX("index"),
+
+    /** Snapshots. */
     SNAPSHOTS("snapshots"),
+
+    /** Schlüsseldateien. */
     KEYS("keys"),
+
+    /** Sperrdateien. */
     LOCKS("locks"),
 }
 
+/**
+ * Ein Blob des Repositorys, wie [Restic.listBlobs] ihn liefert.
+ *
+ * @property type `data` oder `tree`.
+ * @property id ID des Blobs.
+ */
 public data class BlobEntry(
-    /** `data` oder `tree`. */
     val type: String,
     val id: String,
 )

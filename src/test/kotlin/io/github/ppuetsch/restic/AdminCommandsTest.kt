@@ -143,7 +143,9 @@ class AdminCommandsTest {
         assertTrue(restic.repairIndex(readAllPacks = true).lines.isNotEmpty())
         assertTrue(restic.check().isHealthy())
         val pack = restic.list(ListObjectType.PACKS).first()
-        restic.repairPacks(listOf(pack))
+        val packBackupDirectory = temporaryDirectory.resolve("pack-backups").also(Files::createDirectories)
+        resticFor(fixture.repository) { workingDirectory(packBackupDirectory) }.repairPacks(listOf(pack))
+        assertTrue(Files.exists(packBackupDirectory.resolve("pack-$pack")), "restic keeps a copy of the repaired pack")
     }
 
     @Test
