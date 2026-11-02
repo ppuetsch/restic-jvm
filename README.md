@@ -34,7 +34,7 @@ Releases are published to GitHub Packages (`https://maven.pkg.github.com/ppuetsc
 
 ```kotlin
 dependencies {
-    implementation("io.github.ppuetsch:restic-jvm:0.6.0")
+    implementation("io.github.ppuetsch:restic-jvm:0.7.0")
 }
 ```
 

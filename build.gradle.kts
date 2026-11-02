@@ -30,7 +30,7 @@ plugins {
 }
 
 group = "io.github.ppuetsch"
-version = "0.6.0"
+version = "0.7.0"
 
 val repositoryUrl = "https://github.com/ppuetsch/restic-jvm"
 
