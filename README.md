@@ -24,7 +24,9 @@ It starts the `restic` binary, speaks its documented `--json` interface and maps
 
 You need the `restic` binary (0.17 or newer) on the `PATH`, or pass its location with `binary(...)`.
 
-API reference for every release: **[restic-jvm.readthedocs.io](https://restic-jvm.readthedocs.io/)**.
+API reference for every release: **[restic-jvm.readthedocs.io](https://restic-jvm.readthedocs.io/)**. Its start page
+has more examples: listing locks, iterating snapshots, finding the snapshots that contain a file, reading a file into
+memory and backing up a Java object.
 
 ## Install
 
