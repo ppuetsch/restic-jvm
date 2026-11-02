@@ -9,17 +9,22 @@ internal object ExitCodes {
     const val INTERRUPTED: Int = 130
 }
 
+/**
+ * Basis aller Fehler der Library. Als versiegelte Hierarchie lässt sie sich in Kotlin per `when` vollständig
+ * unterscheiden; alle Unterklassen sind ungeprüfte Exceptions.
+ */
 public sealed class ResticException(
     message: String,
     cause: Throwable? = null,
 ) : RuntimeException(message, cause)
 
-/** Die restic-Binary konnte nicht gestartet werden. */
+/** Die restic-Binary konnte nicht gestartet werden, meist weil sie nicht im `PATH` liegt. */
 public class ResticNotAvailableException(
     message: String,
     cause: Throwable,
 ) : ResticException(message, cause)
 
+/** Ein Aufruf hat [ResticConfiguration.timeout] überschritten oder `mount` war nicht rechtzeitig bereit; restic wurde beendet. */
 public class ResticTimeoutException
     @JvmOverloads
     constructor(
@@ -36,17 +41,26 @@ public class ResticOutputException(
     cause: Throwable?,
 ) : ResticException(message, cause)
 
-/** restic wurde gestartet, beendete sich aber mit einem Fehler-Exit-Code. */
+/**
+ * restic wurde gestartet, beendete sich aber mit einem Fehler-Exit-Code. Die Unterklasse folgt aus dem Exit-Code.
+ *
+ * @property exitCode Exit-Code des restic-Prozesses.
+ */
 public sealed class ResticCommandException(
     public val exitCode: Int,
     standardError: String,
 ) : ResticException("restic exited with code $exitCode: ${ErrorOutput.readableMessage(standardError)}") {
-    /** Die Fehlermeldung als Klartext, nie rohes JSON: JSON-Meldungen auf ihren Text reduziert, Textzeilen unverändert, ohne Leerzeilen. */
+    /**
+     * Die Fehlermeldung als Klartext, nie rohes JSON: JSON-Meldungen auf ihren Text reduziert, Textzeilen unverändert,
+     * ohne Leerzeilen.
+     */
     public val errorMessage: String = ErrorOutput.readableMessage(standardError)
 
+    /** Grobe Ursache aus Exit-Code und Meldung, etwa um Netzwerkfehler von falschen Zugangsdaten zu unterscheiden. */
     public val kind: ResticErrorKind = ErrorOutput.classify(exitCode, errorMessage)
 }
 
+/** Ein Fehler-Exit-Code ohne eigene Bedeutung, meist 1; [ResticCommandException.kind] grenzt die Ursache ein. */
 public class ResticFailedException(
     exitCode: Int,
     standardError: String,
@@ -57,18 +71,22 @@ public class SourceUnreadableException(
     standardError: String,
 ) : ResticCommandException(ExitCodes.SOURCE_UNREADABLE, standardError)
 
+/** Exit-Code 10: Unter der angegebenen Adresse liegt kein Repository. */
 public class RepositoryNotFoundException(
     standardError: String,
 ) : ResticCommandException(ExitCodes.REPOSITORY_NOT_FOUND, standardError)
 
+/** Exit-Code 11: Ein anderer Prozess hält eine Sperre; siehe [ResticConfiguration.Builder.retryLock] und [Restic.unlock]. */
 public class RepositoryLockedException(
     standardError: String,
 ) : ResticCommandException(ExitCodes.REPOSITORY_LOCKED, standardError)
 
+/** Exit-Code 12: Das Passwort passt zu keinem Schlüssel des Repositorys. */
 public class WrongPasswordException(
     standardError: String,
 ) : ResticCommandException(ExitCodes.WRONG_PASSWORD, standardError)
 
+/** Exit-Code 130: restic wurde durch ein Signal wie SIGINT unterbrochen. */
 public class ResticInterruptedException(
     standardError: String,
 ) : ResticCommandException(ExitCodes.INTERRUPTED, standardError)

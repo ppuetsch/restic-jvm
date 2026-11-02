@@ -13,12 +13,30 @@ gradle-pitest = "1.19.0"
 pitest-core = "1.30.1"
 pitest-junit5 = "1.2.3"
 cyclonedx = "3.5.1"
+# Untergrenzen für Abhängigkeiten der Build-Werkzeuge (Dokka, ktlint, Kotlin-Plugin), deren gesperrte Versionen
+# bekannte Schwachstellen haben; scripts/vulnerable_locks.py findet die nächsten Kandidaten.
+floor-jackson2 = "2.22.4"
+floor-guava = "33.7.2-jre"
+floor-jsoup = "1.23.2"
+floor-freemarker = "2.3.35"
+floor-logback = "1.5.38"
+floor-bouncycastle = "1.86"
 
 [libraries]
 jackson-databind = { module = "tools.jackson.core:jackson-databind", version.ref = "jackson" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+floor-jackson2-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "floor-jackson2" }
+floor-guava = { module = "com.google.guava:guava", version.ref = "floor-guava" }
+floor-jsoup = { module = "org.jsoup:jsoup", version.ref = "floor-jsoup" }
+floor-freemarker = { module = "org.freemarker:freemarker", version.ref = "floor-freemarker" }
+floor-logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "floor-logback" }
+floor-logback-core = { module = "ch.qos.logback:logback-core", version.ref = "floor-logback" }
+floor-bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "floor-bouncycastle" }
+floor-bouncycastle-pg = { module = "org.bouncycastle:bcpg-jdk18on", version.ref = "floor-bouncycastle" }
+floor-bouncycastle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "floor-bouncycastle" }
+floor-bouncycastle-util = { module = "org.bouncycastle:bcutil-jdk18on", version.ref = "floor-bouncycastle" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

@@ -1,0 +1,7 @@
+# API-Doku (Dokka) auf https://restic-jvm.readthedocs.io; jede Version entspricht einem Release-Tag.
+version: 2
+
+build:
+  os: ubuntu-24.04
+  commands:
+    - bash scripts/build-docs-readthedocs.sh

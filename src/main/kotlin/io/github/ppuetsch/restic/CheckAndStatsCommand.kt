@@ -2,7 +2,14 @@ package io.github.ppuetsch.restic
 
 import tools.jackson.databind.JsonNode
 
-/** Optionen für `restic check`. */
+/**
+ * Optionen für [Restic.check] (`restic check`).
+ *
+ * @property readData Liest und prüft alle Daten-Blobs (`--read-data`).
+ * @property readDataSubset Liest und prüft nur einen Teil der Daten (`--read-data-subset`).
+ * @property withCache Nutzt den lokalen Cache statt eines frischen (`--with-cache`).
+ * @property cancellationToken Token, über das sich der Aufruf abbrechen lässt.
+ */
 public class CheckOptions private constructor(
     builder: Builder,
 ) {
@@ -18,31 +25,41 @@ public class CheckOptions private constructor(
             optionalFlag("--with-cache", withCache)
         }
 
+    /** Stellt [CheckOptions] zusammen; jede Methode setzt ein Flag und gibt den Builder zurück. */
     public class Builder internal constructor() {
         internal var readData: Boolean = false
         internal var readDataSubset: String? = null
         internal var withCache: Boolean = false
         internal var cancellationToken: CancellationToken? = null
 
-        /** Liest alle Datenblobs und prüft ihre Prüfsummen. */
+        /** Liest alle Daten-Blobs und prüft ihre Prüfsummen (`--read-data`); lädt das ganze Repository herunter. */
         @JvmOverloads
         public fun readData(enabled: Boolean = true): Builder = apply { readData = enabled }
 
-        /** `n/t` für einen Teil, `x%` oder `x.y%` oder eine Größe in Bytes mit Suffix. */
+        /**
+         * Liest und prüft nur einen Teil der Daten (`--read-data-subset`): `n/t` für den n-ten von t Teilen,
+         * `x%` oder `x.y%` für einen zufälligen Anteil oder eine Größe mit Suffix wie `500M`.
+         */
         public fun readDataSubset(subset: String): Builder = apply { readDataSubset = subset }
 
+        /** Nutzt den vorhandenen lokalen Cache, statt in einem frischen zu prüfen (`--with-cache`); schneller, aber weniger gründlich. */
         @JvmOverloads
         public fun withCache(enabled: Boolean = true): Builder = apply { withCache = enabled }
 
+        /** Token, über das sich der Aufruf von einem anderen Thread aus abbrechen lässt. */
         public fun cancellationToken(token: CancellationToken): Builder = apply { cancellationToken = token }
 
+        /** Erzeugt die unveränderlichen Optionen. */
         public fun build(): CheckOptions = CheckOptions(this)
     }
 
+    /** Standardwerte und Einstieg in den [Builder]. */
     public companion object {
+        /** Keine Flags gesetzt: restic-Standardverhalten. */
         @JvmField
         public val DEFAULT: CheckOptions = Builder().build()
 
+        /** Ein neuer [Builder] ohne gesetzte Flags. */
         @JvmStatic
         public fun builder(): Builder = Builder()
     }
@@ -50,6 +67,14 @@ public class CheckOptions private constructor(
 
 /** Eine Meldung aus der JSON-Ausgabe von `restic check`. */
 public sealed interface CheckMessage {
+    /**
+     * Abschluss der Prüfung.
+     *
+     * @property errorCount Anzahl gefundener Fehler.
+     * @property brokenPacks IDs beschädigter Pack-Dateien.
+     * @property suggestRepairIndex restic empfiehlt [Restic.repairIndex].
+     * @property suggestPrune restic empfiehlt [Restic.prune].
+     */
     public data class Summary(
         val errorCount: Long,
         val brokenPacks: List<String>,
@@ -57,22 +82,46 @@ public sealed interface CheckMessage {
         val suggestPrune: Boolean,
     ) : CheckMessage
 
+    /**
+     * Ein gefundener Fehler.
+     *
+     * @property message Fehlermeldung von restic.
+     */
     public data class Error(
         val message: String,
     ) : CheckMessage
 
-    /** Eine Zeile, die kein JSON war. */
+    /**
+     * Eine Zeile, die kein JSON war.
+     *
+     * @property line Die Zeile unverändert.
+     */
     public data class Text(
         val line: String,
     ) : CheckMessage
 
-    /** Ein JSON-Objekt mit einem Meldungstyp, den die Library nicht kennt. */
+    /**
+     * Ein JSON-Objekt mit einem Meldungstyp, den die Library nicht kennt.
+     *
+     * @property messageType Der Wert von `message_type`.
+     */
     public data class Other(
         val messageType: String,
     ) : CheckMessage
 }
 
-/** Ergebnis von `check`: Ein Repository mit Fehlern führt nicht zu einer Exception, sondern zu [isHealthy] = false. */
+/**
+ * Ergebnis von [Restic.check]: Ein Repository mit Fehlern führt nicht zu einer Exception, sondern zu [isHealthy] = `false`.
+ *
+ * @property errorCount Anzahl gefundener Fehler laut Zusammenfassung.
+ * @property brokenPacks IDs beschädigter Pack-Dateien.
+ * @property suggestRepairIndex restic empfiehlt [Restic.repairIndex].
+ * @property suggestPrune restic empfiehlt [Restic.prune].
+ * @property errorMessages Die Fehlermeldungen im Klartext.
+ * @property outputLines Die Standardausgabe in Lesbarkeit aufbereitet (nie rohes JSON), in der Reihenfolge, in der restic sie schrieb.
+ * @property errorOutputLines Alle Zeilen der Fehlerausgabe.
+ * @property messages Die Meldungen von restic als Typen, in Ausgabereihenfolge.
+ */
 public data class CheckResult
     @JvmOverloads
     constructor(
@@ -81,26 +130,39 @@ public data class CheckResult
         val suggestRepairIndex: Boolean,
         val suggestPrune: Boolean,
         val errorMessages: List<String>,
-        /** Die Standardausgabe in Lesbarkeit aufbereitet (nie rohes JSON), in der Reihenfolge, in der restic sie schrieb. */
         val outputLines: List<String> = emptyList(),
-        /** Alle Zeilen der Fehlerausgabe. */
         val errorOutputLines: List<String> = emptyList(),
-        /** Die Meldungen von restic als Typen, in Ausgabereihenfolge. */
         val messages: List<CheckMessage> = emptyList(),
     ) {
+        /** `true`, wenn restic weder Fehler gezählt noch Fehlermeldungen ausgegeben hat. */
         public fun isHealthy(): Boolean = errorCount == 0L && errorMessages.isEmpty()
     }
 
+/** Was `restic stats` zählt (`--mode`). */
 public enum class StatsMode(
     internal val cliValue: String,
 ) {
+    /** Größe, die eine Wiederherstellung belegen würde; Standard von restic. */
     RESTORE_SIZE("restore-size"),
+
+    /** Größe der Dateien, wobei inhaltsgleiche Dateien nur einmal zählen. */
     FILES_BY_CONTENTS("files-by-contents"),
+
+    /** Größe der Blobs, die die Dateien referenzieren. */
     BLOBS_PER_FILE("blobs-per-file"),
+
+    /** Tatsächlich belegter Speicher im Repository, mit Kompressionsangaben. */
     RAW_DATA("raw-data"),
 }
 
-/** Optionen für `restic stats`. */
+/**
+ * Optionen für [Restic.stats] (`restic stats`).
+ *
+ * @property cancellationToken Token, über das sich der Aufruf abbrechen lässt.
+ * @property filter Auswahl der Snapshots nach Host, Pfad und Tags.
+ * @property mode Was gezählt wird (`--mode`).
+ * @property snapshotIds Ausgewählte Snapshots; ohne Angabe alle.
+ */
 public class StatsOptions private constructor(
     builder: Builder,
 ) {
@@ -116,38 +178,59 @@ public class StatsOptions private constructor(
             addAll(snapshotIds)
         }
 
+    /** Stellt [StatsOptions] zusammen; jede Methode setzt ein Flag und gibt den Builder zurück. */
     public class Builder internal constructor() {
         internal var cancellationToken: CancellationToken? = null
         internal val filter: SnapshotFilter.Builder = SnapshotFilter.builder()
         internal var mode: StatsMode? = null
         internal val snapshotIds: MutableList<String> = mutableListOf()
 
+        /** Wählt nur Snapshots dieses Hosts (`--host`); mehrfach möglich. */
         public fun host(hostname: String): Builder = apply { filter.host(hostname) }
 
+        /** Wählt nur Snapshots, die genau diesen Pfad gesichert haben (`--path`); mehrfach möglich. */
         public fun path(absolutePath: String): Builder = apply { filter.path(absolutePath) }
 
+        /** Wählt nur Snapshots, die alle diese Tags tragen (`--tag`); mehrere Aufrufe sind ODER-verknüpft. */
         public fun tag(vararg tags: String): Builder = apply { filter.tag(*tags) }
 
+        /** Was gezählt wird (`--mode`); Standard ist [StatsMode.RESTORE_SIZE]. */
         public fun mode(mode: StatsMode): Builder = apply { this.mode = mode }
 
+        /** Beschränkt den Befehl auf diesen Snapshot (ID, Kurz-ID oder `latest`); mehrfach möglich. */
         public fun snapshotId(id: String): Builder = apply { snapshotIds.add(id) }
 
         /** Bricht den Aufruf ab; ein direkt an [Restic] übergebenes Token hat Vorrang. */
         public fun cancellationToken(token: CancellationToken): Builder = apply { cancellationToken = token }
 
+        /** Erzeugt die unveränderlichen Optionen. */
         public fun build(): StatsOptions = StatsOptions(this)
     }
 
+    /** Standardwerte und Einstieg in den [Builder]. */
     public companion object {
+        /** Keine Flags gesetzt: restic-Standardverhalten. */
         @JvmField
         public val DEFAULT: StatsOptions = Builder().build()
 
+        /** Ein neuer [Builder] ohne gesetzte Flags. */
         @JvmStatic
         public fun builder(): Builder = Builder()
     }
 }
 
-/** Je nach [StatsMode] sind nur einige Felder gesetzt. */
+/**
+ * Ergebnis von [Restic.stats]; je nach [StatsMode] sind nur einige Felder gesetzt.
+ *
+ * @property totalSize Gesamtgröße in Bytes.
+ * @property totalFileCount Anzahl der Dateien; nicht bei [StatsMode.RAW_DATA].
+ * @property totalBlobCount Anzahl der Blobs; nur bei [StatsMode.RAW_DATA] und [StatsMode.BLOBS_PER_FILE].
+ * @property snapshotsCount Anzahl der betrachteten Snapshots.
+ * @property totalUncompressedSize Größe vor Kompression; nur bei [StatsMode.RAW_DATA].
+ * @property compressionRatio Kompressionsfaktor; nur bei [StatsMode.RAW_DATA].
+ * @property compressionProgress Anteil bereits komprimierter Daten in Prozent; nur bei [StatsMode.RAW_DATA].
+ * @property compressionSpaceSaving Durch Kompression gesparter Platz in Prozent; nur bei [StatsMode.RAW_DATA].
+ */
 public data class StatsResult(
     val totalSize: Long,
     val totalFileCount: Long?,

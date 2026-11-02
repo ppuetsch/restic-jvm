@@ -5,5 +5,3 @@ build/
 .kotlin/
 local.properties
 
-# written into the working directory by the repair packs test
-/pack-*

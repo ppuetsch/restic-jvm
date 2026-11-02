@@ -6,14 +6,23 @@ import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 
+/** Archivformat, in dem [Restic.dump] ein Verzeichnis ausgibt (`--archive`). */
 public enum class ArchiveFormat(
     internal val cliValue: String,
 ) {
+    /** Tar-Archiv; Standard von restic. */
     TAR("tar"),
+
+    /** Zip-Archiv. */
     ZIP("zip"),
 }
 
-/** Optionen für `restic dump`. */
+/**
+ * Optionen für [Restic.dump] und [Restic.dumpToFile] (`restic dump`).
+ *
+ * @property filter Auswahl des Snapshots, wenn die ID `latest` ist.
+ * @property archiveFormat Archivformat für Verzeichnisse (`--archive`).
+ */
 public class DumpOptions private constructor(
     builder: Builder,
 ) {
@@ -26,49 +35,69 @@ public class DumpOptions private constructor(
             optionalValue("--archive", archiveFormat?.cliValue)
         }
 
+    /** Stellt [DumpOptions] zusammen; jede Methode setzt ein Flag und gibt den Builder zurück. */
     public class Builder internal constructor() {
         internal val filter: SnapshotFilter.Builder = SnapshotFilter.builder()
         internal var archiveFormat: ArchiveFormat? = null
 
-        /** Wirkt nur, wenn die Snapshot-ID `latest` ist. */
+        /** Wählt den neuesten Snapshot dieses Hosts (`--host`); wirkt nur, wenn die Snapshot-ID `latest` ist. */
         public fun host(hostname: String): Builder = apply { filter.host(hostname) }
 
-        /** Wirkt nur, wenn die Snapshot-ID `latest` ist. */
+        /** Wählt den neuesten Snapshot mit diesem Pfad (`--path`); wirkt nur, wenn die Snapshot-ID `latest` ist. */
         public fun path(absolutePath: String): Builder = apply { filter.path(absolutePath) }
 
-        /** Wirkt nur, wenn die Snapshot-ID `latest` ist. */
+        /** Wählt den neuesten Snapshot mit diesen Tags (`--tag`); wirkt nur, wenn die Snapshot-ID `latest` ist. */
         public fun tag(vararg tags: String): Builder = apply { filter.tag(*tags) }
 
-        /** Archivformat, wenn ein Verzeichnis ausgegeben wird (restic-Standard: tar). */
+        /** Archivformat, wenn ein Verzeichnis ausgegeben wird (`--archive`, restic-Standard: tar). */
         public fun archiveFormat(format: ArchiveFormat): Builder = apply { archiveFormat = format }
 
+        /** Erzeugt die unveränderlichen Optionen. */
         public fun build(): DumpOptions = DumpOptions(this)
     }
 
+    /** Standardwerte und Einstieg in den [Builder]. */
     public companion object {
+        /** Keine Flags gesetzt: restic-Standardverhalten. */
         @JvmField
         public val DEFAULT: DumpOptions = Builder().build()
 
+        /** Ein neuer [Builder] ohne gesetzte Flags. */
         @JvmStatic
         public fun builder(): Builder = Builder()
     }
 }
 
-/** Objekttypen, die `restic cat` ausgeben kann. */
+/** Objekttypen, die `restic cat` ausgeben kann; siehe [Restic.cat] und [Restic.catText]. */
 public enum class CatObjectType(
     internal val cliValue: String,
     internal val needsId: Boolean,
 ) {
+    /** Der entschlüsselte Hauptschlüssel; braucht keine ID. */
     MASTERKEY("masterkey", false),
+
+    /** Die Repository-Konfiguration; braucht keine ID. */
     CONFIG("config", false),
+
+    /** Eine Pack-Datei, roh. */
     PACK("pack", true),
+
+    /** Ein einzelner Blob, entschlüsselt. */
     BLOB("blob", true),
+
+    /** Ein Snapshot als JSON. */
     SNAPSHOT("snapshot", true),
+
+    /** Eine Indexdatei als JSON. */
     INDEX("index", true),
+
+    /** Eine Schlüsseldatei als JSON. */
     KEY("key", true),
+
+    /** Eine Sperrdatei als JSON. */
     LOCK("lock", true),
 
-    /** ID hat die Form `snapshotId:unterordner`. */
+    /** Ein Verzeichnis als JSON; die ID hat die Form `snapshotId:unterordner`. */
     TREE("tree", true),
 }
 
