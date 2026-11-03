@@ -30,11 +30,11 @@ memory and backing up a Java object.
 
 ## Install
 
-Releases are published to GitHub Packages (`https://maven.pkg.github.com/ppuetsch/restic-jvm`); Maven Central is planned.
+Releases are on Maven Central.
 
 ```kotlin
 dependencies {
-    implementation("io.github.ppuetsch:restic-jvm:0.7.0")
+    implementation("io.github.ppuetsch:restic-jvm:0.1.0")
 }
 ```
 
@@ -43,7 +43,7 @@ dependencies {
 To run with nothing but Java installed, add the artifact with the restic binary for the platform the service runs on:
 
 ```kotlin
-runtimeOnly("io.github.ppuetsch:restic-jvm-binary-linux-x86_64:0.7.0")
+runtimeOnly("io.github.ppuetsch:restic-jvm-binary-linux-x86_64:0.1.0")
 ```
 
 Available: `linux-x86_64`, `linux-aarch64`, `windows-x86_64`, `macos-x86_64`, `macos-aarch64`, or
@@ -266,6 +266,14 @@ The API reference is generated from the KDoc with Dokka and published on
 Read the Docs menu). Read the Docs runs `scripts/build-docs-readthedocs.sh`; CI runs the same script on every pull
 request.
 
+### Releasing
+
+Set `version` in `build.gradle.kts`, merge, then push a tag `v<version>`. The release workflow builds and tests,
+signs all seven artifacts (library, five platform binaries, `restic-jvm-binaries-all`), uploads them to Maven Central as
+one deployment and creates the GitHub release. Central stops after validation: press **Publish** on
+[central.sonatype.com/publishing/deployments](https://central.sonatype.com/publishing/deployments), because a version
+on Central can never be changed or removed.
+
 ### Verifying a release
 
 Each release carries the jars, their PGP signatures, a CycloneDX SBOM and the public key `signing-key.asc`
@@ -273,8 +281,8 @@ Each release carries the jars, their PGP signatures, a CycloneDX SBOM and the pu
 
 ```
 gpg --import signing-key.asc
-gpg --verify restic-jvm-0.7.0.jar.asc restic-jvm-0.7.0.jar
-gh attestation verify restic-jvm-0.7.0.jar --repo ppuetsch/restic-jvm
+gpg --verify restic-jvm-0.1.0.jar.asc restic-jvm-0.1.0.jar
+gh attestation verify restic-jvm-0.1.0.jar --repo ppuetsch/restic-jvm
 ```
 
 Apache License 2.0.
