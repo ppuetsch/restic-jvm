@@ -3,19 +3,19 @@ package io.github.ppuetsch.restic
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Bricht laufende restic-Aufrufe von einem anderen Thread aus ab; die Aufrufe werfen dann [ResticCancelledException].
- * Beendet werden restic und alle seine Kindprozesse. Ein Token darf an mehrere, auch parallele Aufrufe gegeben werden;
- * [cancel] trifft alle. Einmal abgebrochen bleibt es abgebrochen: spätere Aufrufe mit diesem Token enden sofort.
+ * Cancels running restic calls from another thread; the calls then throw [ResticCancelledException].
+ * restic and all its child processes are ended. One token may be passed to several calls, also running in parallel;
+ * [cancel] stops all of them. Once cancelled it stays cancelled: later calls with this token end immediately.
  */
 public class CancellationToken {
     private val runningProcesses: MutableSet<Process> = ConcurrentHashMap.newKeySet()
 
-    /** `true`, sobald [cancel] aufgerufen wurde. */
+    /** `true` once [cancel] has been called. */
     @Volatile
     public var isCancelled: Boolean = false
         private set
 
-    /** Bricht alle laufenden und künftigen Aufrufe mit diesem Token ab; mehrfaches Aufrufen schadet nicht. */
+    /** Cancels all running and future calls with this token; calling it more than once does no harm. */
     public fun cancel() {
         isCancelled = true
         runningProcesses.forEach(ProcessTree::terminate)

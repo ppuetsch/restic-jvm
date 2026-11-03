@@ -11,7 +11,7 @@ private const val FAKE_SOURCE_RESOURCE: String = "/FakeRestic.java"
 private val IS_WINDOWS: Boolean = System.getProperty("os.name").startsWith("Windows")
 private val PID_POLL_INTERVAL: Duration = Duration.ofMillis(100)
 
-/** Ein scriptbares Ersatzprogramm für restic, siehe `FakeRestic.java` für die Anweisungen. */
+/** A scriptable stand-in for restic; see `FakeRestic.java` for the instructions. */
 internal class FakeRestic(
     private val directory: Path,
     vararg scenario: String,

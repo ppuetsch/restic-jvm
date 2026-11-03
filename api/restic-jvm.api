@@ -234,17 +234,8 @@ public final class io/github/ppuetsch/restic/BackupSummary {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class io/github/ppuetsch/restic/BlobEntry {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lio/github/ppuetsch/restic/BlobEntry;
-	public static synthetic fun copy$default (Lio/github/ppuetsch/restic/BlobEntry;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/ppuetsch/restic/BlobEntry;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getId ()Ljava/lang/String;
+public final class io/github/ppuetsch/restic/Blob : io/github/ppuetsch/restic/RepositoryObject {
 	public final fun getType ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/github/ppuetsch/restic/CacheOptions {
@@ -275,6 +266,38 @@ public final class io/github/ppuetsch/restic/CancellationToken {
 	public fun <init> ()V
 	public final fun cancel ()V
 	public final fun isCancelled ()Z
+}
+
+public final class io/github/ppuetsch/restic/CatCommands {
+	public final fun config ()Lio/github/ppuetsch/restic/RepositoryConfig;
+	public final fun config (Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/RepositoryConfig;
+	public static synthetic fun config$default (Lio/github/ppuetsch/restic/CatCommands;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/RepositoryConfig;
+	public final fun index (Ljava/lang/String;)Lio/github/ppuetsch/restic/Index;
+	public final fun index (Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/Index;
+	public static synthetic fun index$default (Lio/github/ppuetsch/restic/CatCommands;Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/Index;
+	public final fun key (Ljava/lang/String;)Lio/github/ppuetsch/restic/Key;
+	public final fun key (Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/Key;
+	public static synthetic fun key$default (Lio/github/ppuetsch/restic/CatCommands;Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/Key;
+	public final fun lock (Ljava/lang/String;)Lio/github/ppuetsch/restic/Lock;
+	public final fun lock (Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/Lock;
+	public static synthetic fun lock$default (Lio/github/ppuetsch/restic/CatCommands;Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/Lock;
+	public final fun masterKey ()Lio/github/ppuetsch/restic/MasterKey;
+	public final fun masterKey (Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/MasterKey;
+	public static synthetic fun masterKey$default (Lio/github/ppuetsch/restic/CatCommands;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/MasterKey;
+	public final fun raw (Lio/github/ppuetsch/restic/CatObjectType;Ljava/io/OutputStream;)V
+	public final fun raw (Lio/github/ppuetsch/restic/CatObjectType;Ljava/lang/String;Ljava/io/OutputStream;)V
+	public final fun raw (Lio/github/ppuetsch/restic/CatObjectType;Ljava/lang/String;Ljava/io/OutputStream;Lio/github/ppuetsch/restic/CancellationToken;)V
+	public static synthetic fun raw$default (Lio/github/ppuetsch/restic/CatCommands;Lio/github/ppuetsch/restic/CatObjectType;Ljava/lang/String;Ljava/io/OutputStream;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)V
+	public final fun snapshot (Ljava/lang/String;)Lio/github/ppuetsch/restic/Snapshot;
+	public final fun snapshot (Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/Snapshot;
+	public static synthetic fun snapshot$default (Lio/github/ppuetsch/restic/CatCommands;Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/Snapshot;
+	public final fun text (Lio/github/ppuetsch/restic/CatObjectType;)Ljava/lang/String;
+	public final fun text (Lio/github/ppuetsch/restic/CatObjectType;Ljava/lang/String;)Ljava/lang/String;
+	public final fun text (Lio/github/ppuetsch/restic/CatObjectType;Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;)Ljava/lang/String;
+	public static synthetic fun text$default (Lio/github/ppuetsch/restic/CatCommands;Lio/github/ppuetsch/restic/CatObjectType;Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun tree (Ljava/lang/String;)Lio/github/ppuetsch/restic/TreeObject;
+	public final fun tree (Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/TreeObject;
+	public static synthetic fun tree$default (Lio/github/ppuetsch/restic/CatCommands;Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/TreeObject;
 }
 
 public final class io/github/ppuetsch/restic/CatObjectType : java/lang/Enum {
@@ -621,6 +644,40 @@ public final class io/github/ppuetsch/restic/FeatureFlag {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/github/ppuetsch/restic/FileCommands {
+	public final fun diff (Ljava/lang/String;Ljava/lang/String;)Lio/github/ppuetsch/restic/DiffStatistics;
+	public final fun diff (Ljava/lang/String;Ljava/lang/String;Lio/github/ppuetsch/restic/DiffOptions;)Lio/github/ppuetsch/restic/DiffStatistics;
+	public final fun diff (Ljava/lang/String;Ljava/lang/String;Lio/github/ppuetsch/restic/DiffOptions;Lio/github/ppuetsch/restic/DiffListener;)Lio/github/ppuetsch/restic/DiffStatistics;
+	public static synthetic fun diff$default (Lio/github/ppuetsch/restic/FileCommands;Ljava/lang/String;Ljava/lang/String;Lio/github/ppuetsch/restic/DiffOptions;Lio/github/ppuetsch/restic/DiffListener;ILjava/lang/Object;)Lio/github/ppuetsch/restic/DiffStatistics;
+	public final fun diffAll (Ljava/lang/String;Ljava/lang/String;)Lio/github/ppuetsch/restic/DiffResult;
+	public final fun diffAll (Ljava/lang/String;Ljava/lang/String;Lio/github/ppuetsch/restic/DiffOptions;)Lio/github/ppuetsch/restic/DiffResult;
+	public static synthetic fun diffAll$default (Lio/github/ppuetsch/restic/FileCommands;Ljava/lang/String;Ljava/lang/String;Lio/github/ppuetsch/restic/DiffOptions;ILjava/lang/Object;)Lio/github/ppuetsch/restic/DiffResult;
+	public final fun dump (Ljava/lang/String;Ljava/lang/String;Ljava/io/OutputStream;)V
+	public final fun dump (Ljava/lang/String;Ljava/lang/String;Ljava/io/OutputStream;Lio/github/ppuetsch/restic/DumpOptions;)V
+	public final fun dump (Ljava/lang/String;Ljava/lang/String;Ljava/io/OutputStream;Lio/github/ppuetsch/restic/DumpOptions;Lio/github/ppuetsch/restic/CancellationToken;)V
+	public static synthetic fun dump$default (Lio/github/ppuetsch/restic/FileCommands;Ljava/lang/String;Ljava/lang/String;Ljava/io/OutputStream;Lio/github/ppuetsch/restic/DumpOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)V
+	public final fun dumpToFile (Ljava/lang/String;Ljava/lang/String;Ljava/nio/file/Path;)V
+	public final fun dumpToFile (Ljava/lang/String;Ljava/lang/String;Ljava/nio/file/Path;Lio/github/ppuetsch/restic/DumpOptions;)V
+	public final fun dumpToFile (Ljava/lang/String;Ljava/lang/String;Ljava/nio/file/Path;Lio/github/ppuetsch/restic/DumpOptions;Lio/github/ppuetsch/restic/CancellationToken;)V
+	public static synthetic fun dumpToFile$default (Lio/github/ppuetsch/restic/FileCommands;Ljava/lang/String;Ljava/lang/String;Ljava/nio/file/Path;Lio/github/ppuetsch/restic/DumpOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)V
+	public final fun listNodes ()Lio/github/ppuetsch/restic/LsResult;
+	public final fun listNodes (Ljava/lang/String;)Lio/github/ppuetsch/restic/LsResult;
+	public final fun listNodes (Ljava/lang/String;Lio/github/ppuetsch/restic/LsOptions;)Lio/github/ppuetsch/restic/LsResult;
+	public final fun listNodes (Ljava/lang/String;Lio/github/ppuetsch/restic/LsOptions;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/LsResult;
+	public static synthetic fun listNodes$default (Lio/github/ppuetsch/restic/FileCommands;Ljava/lang/String;Lio/github/ppuetsch/restic/LsOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/LsResult;
+	public final fun ls ()Lio/github/ppuetsch/restic/Snapshot;
+	public final fun ls (Ljava/lang/String;)Lio/github/ppuetsch/restic/Snapshot;
+	public final synthetic fun ls (Ljava/lang/String;Lio/github/ppuetsch/restic/LsListener;Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/Snapshot;
+	public final fun ls (Ljava/lang/String;Lio/github/ppuetsch/restic/LsOptions;)Lio/github/ppuetsch/restic/Snapshot;
+	public final fun ls (Ljava/lang/String;Lio/github/ppuetsch/restic/LsOptions;Lio/github/ppuetsch/restic/CancellationToken;Lio/github/ppuetsch/restic/LsListener;)Lio/github/ppuetsch/restic/Snapshot;
+	public final fun ls (Ljava/lang/String;Lio/github/ppuetsch/restic/LsOptions;Lio/github/ppuetsch/restic/LsListener;)Lio/github/ppuetsch/restic/Snapshot;
+	public static synthetic fun ls$default (Lio/github/ppuetsch/restic/FileCommands;Ljava/lang/String;Lio/github/ppuetsch/restic/LsListener;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/ppuetsch/restic/Snapshot;
+	public static synthetic fun ls$default (Lio/github/ppuetsch/restic/FileCommands;Ljava/lang/String;Lio/github/ppuetsch/restic/LsOptions;Lio/github/ppuetsch/restic/LsListener;ILjava/lang/Object;)Lio/github/ppuetsch/restic/Snapshot;
+	public final fun mount (Ljava/nio/file/Path;)Lio/github/ppuetsch/restic/MountHandle;
+	public final fun mount (Ljava/nio/file/Path;Lio/github/ppuetsch/restic/MountOptions;)Lio/github/ppuetsch/restic/MountHandle;
+	public static synthetic fun mount$default (Lio/github/ppuetsch/restic/FileCommands;Ljava/nio/file/Path;Lio/github/ppuetsch/restic/MountOptions;ILjava/lang/Object;)Lio/github/ppuetsch/restic/MountHandle;
+}
+
 public final class io/github/ppuetsch/restic/FindMatch {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/String;Ljava/time/Instant;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -641,23 +698,13 @@ public final class io/github/ppuetsch/restic/FindMatch {
 }
 
 public final class io/github/ppuetsch/restic/FindObject {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/time/Instant;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()Ljava/lang/String;
-	public final fun component6 ()Ljava/time/Instant;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/time/Instant;)Lio/github/ppuetsch/restic/FindObject;
-	public static synthetic fun copy$default (Lio/github/ppuetsch/restic/FindObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/time/Instant;ILjava/lang/Object;)Lio/github/ppuetsch/restic/FindObject;
-	public fun equals (Ljava/lang/Object;)Z
 	public final fun getId ()Ljava/lang/String;
 	public final fun getObjectType ()Ljava/lang/String;
 	public final fun getParentTree ()Ljava/lang/String;
 	public final fun getPath ()Ljava/lang/String;
+	public final fun getSnapshot ()Lio/github/ppuetsch/restic/Snapshot;
 	public final fun getSnapshotId ()Ljava/lang/String;
 	public final fun getTime ()Ljava/time/Instant;
-	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -717,17 +764,10 @@ public final class io/github/ppuetsch/restic/FindOptions$Companion {
 }
 
 public final class io/github/ppuetsch/restic/FindSnapshotMatches {
-	public fun <init> (Ljava/lang/String;JLjava/util/List;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()J
-	public final fun component3 ()Ljava/util/List;
-	public final fun copy (Ljava/lang/String;JLjava/util/List;)Lio/github/ppuetsch/restic/FindSnapshotMatches;
-	public static synthetic fun copy$default (Lio/github/ppuetsch/restic/FindSnapshotMatches;Ljava/lang/String;JLjava/util/List;ILjava/lang/Object;)Lio/github/ppuetsch/restic/FindSnapshotMatches;
-	public fun equals (Ljava/lang/Object;)Z
 	public final fun getHits ()J
 	public final fun getMatches ()Ljava/util/List;
+	public final fun getSnapshot ()Lio/github/ppuetsch/restic/Snapshot;
 	public final fun getSnapshotId ()Ljava/lang/String;
-	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -886,6 +926,11 @@ public final class io/github/ppuetsch/restic/GenerateOptions$Companion {
 	public final fun builder ()Lio/github/ppuetsch/restic/GenerateOptions$Builder;
 }
 
+public final class io/github/ppuetsch/restic/Index : io/github/ppuetsch/restic/RepositoryObject {
+	public final fun getPacks ()Ljava/util/List;
+	public final fun getSupersedes ()Ljava/util/List;
+}
+
 public final class io/github/ppuetsch/restic/IndexBlob {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;JJLjava/lang/Long;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -901,19 +946,6 @@ public final class io/github/ppuetsch/restic/IndexBlob {
 	public final fun getOffset ()J
 	public final fun getType ()Ljava/lang/String;
 	public final fun getUncompressedLength ()Ljava/lang/Long;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/github/ppuetsch/restic/IndexObject {
-	public fun <init> (Ljava/util/List;Ljava/util/List;)V
-	public final fun component1 ()Ljava/util/List;
-	public final fun component2 ()Ljava/util/List;
-	public final fun copy (Ljava/util/List;Ljava/util/List;)Lio/github/ppuetsch/restic/IndexObject;
-	public static synthetic fun copy$default (Lio/github/ppuetsch/restic/IndexObject;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lio/github/ppuetsch/restic/IndexObject;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getPacks ()Ljava/util/List;
-	public final fun getSupersedes ()Ljava/util/List;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -980,6 +1012,18 @@ public final class io/github/ppuetsch/restic/InitResult {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/github/ppuetsch/restic/Key : io/github/ppuetsch/restic/RepositoryObject {
+	public final fun getCreated ()Ljava/time/Instant;
+	public final fun getData ()Ljava/lang/String;
+	public final fun getHostname ()Ljava/lang/String;
+	public final fun getKdf ()Ljava/lang/String;
+	public final fun getN ()J
+	public final fun getP ()J
+	public final fun getR ()J
+	public final fun getSalt ()Ljava/lang/String;
+	public final fun getUsername ()Ljava/lang/String;
+}
+
 public final class io/github/ppuetsch/restic/KeyAddResult {
 	public fun <init> (Ljava/lang/String;Ljava/util/List;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -991,6 +1035,25 @@ public final class io/github/ppuetsch/restic/KeyAddResult {
 	public final fun getOutputLines ()Ljava/util/List;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/ppuetsch/restic/KeyCommands {
+	public final fun add ()Lio/github/ppuetsch/restic/KeyAddResult;
+	public final fun add (Lio/github/ppuetsch/restic/NewKeyOptions;)Lio/github/ppuetsch/restic/KeyAddResult;
+	public final fun add (Lio/github/ppuetsch/restic/NewKeyOptions;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/KeyAddResult;
+	public final synthetic fun add (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/KeyAddResult;
+	public static synthetic fun add$default (Lio/github/ppuetsch/restic/KeyCommands;Lio/github/ppuetsch/restic/NewKeyOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/KeyAddResult;
+	public final fun changePassword ()Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun changePassword (Lio/github/ppuetsch/restic/NewKeyOptions;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun changePassword (Lio/github/ppuetsch/restic/NewKeyOptions;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final synthetic fun changePassword (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/CommandOutput;
+	public static synthetic fun changePassword$default (Lio/github/ppuetsch/restic/KeyCommands;Lio/github/ppuetsch/restic/NewKeyOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun list ()Ljava/util/List;
+	public final fun list (Lio/github/ppuetsch/restic/CancellationToken;)Ljava/util/List;
+	public static synthetic fun list$default (Lio/github/ppuetsch/restic/KeyCommands;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Ljava/util/List;
+	public final fun remove (Ljava/lang/String;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun remove (Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
+	public static synthetic fun remove$default (Lio/github/ppuetsch/restic/KeyCommands;Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
 }
 
 public final class io/github/ppuetsch/restic/KeyInfo {
@@ -1012,15 +1075,28 @@ public final class io/github/ppuetsch/restic/KeyInfo {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class io/github/ppuetsch/restic/ListObjectType : java/lang/Enum {
+public final class io/github/ppuetsch/restic/ListObjectType {
+	public static final field BLOBS Lio/github/ppuetsch/restic/ListObjectType;
+	public static final field Companion Lio/github/ppuetsch/restic/ListObjectType$Companion;
 	public static final field INDEX Lio/github/ppuetsch/restic/ListObjectType;
 	public static final field KEYS Lio/github/ppuetsch/restic/ListObjectType;
 	public static final field LOCKS Lio/github/ppuetsch/restic/ListObjectType;
 	public static final field PACKS Lio/github/ppuetsch/restic/ListObjectType;
 	public static final field SNAPSHOTS Lio/github/ppuetsch/restic/ListObjectType;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lio/github/ppuetsch/restic/ListObjectType;
-	public static fun values ()[Lio/github/ppuetsch/restic/ListObjectType;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/ppuetsch/restic/ListObjectType$Companion {
+}
+
+public final class io/github/ppuetsch/restic/Lock : io/github/ppuetsch/restic/RepositoryObject {
+	public final fun getExclusive ()Z
+	public final fun getGid ()Ljava/lang/Long;
+	public final fun getHostname ()Ljava/lang/String;
+	public final fun getPid ()J
+	public final fun getTime ()Ljava/time/Instant;
+	public final fun getUid ()Ljava/lang/Long;
+	public final fun getUsername ()Ljava/lang/String;
 }
 
 public abstract interface class io/github/ppuetsch/restic/LsListener {
@@ -1133,6 +1209,45 @@ public final class io/github/ppuetsch/restic/LsSort : java/lang/Enum {
 	public static fun values ()[Lio/github/ppuetsch/restic/LsSort;
 }
 
+public final class io/github/ppuetsch/restic/MaintenanceCommands {
+	public final fun cache ()Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun cache (Lio/github/ppuetsch/restic/CacheOptions;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun cache (Lio/github/ppuetsch/restic/CacheOptions;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final synthetic fun cache (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/CommandOutput;
+	public static synthetic fun cache$default (Lio/github/ppuetsch/restic/MaintenanceCommands;Lio/github/ppuetsch/restic/CacheOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun check ()Lio/github/ppuetsch/restic/CheckResult;
+	public final fun check (Lio/github/ppuetsch/restic/CheckOptions;)Lio/github/ppuetsch/restic/CheckResult;
+	public final fun check (Lio/github/ppuetsch/restic/CheckOptions;Lio/github/ppuetsch/restic/OutputLineListener;)Lio/github/ppuetsch/restic/CheckResult;
+	public final synthetic fun check (Lio/github/ppuetsch/restic/OutputLineListener;Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/CheckResult;
+	public static synthetic fun check$default (Lio/github/ppuetsch/restic/MaintenanceCommands;Lio/github/ppuetsch/restic/CheckOptions;Lio/github/ppuetsch/restic/OutputLineListener;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CheckResult;
+	public static synthetic fun check$default (Lio/github/ppuetsch/restic/MaintenanceCommands;Lio/github/ppuetsch/restic/OutputLineListener;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CheckResult;
+	public final fun features ()Ljava/util/List;
+	public final fun features (Lio/github/ppuetsch/restic/CancellationToken;)Ljava/util/List;
+	public static synthetic fun features$default (Lio/github/ppuetsch/restic/MaintenanceCommands;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Ljava/util/List;
+	public final fun migrate ()Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun migrate (Ljava/util/List;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun migrate (Ljava/util/List;Z)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun migrate (Ljava/util/List;ZLio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
+	public static synthetic fun migrate$default (Lio/github/ppuetsch/restic/MaintenanceCommands;Ljava/util/List;ZLio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun prune ()Lio/github/ppuetsch/restic/PruneResult;
+	public final fun prune (Lio/github/ppuetsch/restic/PruneOptions;)Lio/github/ppuetsch/restic/PruneResult;
+	public final fun prune (Lio/github/ppuetsch/restic/PruneOptions;Lio/github/ppuetsch/restic/OutputLineListener;)Lio/github/ppuetsch/restic/PruneResult;
+	public final synthetic fun prune (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/PruneResult;
+	public static synthetic fun prune$default (Lio/github/ppuetsch/restic/MaintenanceCommands;Lio/github/ppuetsch/restic/PruneOptions;Lio/github/ppuetsch/restic/OutputLineListener;ILjava/lang/Object;)Lio/github/ppuetsch/restic/PruneResult;
+	public final fun recover ()Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun recover (Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
+	public static synthetic fun recover$default (Lio/github/ppuetsch/restic/MaintenanceCommands;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun stats ()Lio/github/ppuetsch/restic/StatsResult;
+	public final fun stats (Lio/github/ppuetsch/restic/StatsOptions;)Lio/github/ppuetsch/restic/StatsResult;
+	public final fun stats (Lio/github/ppuetsch/restic/StatsOptions;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/StatsResult;
+	public final synthetic fun stats (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/StatsResult;
+	public static synthetic fun stats$default (Lio/github/ppuetsch/restic/MaintenanceCommands;Lio/github/ppuetsch/restic/StatsOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/StatsResult;
+	public final fun unlock ()Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun unlock (Z)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun unlock (ZLio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
+	public static synthetic fun unlock$default (Lio/github/ppuetsch/restic/MaintenanceCommands;ZLio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
+}
+
 public final class io/github/ppuetsch/restic/MasterKey {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -1146,6 +1261,21 @@ public final class io/github/ppuetsch/restic/MasterKey {
 	public final fun getMacRandom ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/ppuetsch/restic/ModifyCommands {
+	public final fun copy (Lio/github/ppuetsch/restic/CopyOptions;)Lio/github/ppuetsch/restic/CopyResult;
+	public final fun copy (Lio/github/ppuetsch/restic/CopyOptions;Lio/github/ppuetsch/restic/OutputLineListener;)Lio/github/ppuetsch/restic/CopyResult;
+	public final synthetic fun copy (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/CopyResult;
+	public static synthetic fun copy$default (Lio/github/ppuetsch/restic/ModifyCommands;Lio/github/ppuetsch/restic/CopyOptions;Lio/github/ppuetsch/restic/OutputLineListener;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CopyResult;
+	public final fun rewrite (Lio/github/ppuetsch/restic/RewriteOptions;)Lio/github/ppuetsch/restic/RewriteResult;
+	public final fun rewrite (Lio/github/ppuetsch/restic/RewriteOptions;Lio/github/ppuetsch/restic/OutputLineListener;)Lio/github/ppuetsch/restic/RewriteResult;
+	public final synthetic fun rewrite (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/RewriteResult;
+	public static synthetic fun rewrite$default (Lio/github/ppuetsch/restic/ModifyCommands;Lio/github/ppuetsch/restic/RewriteOptions;Lio/github/ppuetsch/restic/OutputLineListener;ILjava/lang/Object;)Lio/github/ppuetsch/restic/RewriteResult;
+	public final fun tag (Lio/github/ppuetsch/restic/TagOptions;)Lio/github/ppuetsch/restic/TagResult;
+	public final fun tag (Lio/github/ppuetsch/restic/TagOptions;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/TagResult;
+	public final synthetic fun tag (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/TagResult;
+	public static synthetic fun tag$default (Lio/github/ppuetsch/restic/ModifyCommands;Lio/github/ppuetsch/restic/TagOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/TagResult;
 }
 
 public final class io/github/ppuetsch/restic/MountHandle : java/lang/AutoCloseable {
@@ -1233,6 +1363,9 @@ public final class io/github/ppuetsch/restic/OverwriteBehavior : java/lang/Enum 
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lio/github/ppuetsch/restic/OverwriteBehavior;
 	public static fun values ()[Lio/github/ppuetsch/restic/OverwriteBehavior;
+}
+
+public final class io/github/ppuetsch/restic/Pack : io/github/ppuetsch/restic/RepositoryObject {
 }
 
 public final class io/github/ppuetsch/restic/PruneOptions {
@@ -1326,6 +1459,21 @@ public final class io/github/ppuetsch/restic/PruneTuning$Companion {
 	public final fun builder ()Lio/github/ppuetsch/restic/PruneTuning$Builder;
 }
 
+public final class io/github/ppuetsch/restic/RepairCommands {
+	public final fun index ()Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun index (Z)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun index (ZLio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
+	public static synthetic fun index$default (Lio/github/ppuetsch/restic/RepairCommands;ZLio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun packs (Ljava/util/List;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun packs (Ljava/util/List;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
+	public static synthetic fun packs$default (Lio/github/ppuetsch/restic/RepairCommands;Ljava/util/List;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun snapshots ()Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun snapshots (Lio/github/ppuetsch/restic/RepairSnapshotsOptions;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun snapshots (Lio/github/ppuetsch/restic/RepairSnapshotsOptions;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final synthetic fun snapshots (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/CommandOutput;
+	public static synthetic fun snapshots$default (Lio/github/ppuetsch/restic/RepairCommands;Lio/github/ppuetsch/restic/RepairSnapshotsOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
+}
+
 public final class io/github/ppuetsch/restic/RepairSnapshotsOptions {
 	public static final field Companion Lio/github/ppuetsch/restic/RepairSnapshotsOptions$Companion;
 	public static final field DEFAULT Lio/github/ppuetsch/restic/RepairSnapshotsOptions;
@@ -1369,56 +1517,6 @@ public final class io/github/ppuetsch/restic/RepositoryConfig {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class io/github/ppuetsch/restic/RepositoryKey {
-	public fun <init> (Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJJLjava/lang/String;Ljava/lang/String;)V
-	public final fun component1 ()Ljava/time/Instant;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()J
-	public final fun component6 ()J
-	public final fun component7 ()J
-	public final fun component8 ()Ljava/lang/String;
-	public final fun component9 ()Ljava/lang/String;
-	public final fun copy (Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJJLjava/lang/String;Ljava/lang/String;)Lio/github/ppuetsch/restic/RepositoryKey;
-	public static synthetic fun copy$default (Lio/github/ppuetsch/restic/RepositoryKey;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJJLjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/ppuetsch/restic/RepositoryKey;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCreated ()Ljava/time/Instant;
-	public final fun getData ()Ljava/lang/String;
-	public final fun getHostname ()Ljava/lang/String;
-	public final fun getKdf ()Ljava/lang/String;
-	public final fun getN ()J
-	public final fun getP ()J
-	public final fun getR ()J
-	public final fun getSalt ()Ljava/lang/String;
-	public final fun getUsername ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/github/ppuetsch/restic/RepositoryLock {
-	public fun <init> (Ljava/time/Instant;ZLjava/lang/String;Ljava/lang/String;JLjava/lang/Long;Ljava/lang/Long;)V
-	public final fun component1 ()Ljava/time/Instant;
-	public final fun component2 ()Z
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()J
-	public final fun component6 ()Ljava/lang/Long;
-	public final fun component7 ()Ljava/lang/Long;
-	public final fun copy (Ljava/time/Instant;ZLjava/lang/String;Ljava/lang/String;JLjava/lang/Long;Ljava/lang/Long;)Lio/github/ppuetsch/restic/RepositoryLock;
-	public static synthetic fun copy$default (Lio/github/ppuetsch/restic/RepositoryLock;Ljava/time/Instant;ZLjava/lang/String;Ljava/lang/String;JLjava/lang/Long;Ljava/lang/Long;ILjava/lang/Object;)Lio/github/ppuetsch/restic/RepositoryLock;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getExclusive ()Z
-	public final fun getGid ()Ljava/lang/Long;
-	public final fun getHostname ()Ljava/lang/String;
-	public final fun getPid ()J
-	public final fun getTime ()Ljava/time/Instant;
-	public final fun getUid ()Ljava/lang/Long;
-	public final fun getUsername ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
 public final class io/github/ppuetsch/restic/RepositoryLockedException : io/github/ppuetsch/restic/ResticCommandException {
 	public fun <init> (Ljava/lang/String;)V
 }
@@ -1427,15 +1525,18 @@ public final class io/github/ppuetsch/restic/RepositoryNotFoundException : io/gi
 	public fun <init> (Ljava/lang/String;)V
 }
 
+public abstract class io/github/ppuetsch/restic/RepositoryObject {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/github/ppuetsch/restic/Restic {
 	public static final field Companion Lio/github/ppuetsch/restic/Restic$Companion;
 	public static final field LATEST Ljava/lang/String;
 	public fun <init> (Lio/github/ppuetsch/restic/ResticConfiguration;)V
-	public final fun addKey ()Lio/github/ppuetsch/restic/KeyAddResult;
-	public final fun addKey (Lio/github/ppuetsch/restic/NewKeyOptions;)Lio/github/ppuetsch/restic/KeyAddResult;
-	public final fun addKey (Lio/github/ppuetsch/restic/NewKeyOptions;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/KeyAddResult;
-	public final synthetic fun addKey (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/KeyAddResult;
-	public static synthetic fun addKey$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/NewKeyOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/KeyAddResult;
 	public final fun backup (Ljava/util/List;)Lio/github/ppuetsch/restic/BackupResult;
 	public final synthetic fun backup (Ljava/util/List;Lio/github/ppuetsch/restic/BackupListener;Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/BackupResult;
 	public final fun backup (Ljava/util/List;Lio/github/ppuetsch/restic/BackupOptions;)Lio/github/ppuetsch/restic/BackupResult;
@@ -1450,79 +1551,8 @@ public final class io/github/ppuetsch/restic/Restic {
 	public final fun backupStandardInput (Ljava/io/InputStream;Lio/github/ppuetsch/restic/BackupOptions;)Lio/github/ppuetsch/restic/BackupResult;
 	public final fun backupStandardInput (Ljava/io/InputStream;Lio/github/ppuetsch/restic/BackupOptions;Lio/github/ppuetsch/restic/BackupListener;)Lio/github/ppuetsch/restic/BackupResult;
 	public static synthetic fun backupStandardInput$default (Lio/github/ppuetsch/restic/Restic;Ljava/io/InputStream;Lio/github/ppuetsch/restic/BackupOptions;Lio/github/ppuetsch/restic/BackupListener;ILjava/lang/Object;)Lio/github/ppuetsch/restic/BackupResult;
-	public final fun cache ()Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun cache (Lio/github/ppuetsch/restic/CacheOptions;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun cache (Lio/github/ppuetsch/restic/CacheOptions;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final synthetic fun cache (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/CommandOutput;
-	public static synthetic fun cache$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/CacheOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun cat (Lio/github/ppuetsch/restic/CatObjectType;Ljava/io/OutputStream;)V
-	public final fun cat (Lio/github/ppuetsch/restic/CatObjectType;Ljava/lang/String;Ljava/io/OutputStream;)V
-	public final fun cat (Lio/github/ppuetsch/restic/CatObjectType;Ljava/lang/String;Ljava/io/OutputStream;Lio/github/ppuetsch/restic/CancellationToken;)V
-	public static synthetic fun cat$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/CatObjectType;Ljava/lang/String;Ljava/io/OutputStream;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)V
-	public final fun catConfig ()Lio/github/ppuetsch/restic/RepositoryConfig;
-	public final fun catConfig (Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/RepositoryConfig;
-	public static synthetic fun catConfig$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/RepositoryConfig;
-	public final fun catIndex (Ljava/lang/String;)Lio/github/ppuetsch/restic/IndexObject;
-	public final fun catIndex (Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/IndexObject;
-	public static synthetic fun catIndex$default (Lio/github/ppuetsch/restic/Restic;Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/IndexObject;
-	public final fun catKey (Ljava/lang/String;)Lio/github/ppuetsch/restic/RepositoryKey;
-	public final fun catKey (Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/RepositoryKey;
-	public static synthetic fun catKey$default (Lio/github/ppuetsch/restic/Restic;Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/RepositoryKey;
-	public final fun catLock (Ljava/lang/String;)Lio/github/ppuetsch/restic/RepositoryLock;
-	public final fun catLock (Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/RepositoryLock;
-	public static synthetic fun catLock$default (Lio/github/ppuetsch/restic/Restic;Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/RepositoryLock;
-	public final fun catMasterKey ()Lio/github/ppuetsch/restic/MasterKey;
-	public final fun catMasterKey (Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/MasterKey;
-	public static synthetic fun catMasterKey$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/MasterKey;
-	public final fun catSnapshot (Ljava/lang/String;)Lio/github/ppuetsch/restic/Snapshot;
-	public final fun catSnapshot (Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/Snapshot;
-	public static synthetic fun catSnapshot$default (Lio/github/ppuetsch/restic/Restic;Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/Snapshot;
-	public final fun catText (Lio/github/ppuetsch/restic/CatObjectType;)Ljava/lang/String;
-	public final fun catText (Lio/github/ppuetsch/restic/CatObjectType;Ljava/lang/String;)Ljava/lang/String;
-	public final fun catText (Lio/github/ppuetsch/restic/CatObjectType;Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;)Ljava/lang/String;
-	public static synthetic fun catText$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/CatObjectType;Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Ljava/lang/String;
-	public final fun catTree (Ljava/lang/String;)Lio/github/ppuetsch/restic/TreeObject;
-	public final fun catTree (Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/TreeObject;
-	public static synthetic fun catTree$default (Lio/github/ppuetsch/restic/Restic;Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/TreeObject;
-	public final fun changePassword ()Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun changePassword (Lio/github/ppuetsch/restic/NewKeyOptions;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun changePassword (Lio/github/ppuetsch/restic/NewKeyOptions;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final synthetic fun changePassword (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/CommandOutput;
-	public static synthetic fun changePassword$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/NewKeyOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun check ()Lio/github/ppuetsch/restic/CheckResult;
-	public final fun check (Lio/github/ppuetsch/restic/CheckOptions;)Lio/github/ppuetsch/restic/CheckResult;
-	public final fun check (Lio/github/ppuetsch/restic/CheckOptions;Lio/github/ppuetsch/restic/OutputLineListener;)Lio/github/ppuetsch/restic/CheckResult;
-	public final synthetic fun check (Lio/github/ppuetsch/restic/OutputLineListener;Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/CheckResult;
-	public static synthetic fun check$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/CheckOptions;Lio/github/ppuetsch/restic/OutputLineListener;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CheckResult;
-	public static synthetic fun check$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/OutputLineListener;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CheckResult;
-	public final fun completion (Lio/github/ppuetsch/restic/CompletionShell;)Ljava/lang/String;
-	public final fun completion (Lio/github/ppuetsch/restic/CompletionShell;Lio/github/ppuetsch/restic/CancellationToken;)Ljava/lang/String;
-	public static synthetic fun completion$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/CompletionShell;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Ljava/lang/String;
-	public final fun copy (Lio/github/ppuetsch/restic/CopyOptions;)Lio/github/ppuetsch/restic/CopyResult;
-	public final fun copy (Lio/github/ppuetsch/restic/CopyOptions;Lio/github/ppuetsch/restic/OutputLineListener;)Lio/github/ppuetsch/restic/CopyResult;
-	public final synthetic fun copy (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/CopyResult;
-	public static synthetic fun copy$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/CopyOptions;Lio/github/ppuetsch/restic/OutputLineListener;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CopyResult;
-	public final fun diff (Ljava/lang/String;Ljava/lang/String;)Lio/github/ppuetsch/restic/DiffStatistics;
-	public final fun diff (Ljava/lang/String;Ljava/lang/String;Lio/github/ppuetsch/restic/DiffOptions;)Lio/github/ppuetsch/restic/DiffStatistics;
-	public final fun diff (Ljava/lang/String;Ljava/lang/String;Lio/github/ppuetsch/restic/DiffOptions;Lio/github/ppuetsch/restic/DiffListener;)Lio/github/ppuetsch/restic/DiffStatistics;
-	public static synthetic fun diff$default (Lio/github/ppuetsch/restic/Restic;Ljava/lang/String;Ljava/lang/String;Lio/github/ppuetsch/restic/DiffOptions;Lio/github/ppuetsch/restic/DiffListener;ILjava/lang/Object;)Lio/github/ppuetsch/restic/DiffStatistics;
-	public final fun diffAll (Ljava/lang/String;Ljava/lang/String;)Lio/github/ppuetsch/restic/DiffResult;
-	public final fun diffAll (Ljava/lang/String;Ljava/lang/String;Lio/github/ppuetsch/restic/DiffOptions;)Lio/github/ppuetsch/restic/DiffResult;
-	public static synthetic fun diffAll$default (Lio/github/ppuetsch/restic/Restic;Ljava/lang/String;Ljava/lang/String;Lio/github/ppuetsch/restic/DiffOptions;ILjava/lang/Object;)Lio/github/ppuetsch/restic/DiffResult;
-	public final fun dump (Ljava/lang/String;Ljava/lang/String;Ljava/io/OutputStream;)V
-	public final fun dump (Ljava/lang/String;Ljava/lang/String;Ljava/io/OutputStream;Lio/github/ppuetsch/restic/DumpOptions;)V
-	public final fun dump (Ljava/lang/String;Ljava/lang/String;Ljava/io/OutputStream;Lio/github/ppuetsch/restic/DumpOptions;Lio/github/ppuetsch/restic/CancellationToken;)V
-	public static synthetic fun dump$default (Lio/github/ppuetsch/restic/Restic;Ljava/lang/String;Ljava/lang/String;Ljava/io/OutputStream;Lio/github/ppuetsch/restic/DumpOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)V
-	public final fun dumpToFile (Ljava/lang/String;Ljava/lang/String;Ljava/nio/file/Path;)V
-	public final fun dumpToFile (Ljava/lang/String;Ljava/lang/String;Ljava/nio/file/Path;Lio/github/ppuetsch/restic/DumpOptions;)V
-	public final fun dumpToFile (Ljava/lang/String;Ljava/lang/String;Ljava/nio/file/Path;Lio/github/ppuetsch/restic/DumpOptions;Lio/github/ppuetsch/restic/CancellationToken;)V
-	public static synthetic fun dumpToFile$default (Lio/github/ppuetsch/restic/Restic;Ljava/lang/String;Ljava/lang/String;Ljava/nio/file/Path;Lio/github/ppuetsch/restic/DumpOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)V
-	public final fun extendedOptions ()Ljava/util/List;
-	public final fun extendedOptions (Lio/github/ppuetsch/restic/CancellationToken;)Ljava/util/List;
-	public static synthetic fun extendedOptions$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Ljava/util/List;
-	public final fun features ()Ljava/util/List;
-	public final fun features (Lio/github/ppuetsch/restic/CancellationToken;)Ljava/util/List;
-	public static synthetic fun features$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Ljava/util/List;
+	public final fun cat ()Lio/github/ppuetsch/restic/CatCommands;
+	public final fun files ()Lio/github/ppuetsch/restic/FileCommands;
 	public final fun find (Ljava/util/List;)Ljava/util/List;
 	public final fun find (Ljava/util/List;Lio/github/ppuetsch/restic/FindOptions;)Ljava/util/List;
 	public final fun find (Ljava/util/List;Lio/github/ppuetsch/restic/FindOptions;Lio/github/ppuetsch/restic/CancellationToken;)Ljava/util/List;
@@ -1536,85 +1566,25 @@ public final class io/github/ppuetsch/restic/Restic {
 	public final fun forget (Lio/github/ppuetsch/restic/ForgetOptions;Lio/github/ppuetsch/restic/OutputLineListener;)Lio/github/ppuetsch/restic/ForgetResult;
 	public final synthetic fun forget (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/ForgetResult;
 	public static synthetic fun forget$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/ForgetOptions;Lio/github/ppuetsch/restic/OutputLineListener;ILjava/lang/Object;)Lio/github/ppuetsch/restic/ForgetResult;
-	public final fun generate (Lio/github/ppuetsch/restic/GenerateOptions;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun generate (Lio/github/ppuetsch/restic/GenerateOptions;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final synthetic fun generate (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/CommandOutput;
-	public static synthetic fun generate$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/GenerateOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
 	public final fun getConfiguration ()Lio/github/ppuetsch/restic/ResticConfiguration;
-	public final fun help (Ljava/util/List;Lio/github/ppuetsch/restic/CancellationToken;)Ljava/lang/String;
-	public final fun help ([Ljava/lang/String;)Ljava/lang/String;
 	public final fun init ()Lio/github/ppuetsch/restic/InitResult;
 	public final fun init (Lio/github/ppuetsch/restic/InitOptions;)Lio/github/ppuetsch/restic/InitResult;
 	public final fun init (Lio/github/ppuetsch/restic/InitOptions;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/InitResult;
 	public final synthetic fun init (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/InitResult;
 	public static synthetic fun init$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/InitOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/InitResult;
+	public final fun keys ()Lio/github/ppuetsch/restic/KeyCommands;
 	public final fun list (Lio/github/ppuetsch/restic/ListObjectType;)Ljava/util/List;
 	public final fun list (Lio/github/ppuetsch/restic/ListObjectType;Lio/github/ppuetsch/restic/CancellationToken;)Ljava/util/List;
 	public static synthetic fun list$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/ListObjectType;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Ljava/util/List;
-	public final fun listBlobs ()Ljava/util/List;
-	public final fun listBlobs (Lio/github/ppuetsch/restic/CancellationToken;)Ljava/util/List;
-	public static synthetic fun listBlobs$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Ljava/util/List;
-	public final fun listKeys ()Ljava/util/List;
-	public final fun listKeys (Lio/github/ppuetsch/restic/CancellationToken;)Ljava/util/List;
-	public static synthetic fun listKeys$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Ljava/util/List;
-	public final fun listNodes ()Lio/github/ppuetsch/restic/LsResult;
-	public final fun listNodes (Ljava/lang/String;)Lio/github/ppuetsch/restic/LsResult;
-	public final fun listNodes (Ljava/lang/String;Lio/github/ppuetsch/restic/LsOptions;)Lio/github/ppuetsch/restic/LsResult;
-	public final fun listNodes (Ljava/lang/String;Lio/github/ppuetsch/restic/LsOptions;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/LsResult;
-	public static synthetic fun listNodes$default (Lio/github/ppuetsch/restic/Restic;Ljava/lang/String;Lio/github/ppuetsch/restic/LsOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/LsResult;
-	public final fun ls ()Lio/github/ppuetsch/restic/Snapshot;
-	public final fun ls (Ljava/lang/String;)Lio/github/ppuetsch/restic/Snapshot;
-	public final synthetic fun ls (Ljava/lang/String;Lio/github/ppuetsch/restic/LsListener;Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/Snapshot;
-	public final fun ls (Ljava/lang/String;Lio/github/ppuetsch/restic/LsOptions;)Lio/github/ppuetsch/restic/Snapshot;
-	public final fun ls (Ljava/lang/String;Lio/github/ppuetsch/restic/LsOptions;Lio/github/ppuetsch/restic/CancellationToken;Lio/github/ppuetsch/restic/LsListener;)Lio/github/ppuetsch/restic/Snapshot;
-	public final fun ls (Ljava/lang/String;Lio/github/ppuetsch/restic/LsOptions;Lio/github/ppuetsch/restic/LsListener;)Lio/github/ppuetsch/restic/Snapshot;
-	public static synthetic fun ls$default (Lio/github/ppuetsch/restic/Restic;Ljava/lang/String;Lio/github/ppuetsch/restic/LsListener;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/ppuetsch/restic/Snapshot;
-	public static synthetic fun ls$default (Lio/github/ppuetsch/restic/Restic;Ljava/lang/String;Lio/github/ppuetsch/restic/LsOptions;Lio/github/ppuetsch/restic/LsListener;ILjava/lang/Object;)Lio/github/ppuetsch/restic/Snapshot;
-	public final fun migrate ()Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun migrate (Ljava/util/List;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun migrate (Ljava/util/List;Z)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun migrate (Ljava/util/List;ZLio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
-	public static synthetic fun migrate$default (Lio/github/ppuetsch/restic/Restic;Ljava/util/List;ZLio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun mount (Ljava/nio/file/Path;)Lio/github/ppuetsch/restic/MountHandle;
-	public final fun mount (Ljava/nio/file/Path;Lio/github/ppuetsch/restic/MountOptions;)Lio/github/ppuetsch/restic/MountHandle;
-	public static synthetic fun mount$default (Lio/github/ppuetsch/restic/Restic;Ljava/nio/file/Path;Lio/github/ppuetsch/restic/MountOptions;ILjava/lang/Object;)Lio/github/ppuetsch/restic/MountHandle;
-	public final fun prune ()Lio/github/ppuetsch/restic/PruneResult;
-	public final fun prune (Lio/github/ppuetsch/restic/PruneOptions;)Lio/github/ppuetsch/restic/PruneResult;
-	public final fun prune (Lio/github/ppuetsch/restic/PruneOptions;Lio/github/ppuetsch/restic/OutputLineListener;)Lio/github/ppuetsch/restic/PruneResult;
-	public final synthetic fun prune (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/PruneResult;
-	public static synthetic fun prune$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/PruneOptions;Lio/github/ppuetsch/restic/OutputLineListener;ILjava/lang/Object;)Lio/github/ppuetsch/restic/PruneResult;
-	public final fun recover ()Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun recover (Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
-	public static synthetic fun recover$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun removeKey (Ljava/lang/String;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun removeKey (Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
-	public static synthetic fun removeKey$default (Lio/github/ppuetsch/restic/Restic;Ljava/lang/String;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun repairIndex ()Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun repairIndex (Z)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun repairIndex (ZLio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
-	public static synthetic fun repairIndex$default (Lio/github/ppuetsch/restic/Restic;ZLio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun repairPacks (Ljava/util/List;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun repairPacks (Ljava/util/List;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
-	public static synthetic fun repairPacks$default (Lio/github/ppuetsch/restic/Restic;Ljava/util/List;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun repairSnapshots ()Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun repairSnapshots (Lio/github/ppuetsch/restic/RepairSnapshotsOptions;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun repairSnapshots (Lio/github/ppuetsch/restic/RepairSnapshotsOptions;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final synthetic fun repairSnapshots (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/CommandOutput;
-	public static synthetic fun repairSnapshots$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/RepairSnapshotsOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun maintenance ()Lio/github/ppuetsch/restic/MaintenanceCommands;
+	public final fun modify ()Lio/github/ppuetsch/restic/ModifyCommands;
+	public final fun repair ()Lio/github/ppuetsch/restic/RepairCommands;
 	public final fun restore (Ljava/lang/String;Ljava/nio/file/Path;)Lio/github/ppuetsch/restic/RestoreSummary;
 	public final synthetic fun restore (Ljava/lang/String;Ljava/nio/file/Path;Lio/github/ppuetsch/restic/RestoreListener;Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/RestoreSummary;
 	public final fun restore (Ljava/lang/String;Ljava/nio/file/Path;Lio/github/ppuetsch/restic/RestoreOptions;)Lio/github/ppuetsch/restic/RestoreSummary;
 	public final fun restore (Ljava/lang/String;Ljava/nio/file/Path;Lio/github/ppuetsch/restic/RestoreOptions;Lio/github/ppuetsch/restic/RestoreListener;)Lio/github/ppuetsch/restic/RestoreSummary;
 	public static synthetic fun restore$default (Lio/github/ppuetsch/restic/Restic;Ljava/lang/String;Ljava/nio/file/Path;Lio/github/ppuetsch/restic/RestoreListener;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/ppuetsch/restic/RestoreSummary;
 	public static synthetic fun restore$default (Lio/github/ppuetsch/restic/Restic;Ljava/lang/String;Ljava/nio/file/Path;Lio/github/ppuetsch/restic/RestoreOptions;Lio/github/ppuetsch/restic/RestoreListener;ILjava/lang/Object;)Lio/github/ppuetsch/restic/RestoreSummary;
-	public final fun rewrite (Lio/github/ppuetsch/restic/RewriteOptions;)Lio/github/ppuetsch/restic/RewriteResult;
-	public final fun rewrite (Lio/github/ppuetsch/restic/RewriteOptions;Lio/github/ppuetsch/restic/OutputLineListener;)Lio/github/ppuetsch/restic/RewriteResult;
-	public final synthetic fun rewrite (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/RewriteResult;
-	public static synthetic fun rewrite$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/RewriteOptions;Lio/github/ppuetsch/restic/OutputLineListener;ILjava/lang/Object;)Lio/github/ppuetsch/restic/RewriteResult;
-	public final fun selfUpdate ()Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun selfUpdate (Ljava/nio/file/Path;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun selfUpdate (Ljava/nio/file/Path;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
-	public static synthetic fun selfUpdate$default (Lio/github/ppuetsch/restic/Restic;Ljava/nio/file/Path;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
 	public final fun snapshotGroups ()Ljava/util/List;
 	public final fun snapshotGroups (Lio/github/ppuetsch/restic/SnapshotsOptions;)Ljava/util/List;
 	public final fun snapshotGroups (Lio/github/ppuetsch/restic/SnapshotsOptions;Lio/github/ppuetsch/restic/CancellationToken;)Ljava/util/List;
@@ -1624,22 +1594,7 @@ public final class io/github/ppuetsch/restic/Restic {
 	public final fun snapshots (Lio/github/ppuetsch/restic/SnapshotsOptions;Lio/github/ppuetsch/restic/CancellationToken;)Ljava/util/List;
 	public final synthetic fun snapshots (Lkotlin/jvm/functions/Function1;)Ljava/util/List;
 	public static synthetic fun snapshots$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/SnapshotsOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Ljava/util/List;
-	public final fun stats ()Lio/github/ppuetsch/restic/StatsResult;
-	public final fun stats (Lio/github/ppuetsch/restic/StatsOptions;)Lio/github/ppuetsch/restic/StatsResult;
-	public final fun stats (Lio/github/ppuetsch/restic/StatsOptions;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/StatsResult;
-	public final synthetic fun stats (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/StatsResult;
-	public static synthetic fun stats$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/StatsOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/StatsResult;
-	public final fun tag (Lio/github/ppuetsch/restic/TagOptions;)Lio/github/ppuetsch/restic/TagResult;
-	public final fun tag (Lio/github/ppuetsch/restic/TagOptions;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/TagResult;
-	public final synthetic fun tag (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/TagResult;
-	public static synthetic fun tag$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/TagOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/TagResult;
-	public final fun unlock ()Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun unlock (Z)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun unlock (ZLio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
-	public static synthetic fun unlock$default (Lio/github/ppuetsch/restic/Restic;ZLio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
-	public final fun version ()Lio/github/ppuetsch/restic/ResticVersion;
-	public final fun version (Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/ResticVersion;
-	public static synthetic fun version$default (Lio/github/ppuetsch/restic/Restic;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/ResticVersion;
+	public final fun tools ()Lio/github/ppuetsch/restic/ToolCommands;
 }
 
 public final class io/github/ppuetsch/restic/Restic$Companion {
@@ -2279,6 +2234,28 @@ public final class io/github/ppuetsch/restic/TagResult {
 	public final fun getChanges ()Ljava/util/List;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/ppuetsch/restic/ToolCommands {
+	public final fun completion (Lio/github/ppuetsch/restic/CompletionShell;)Ljava/lang/String;
+	public final fun completion (Lio/github/ppuetsch/restic/CompletionShell;Lio/github/ppuetsch/restic/CancellationToken;)Ljava/lang/String;
+	public static synthetic fun completion$default (Lio/github/ppuetsch/restic/ToolCommands;Lio/github/ppuetsch/restic/CompletionShell;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun extendedOptions ()Ljava/util/List;
+	public final fun extendedOptions (Lio/github/ppuetsch/restic/CancellationToken;)Ljava/util/List;
+	public static synthetic fun extendedOptions$default (Lio/github/ppuetsch/restic/ToolCommands;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Ljava/util/List;
+	public final fun generate (Lio/github/ppuetsch/restic/GenerateOptions;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun generate (Lio/github/ppuetsch/restic/GenerateOptions;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final synthetic fun generate (Lkotlin/jvm/functions/Function1;)Lio/github/ppuetsch/restic/CommandOutput;
+	public static synthetic fun generate$default (Lio/github/ppuetsch/restic/ToolCommands;Lio/github/ppuetsch/restic/GenerateOptions;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun help (Ljava/util/List;Lio/github/ppuetsch/restic/CancellationToken;)Ljava/lang/String;
+	public final fun help ([Ljava/lang/String;)Ljava/lang/String;
+	public final fun selfUpdate ()Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun selfUpdate (Ljava/nio/file/Path;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun selfUpdate (Ljava/nio/file/Path;Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CommandOutput;
+	public static synthetic fun selfUpdate$default (Lio/github/ppuetsch/restic/ToolCommands;Ljava/nio/file/Path;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CommandOutput;
+	public final fun version ()Lio/github/ppuetsch/restic/ResticVersion;
+	public final fun version (Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/ResticVersion;
+	public static synthetic fun version$default (Lio/github/ppuetsch/restic/ToolCommands;Lio/github/ppuetsch/restic/CancellationToken;ILjava/lang/Object;)Lio/github/ppuetsch/restic/ResticVersion;
 }
 
 public final class io/github/ppuetsch/restic/TreeNode {

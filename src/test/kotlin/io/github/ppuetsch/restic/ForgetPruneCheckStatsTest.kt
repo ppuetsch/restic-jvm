@@ -209,16 +209,16 @@ class ForgetPruneCheckStatsTest {
     @Test
     fun `prune frees space after forget`() {
         restic.forget { keepLast(1) }
-        val result = restic.prune()
+        val result = restic.maintenance().prune()
         assertTrue(result.outputLines.any { it.contains("done") }, result.outputLines.toString())
-        assertTrue(restic.check().isHealthy())
+        assertTrue(restic.maintenance().check().isHealthy())
     }
 
     @Test
     fun `prune dry run and tuning flags`() {
         restic.forget { keepLast(1) }
         val lines = mutableListOf<String>()
-        restic.prune(
+        restic.maintenance().prune(
             PruneOptions
                 .builder()
                 .dryRun()
@@ -229,7 +229,7 @@ class ForgetPruneCheckStatsTest {
             lines::add,
         )
         assertTrue(lines.isNotEmpty())
-        restic.prune {
+        restic.maintenance().prune {
             repackCacheableOnly()
             repackSmallerThan("1M")
             repackUncompressed()
@@ -238,7 +238,7 @@ class ForgetPruneCheckStatsTest {
 
     @Test
     fun `check of a healthy repository`() {
-        val result = restic.check()
+        val result = restic.maintenance().check()
         assertTrue(result.isHealthy())
         assertEquals(0, result.errorCount)
         assertEquals(emptyList<String>(), result.brokenPacks)
@@ -247,9 +247,9 @@ class ForgetPruneCheckStatsTest {
 
     @Test
     fun `check with read data variants`() {
-        assertTrue(restic.check { readData() }.isHealthy())
-        assertTrue(restic.check { readDataSubset("1/2") }.isHealthy())
-        assertTrue(restic.check { withCache() }.isHealthy())
+        assertTrue(restic.maintenance().check { readData() }.isHealthy())
+        assertTrue(restic.maintenance().check { readDataSubset("1/2") }.isHealthy())
+        assertTrue(restic.maintenance().check { withCache() }.isHealthy())
     }
 
     @Test
@@ -257,14 +257,14 @@ class ForgetPruneCheckStatsTest {
         val dataDirectory = fixture.repository.resolve("data")
         val pack = Files.walk(dataDirectory).use { stream -> stream.filter { Files.isRegularFile(it) }.findFirst().orElseThrow() }
         Files.delete(pack)
-        val result = restic.check { readData() }
+        val result = restic.maintenance().check { readData() }
         assertFalse(result.isHealthy())
         assertTrue(result.errorCount > 0 || result.errorMessages.isNotEmpty())
     }
 
     @Test
     fun `stats in the default mode`() {
-        val stats = restic.stats()
+        val stats = restic.maintenance().stats()
         assertEquals(3, stats.snapshotsCount)
         assertTrue(stats.totalSize > 0)
         assertTrue(stats.totalFileCount!! > 0)
@@ -272,7 +272,7 @@ class ForgetPruneCheckStatsTest {
 
     @Test
     fun `stats modes`() {
-        val raw = restic.stats { mode(StatsMode.RAW_DATA) }
+        val raw = restic.maintenance().stats { mode(StatsMode.RAW_DATA) }
         assertNotNull(raw.totalBlobCount)
         assertNotNull(raw.totalUncompressedSize)
         assertNotNull(raw.compressionRatio)
@@ -280,19 +280,20 @@ class ForgetPruneCheckStatsTest {
         assertNotNull(raw.compressionSpaceSaving)
         assertNull(raw.totalFileCount)
 
-        assertNotNull(restic.stats { mode(StatsMode.BLOBS_PER_FILE) }.totalBlobCount)
-        assertTrue(restic.stats { mode(StatsMode.FILES_BY_CONTENTS) }.totalSize > 0)
-        assertTrue(restic.stats { mode(StatsMode.RESTORE_SIZE) }.totalSize > 0)
+        assertNotNull(restic.maintenance().stats { mode(StatsMode.BLOBS_PER_FILE) }.totalBlobCount)
+        assertTrue(restic.maintenance().stats { mode(StatsMode.FILES_BY_CONTENTS) }.totalSize > 0)
+        assertTrue(restic.maintenance().stats { mode(StatsMode.RESTORE_SIZE) }.totalSize > 0)
     }
 
     @Test
     fun `stats can be restricted to snapshots`() {
         val first = restic.snapshots().first { it.tags == listOf("old") }
-        assertEquals(1, restic.stats { snapshotId(first.id) }.snapshotsCount)
-        assertEquals(1, restic.stats { tag("new") }.snapshotsCount)
+        assertEquals(1, restic.maintenance().stats { snapshotId(first.id) }.snapshotsCount)
+        assertEquals(1, restic.maintenance().stats { tag("new") }.snapshotsCount)
         assertEquals(
             3,
             restic
+                .maintenance()
                 .stats {
                     host(first.hostname)
                     path(fixture.source.toString())

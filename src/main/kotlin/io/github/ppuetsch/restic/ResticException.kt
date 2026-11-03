@@ -1,6 +1,6 @@
 package io.github.ppuetsch.restic
 
-/** Exit-Codes laut restic-Dokumentation (Kapitel „Scripting“). */
+/** Exit codes according to the restic documentation (chapter "Scripting"). */
 internal object ExitCodes {
     const val SOURCE_UNREADABLE: Int = 3
     const val REPOSITORY_NOT_FOUND: Int = 10
@@ -10,21 +10,21 @@ internal object ExitCodes {
 }
 
 /**
- * Basis aller Fehler der Library. Als versiegelte Hierarchie lässt sie sich in Kotlin per `when` vollständig
- * unterscheiden; alle Unterklassen sind ungeprüfte Exceptions.
+ * Base of all errors of the library. As a sealed hierarchy it can be distinguished exhaustively with `when` in Kotlin;
+ * all subclasses are unchecked exceptions.
  */
 public sealed class ResticException(
     message: String,
     cause: Throwable? = null,
 ) : RuntimeException(message, cause)
 
-/** Die restic-Binary konnte nicht gestartet werden, meist weil sie nicht im `PATH` liegt. */
+/** The restic binary could not be started, usually because it is not on the `PATH`. */
 public class ResticNotAvailableException(
     message: String,
     cause: Throwable,
 ) : ResticException(message, cause)
 
-/** Ein Aufruf hat [ResticConfiguration.timeout] überschritten oder `mount` war nicht rechtzeitig bereit; restic wurde beendet. */
+/** A call exceeded [ResticConfiguration.timeout] or `mount` was not ready in time; restic was ended. */
 public class ResticTimeoutException
     @JvmOverloads
     constructor(
@@ -32,61 +32,61 @@ public class ResticTimeoutException
         cause: Throwable? = null,
     ) : ResticException(message, cause)
 
-/** Der Aufruf wurde über ein [CancellationToken] abgebrochen. */
+/** The call was cancelled through a [CancellationToken]. */
 public class ResticCancelledException : ResticException("restic call was cancelled")
 
-/** restic hat Ausgabe geliefert, die die Library nicht als JSON lesen konnte. */
+/** restic produced output the library could not read as JSON. */
 public class ResticOutputException(
     message: String,
     cause: Throwable?,
 ) : ResticException(message, cause)
 
 /**
- * restic wurde gestartet, beendete sich aber mit einem Fehler-Exit-Code. Die Unterklasse folgt aus dem Exit-Code.
+ * restic was started but exited with an error exit code. The subclass follows from the exit code.
  *
- * @property exitCode Exit-Code des restic-Prozesses.
+ * @property exitCode Exit code of the restic process.
  */
 public sealed class ResticCommandException(
     public val exitCode: Int,
     standardError: String,
 ) : ResticException("restic exited with code $exitCode: ${ErrorOutput.readableMessage(standardError)}") {
     /**
-     * Die Fehlermeldung als Klartext, nie rohes JSON: JSON-Meldungen auf ihren Text reduziert, Textzeilen unverändert,
-     * ohne Leerzeilen.
+     * The error message as plain text, never raw JSON: JSON messages reduced to their text, text lines unchanged,
+     * without blank lines.
      */
     public val errorMessage: String = ErrorOutput.readableMessage(standardError)
 
-    /** Grobe Ursache aus Exit-Code und Meldung, etwa um Netzwerkfehler von falschen Zugangsdaten zu unterscheiden. */
+    /** Rough cause derived from exit code and message, for example to tell network errors from wrong credentials. */
     public val kind: ResticErrorKind = ErrorOutput.classify(exitCode, errorMessage)
 }
 
-/** Ein Fehler-Exit-Code ohne eigene Bedeutung, meist 1; [ResticCommandException.kind] grenzt die Ursache ein. */
+/** An error exit code without a specific meaning, usually 1; [ResticCommandException.kind] narrows down the cause. */
 public class ResticFailedException(
     exitCode: Int,
     standardError: String,
 ) : ResticCommandException(exitCode, standardError)
 
-/** Exit-Code 3: Ein Snapshot wurde erzeugt, einzelne Quelldateien waren aber nicht lesbar. */
+/** Exit code 3: a snapshot was created, but some source files could not be read. */
 public class SourceUnreadableException(
     standardError: String,
 ) : ResticCommandException(ExitCodes.SOURCE_UNREADABLE, standardError)
 
-/** Exit-Code 10: Unter der angegebenen Adresse liegt kein Repository. */
+/** Exit code 10: there is no repository at the given location. */
 public class RepositoryNotFoundException(
     standardError: String,
 ) : ResticCommandException(ExitCodes.REPOSITORY_NOT_FOUND, standardError)
 
-/** Exit-Code 11: Ein anderer Prozess hält eine Sperre; siehe [ResticConfiguration.Builder.retryLock] und [Restic.unlock]. */
+/** Exit code 11: another process holds a lock; see [ResticConfiguration.Builder.retryLock] and [MaintenanceCommands.unlock]. */
 public class RepositoryLockedException(
     standardError: String,
 ) : ResticCommandException(ExitCodes.REPOSITORY_LOCKED, standardError)
 
-/** Exit-Code 12: Das Passwort passt zu keinem Schlüssel des Repositorys. */
+/** Exit code 12: the password matches no key of the repository. */
 public class WrongPasswordException(
     standardError: String,
 ) : ResticCommandException(ExitCodes.WRONG_PASSWORD, standardError)
 
-/** Exit-Code 130: restic wurde durch ein Signal wie SIGINT unterbrochen. */
+/** Exit code 130: restic was interrupted by a signal such as SIGINT. */
 public class ResticInterruptedException(
     standardError: String,
 ) : ResticCommandException(ExitCodes.INTERRUPTED, standardError)

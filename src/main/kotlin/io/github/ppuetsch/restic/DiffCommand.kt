@@ -3,53 +3,11 @@ package io.github.ppuetsch.restic
 import tools.jackson.databind.JsonNode
 
 /**
- * Optionen für [Restic.diff] und [Restic.diffAll] (`restic diff`).
+ * A change between two snapshots.
  *
- * @property metadata Meldet auch reine Metadaten-Änderungen (`--metadata`).
- * @property cancellationToken Token, über das sich der Aufruf abbrechen lässt.
- */
-public class DiffOptions private constructor(
-    builder: Builder,
-) {
-    public val metadata: Boolean = builder.metadata
-    public val cancellationToken: CancellationToken? = builder.cancellationToken
-
-    internal fun arguments(): List<String> = buildList { optionalFlag("--metadata", metadata) }
-
-    /** Stellt [DiffOptions] zusammen; jede Methode setzt ein Flag und gibt den Builder zurück. */
-    public class Builder internal constructor() {
-        internal var metadata: Boolean = false
-        internal var cancellationToken: CancellationToken? = null
-
-        /** Meldet auch reine Metadaten-Änderungen wie Rechte oder Zeitstempel (`--metadata`). */
-        @JvmOverloads
-        public fun metadata(enabled: Boolean = true): Builder = apply { metadata = enabled }
-
-        /** Token, über das sich der Aufruf von einem anderen Thread aus abbrechen lässt. */
-        public fun cancellationToken(token: CancellationToken): Builder = apply { cancellationToken = token }
-
-        /** Erzeugt die unveränderlichen Optionen. */
-        public fun build(): DiffOptions = DiffOptions(this)
-    }
-
-    /** Standardwerte und Einstieg in den [Builder]. */
-    public companion object {
-        /** Keine Flags gesetzt: restic-Standardverhalten. */
-        @JvmField
-        public val DEFAULT: DiffOptions = Builder().build()
-
-        /** Ein neuer [Builder] ohne gesetzte Flags. */
-        @JvmStatic
-        public fun builder(): Builder = Builder()
-    }
-}
-
-/**
- * Eine Änderung zwischen zwei Snapshots.
- *
- * @property path Pfad der geänderten Datei oder des Verzeichnisses.
- * @property modifier `+` hinzugefügt, `-` entfernt, `M` Inhalt geändert, `U` Metadaten geändert, `T` Typ geändert,
- *   `?` unbekannt.
+ * @property path Path of the changed file or directory.
+ * @property modifier `+` added, `-` removed, `M` content changed, `U` metadata changed, `T` type changed,
+ *   `?` unknown.
  */
 public data class DiffChange(
     val path: String,
@@ -57,14 +15,14 @@ public data class DiffChange(
 )
 
 /**
- * Hinzugekommene oder entfernte Mengen zwischen zwei Snapshots.
+ * Amounts added or removed between two snapshots.
  *
- * @property files Anzahl der Dateien.
- * @property directories Anzahl der Verzeichnisse.
- * @property others Anzahl anderer Einträge wie Symlinks oder Geräte.
- * @property dataBlobs Anzahl der Daten-Blobs.
- * @property treeBlobs Anzahl der Tree-Blobs.
- * @property bytes Größe der Blobs in Bytes.
+ * @property files Number of files.
+ * @property directories Number of directories.
+ * @property others Number of other entries such as symlinks or devices.
+ * @property dataBlobs Number of data blobs.
+ * @property treeBlobs Number of tree blobs.
+ * @property bytes Size of the blobs in bytes.
  */
 public data class DiffCounts(
     val files: Long,
@@ -76,13 +34,13 @@ public data class DiffCounts(
 )
 
 /**
- * Zusammenfassung eines Vergleichs zweier Snapshots.
+ * Summary of a comparison of two snapshots.
  *
- * @property sourceSnapshotId Vollständige ID des ersten Snapshots.
- * @property targetSnapshotId Vollständige ID des zweiten Snapshots.
- * @property changedFiles Anzahl geänderter Dateien.
- * @property added Was im zweiten Snapshot hinzugekommen ist.
- * @property removed Was im zweiten Snapshot fehlt.
+ * @property sourceSnapshotId Full ID of the first snapshot.
+ * @property targetSnapshotId Full ID of the second snapshot.
+ * @property changedFiles Number of changed files.
+ * @property added What the second snapshot added.
+ * @property removed What the second snapshot lacks.
  */
 public data class DiffStatistics(
     val sourceSnapshotId: String,
@@ -93,19 +51,19 @@ public data class DiffStatistics(
 )
 
 /**
- * Ergebnis von [Restic.diffAll].
+ * Result of [FileCommands.diffAll].
  *
- * @property changes Alle Änderungen in Ausgabereihenfolge.
- * @property statistics Die Zusammenfassung.
+ * @property changes All changes, in output order.
+ * @property statistics The summary.
  */
 public data class DiffResult(
     val changes: List<DiffChange>,
     val statistics: DiffStatistics,
 )
 
-/** Empfängt die Änderungen eines laufenden [Restic.diff]; wird im Thread aufgerufen, der die restic-Ausgabe liest. */
+/** Receives the changes of a running [FileCommands.diff]; called on the thread that reads restic's output. */
 public fun interface DiffListener {
-    /** Eine gefundene Änderung. */
+    /** A change that was found. */
     public fun onChange(change: DiffChange)
 }
 

@@ -15,7 +15,7 @@ class TypedCatTest {
 
     @Test
     fun `config is typed`() {
-        val config = repository.restic.catConfig()
+        val config = repository.restic.cat().config()
 
         assertEquals(2, config.version)
         assertEquals(64, config.id.length)
@@ -24,7 +24,7 @@ class TypedCatTest {
 
     @Test
     fun `master key is typed`() {
-        val key = repository.restic.catMasterKey()
+        val key = repository.restic.cat().masterKey()
 
         assertTrue(key.encryptionKey.isNotEmpty() && key.macKey.isNotEmpty() && key.macRandom.isNotEmpty())
     }
@@ -33,7 +33,7 @@ class TypedCatTest {
     fun `snapshot is typed and carries its id`() {
         val listed = repository.restic.snapshots().single()
 
-        val snapshot = repository.restic.catSnapshot(listed.id)
+        val snapshot = repository.restic.cat().snapshot(listed.id)
 
         assertEquals(listed.id, snapshot.id)
         assertEquals(listed.tree, snapshot.tree)
@@ -42,9 +42,13 @@ class TypedCatTest {
 
     @Test
     fun `key is typed`() {
-        val keyInfo = repository.restic.listKeys().single()
+        val keyInfo =
+            repository.restic
+                .keys()
+                .list()
+                .single()
 
-        val key = repository.restic.catKey(keyInfo.id)
+        val key = repository.restic.cat().key(keyInfo.id)
 
         assertEquals("scrypt", key.kdf)
         assertTrue(key.n > 0 && key.r > 0 && key.p > 0)
@@ -55,7 +59,7 @@ class TypedCatTest {
     fun `tree is typed`() {
         val snapshot = repository.restic.snapshots().single()
 
-        val tree = repository.restic.catTree(snapshot.id)
+        val tree = repository.restic.cat().tree(snapshot.id)
 
         assertTrue(tree.nodes.isNotEmpty())
         assertTrue(tree.nodes.all { it.name.isNotEmpty() && it.type.isNotEmpty() })
@@ -63,9 +67,13 @@ class TypedCatTest {
 
     @Test
     fun `index is typed`() {
-        val indexId = repository.restic.list(ListObjectType.INDEX).first()
+        val indexId =
+            repository.restic
+                .list(ListObjectType.INDEX)
+                .first()
+                .id
 
-        val index = repository.restic.catIndex(indexId)
+        val index = repository.restic.cat().index(indexId)
 
         assertTrue(index.packs.isNotEmpty())
         assertTrue(index.packs.all { pack -> pack.id.isNotEmpty() && pack.blobs.isNotEmpty() })

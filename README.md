@@ -58,7 +58,12 @@ val result = restic.backup(listOf(Path.of("/home/me"))) {
 println("snapshot ${result.summary.snapshotId}, ${result.summary.filesNew} new files")
 
 restic.forget { keepDaily(7); keepWeekly(4); prune() }
+restic.maintenance().check()
 ```
+
+The everyday commands (`init`, `backup`, `snapshots`, `list`, `find`, `restore`, `forget`) are methods of `Restic`;
+the rest is grouped: `files()` (ls, dump, diff, mount), `modify()` (tag, rewrite, copy), `maintenance()` (prune,
+check, stats, unlock, ...), `repair()`, `keys()`, `cat()` and `tools()` (version, completion, help, ...).
 
 ## Java
 
@@ -77,9 +82,24 @@ BackupResult result = restic.backup(
             }
         });
 
-for (Snapshot snapshot : restic.snapshots()) {
-    System.out.println(snapshot.getShortId() + " " + snapshot.getTime());
-}
+restic.snapshots().stream()
+        .map(snapshot -> snapshot.getShortId() + " " + snapshot.getTime())
+        .forEach(System.out::println);
+```
+
+### Repository objects
+
+`list` returns typed objects (`Lock`, `Key`, `Index`, `Pack`, `Blob`, `Snapshot`). Listing reads only their IDs; a lock,
+key or index file reads its content on the first access to any other property, once, with one `restic cat` call.
+Find results load their snapshot the same way.
+
+```java
+restic.list(ListObjectType.LOCKS).forEach(lock ->
+        System.out.println(lock.getId() + ": pid " + lock.getPid() + " on " + lock.getHostname()));
+
+List<Snapshot> withFile = restic.find(List.of("mySpecialFile.txt")).stream()
+        .map(FindSnapshotMatches::getSnapshot)
+        .toList();
 ```
 
 Errors are a sealed `ResticException` hierarchy
@@ -95,7 +115,7 @@ Every command that starts a restic process accepts an optional `CancellationToke
 - `ls` also has the overload `ls(snapshotId, options, cancellationToken, listener)`; `listNodes`, `snapshots`,
   `snapshotGroups`, `find`, `findObjects` and `stats` also take it as their last parameter.
   **A token passed directly wins over the one in the options**; if it is `null`, the options token applies;
-- methods without options take it as their last parameter, e.g. `unlock(false, token)`, `listKeys(token)`, `help(listOf("backup"), token)`.
+- methods without options take it as their last parameter, e.g. `maintenance().unlock(false, token)`, `keys().list(token)`, `tools().help(listOf("backup"), token)`.
 
 `cancel()` ends restic **and all its child processes** (for example `rclone` behind an `rclone:` repository),
 first politely and after two seconds forcibly, on Linux and Windows. The call throws `ResticCancelledException`.
@@ -105,7 +125,7 @@ If restic still finished successfully at the moment of cancellation, its result 
 
 ```kotlin
 val token = CancellationToken()
-val listing = executor.submit { restic.listNodes(Restic.LATEST, LsOptions.builder().cancellationToken(token).build()) }
+val listing = executor.submit { restic.files().listNodes(Restic.LATEST, LsOptions.builder().cancellationToken(token).build()) }
 token.cancel() // from any thread; the call above throws ResticCancelledException
 ```
 
@@ -144,10 +164,10 @@ val listener = object : OutputLineListener {
     override fun onLine(line: String) = log.info(line)
     override fun onErrorLine(line: String) = log.warn(line)
 }
-val check = restic.check(CheckOptions.builder().readDataSubset("10%").build(), listener)
+val check = restic.maintenance().check(CheckOptions.builder().readDataSubset("10%").build(), listener)
 println("healthy=${check.isHealthy()}, ${check.outputLines.size} lines")
 
-val prune = restic.prune(PruneOptions.DEFAULT, listener)
+val prune = restic.maintenance().prune(PruneOptions.DEFAULT, listener)
 println("freed ${prune.bytesFreed} bytes, deleted ${prune.packsDeleted} packs, repacked ${prune.packsRepacked} packs")
 ```
 

@@ -4,22 +4,22 @@ import tools.jackson.databind.JsonNode
 import java.time.Instant
 
 /**
- * Die Zusammenfassung, die restic ab 0.17 mit jedem Snapshot speichert.
+ * The summary restic stores with every snapshot since 0.17.
  *
- * @property backupStart Startzeitpunkt des Backups.
- * @property backupEnd Endzeitpunkt des Backups.
- * @property filesNew Neu hinzugekommene Dateien.
- * @property filesChanged Geänderte Dateien.
- * @property filesUnmodified Unveränderte Dateien.
- * @property directoriesNew Neu hinzugekommene Verzeichnisse.
- * @property directoriesChanged Geänderte Verzeichnisse.
- * @property directoriesUnmodified Unveränderte Verzeichnisse.
- * @property dataBlobs Neu geschriebene Daten-Blobs.
- * @property treeBlobs Neu geschriebene Tree-Blobs.
- * @property dataAdded Neu hinzugefügte Bytes vor Kompression.
- * @property dataAddedPacked Neu hinzugefügte Bytes nach Kompression.
- * @property totalFilesProcessed Alle verarbeiteten Dateien.
- * @property totalBytesProcessed Größe aller verarbeiteten Dateien.
+ * @property backupStart Start time of the backup.
+ * @property backupEnd End time of the backup.
+ * @property filesNew New files.
+ * @property filesChanged Changed files.
+ * @property filesUnmodified Unchanged files.
+ * @property directoriesNew New directories.
+ * @property directoriesChanged Changed directories.
+ * @property directoriesUnmodified Unchanged directories.
+ * @property dataBlobs Newly written data blobs.
+ * @property treeBlobs Newly written tree blobs.
+ * @property dataAdded Newly added bytes before compression.
+ * @property dataAddedPacked Newly added bytes after compression.
+ * @property totalFilesProcessed All processed files.
+ * @property totalBytesProcessed Size of all processed files.
  */
 public data class SnapshotSummary(
     val backupStart: Instant?,
@@ -39,23 +39,23 @@ public data class SnapshotSummary(
 )
 
 /**
- * Ein Snapshot: der Zustand der gesicherten Pfade zu einem Zeitpunkt.
+ * A snapshot: the state of the backed-up paths at one point in time.
  *
- * @property id Vollständige ID.
- * @property shortId Die ersten acht Zeichen der ID, wie restic sie anzeigt.
- * @property time Zeitpunkt des Backups.
- * @property parent ID des Eltern-Snapshots, gegen den verglichen wurde.
- * @property tree ID des Wurzelverzeichnisses.
- * @property paths Gesicherte Pfade.
- * @property hostname Host, auf dem gesichert wurde.
- * @property username Benutzer, der gesichert hat.
- * @property uid Benutzer-ID unter Unix.
- * @property gid Gruppen-ID unter Unix.
- * @property excludes Beim Backup verwendete Ausschlussmuster.
- * @property tags Tags des Snapshots.
- * @property programVersion restic-Version, die den Snapshot angelegt hat.
- * @property original Snapshot-ID des Originals, wenn dieser Snapshot per `copy` oder `rewrite` entstanden ist.
- * @property summary Zusammenfassung des Backups; fehlt bei Snapshots von restic vor 0.17.
+ * @property id Full ID.
+ * @property shortId The first eight characters of the ID, as restic shows them.
+ * @property time Time of the backup.
+ * @property parent ID of the parent snapshot it was compared against.
+ * @property tree ID of the root directory.
+ * @property paths Backed-up paths.
+ * @property hostname Host on which the backup ran.
+ * @property username User who ran the backup.
+ * @property uid User ID on Unix.
+ * @property gid Group ID on Unix.
+ * @property excludes Exclude patterns used for the backup.
+ * @property tags Tags of the snapshot.
+ * @property programVersion restic version that created the snapshot.
+ * @property original Snapshot ID of the original, if this snapshot was created by `copy` or `rewrite`.
+ * @property summary Summary of the backup; missing for snapshots made by restic before 0.17.
  */
 public data class Snapshot(
     val id: String,
@@ -76,11 +76,11 @@ public data class Snapshot(
 )
 
 /**
- * Das gemeinsame Merkmal einer Snapshot-Gruppe; nur die Felder der Gruppierung sind gesetzt.
+ * What a snapshot group has in common; only the fields used for grouping are set.
  *
- * @property hostname Host der Gruppe.
- * @property paths Pfade der Gruppe.
- * @property tags Tags der Gruppe.
+ * @property hostname Host of the group.
+ * @property paths Paths of the group.
+ * @property tags Tags of the group.
  */
 public data class SnapshotGroupKey(
     val hostname: String?,
@@ -89,10 +89,10 @@ public data class SnapshotGroupKey(
 )
 
 /**
- * Eine Gruppe von Snapshots aus [Restic.snapshotGroups].
+ * A group of snapshots from [Restic.snapshotGroups].
  *
- * @property key Das gemeinsame Merkmal.
- * @property snapshots Die Snapshots der Gruppe.
+ * @property key What the group has in common.
+ * @property snapshots The snapshots of the group.
  */
 public data class SnapshotGroup(
     val key: SnapshotGroupKey,

@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 private const val LINE_FEED: Char = '\n'
 
-/** Blockierendes Lesen der Prozess-Streams gehört nicht in den gemeinsamen ForkJoinPool. */
+/** Blocking reads of process streams do not belong in the common ForkJoinPool. */
 internal val STREAM_READERS: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
 
 private val WATCHDOG: ScheduledExecutorService =
@@ -47,7 +47,7 @@ internal class ProcessRunner(
     private val configuration: ResticConfiguration,
     private val defaultCancellation: CancellationToken? = null,
 ) {
-    /** Ein Runner, dessen Aufrufe über [token] abbrechbar sind, sofern sie nicht schon ein eigenes Token tragen. */
+    /** A runner whose calls can be cancelled through [token], unless they already carry a token of their own. */
     fun cancellableBy(token: CancellationToken?): ProcessRunner = if (token == null) this else ProcessRunner(configuration, token)
 
     fun run(
@@ -60,6 +60,8 @@ internal class ProcessRunner(
         onStandardOutputLine: (String) -> Unit = {},
     ): ProcessOutcome {
         val request = plainRequest.withDefaultCancellation(defaultCancellation)
+        // a cancelled token must win deterministically; a started restic could otherwise finish first and succeed
+        if (request.cancellation?.isCancelled == true) throw ResticCancelledException()
         val process = start(request)
         request.cancellation?.attach(process)
         try {
@@ -74,7 +76,7 @@ internal class ProcessRunner(
         onStandardOutputLine: (String) -> Unit = {},
     ): ProcessOutcome = runChecked(ProcessRequest(arguments), onStandardOutputLine)
 
-    /** Wirft bei Exit-Code != 0 die passende [ResticCommandException]. */
+    /** Throws the matching [ResticCommandException] for an exit code other than 0. */
     fun runChecked(
         request: ProcessRequest,
         onStandardOutputLine: (String) -> Unit = {},
@@ -84,7 +86,7 @@ internal class ProcessRunner(
         return outcome
     }
 
-    /** Startet den Prozess und überlässt dem Aufrufer Ein- und Ausgabe sowie das Beenden. */
+    /** Starts the process and leaves input, output and ending it to the caller. */
     fun startProcess(request: ProcessRequest): Process = start(request)
 
     private fun start(request: ProcessRequest): Process {
@@ -108,17 +110,14 @@ internal class ProcessRunner(
         val watchdog = startWatchdog(process, configuration.timeout, timedOut)
         feedStandardInput(process, request.standardInput)
         val standardError = StandardErrorReader(process, request.onStandardErrorLine)
+        var outputConsumed = false
         try {
             consumeStandardOutput(process, request.standardOutput, onStandardOutputLine)
-        } catch (
-            // Listener dürfen alles werfen; nach einem Abbruch zählt der Abbruch
-            @Suppress("TooGenericExceptionCaught")
-            failure: Throwable,
-        ) {
-            throwIfStoppedByUs(request.cancellation, timedOut.get())
-            throw failure
+            outputConsumed = true
         } finally {
             watchdog?.cancel(false)
+            // a listener may have thrown anything; after a cancellation, the cancellation is what counts
+            if (!outputConsumed) throwIfStoppedByUs(request.cancellation, timedOut.get())
         }
         val exitCode = process.waitFor()
         if (exitCode != 0) throwIfStoppedByUs(request.cancellation, timedOut.get())
@@ -126,8 +125,8 @@ internal class ProcessRunner(
     }
 
     /**
-     * Nach Abbruch oder Timeout sind Lesefehler und halbe Ausgaben Folgen des Beendens, nicht die Ursache; gemeldet
-     * wird deshalb der Abbruch. Endete restic trotzdem regulär mit 0, gilt das Ergebnis (siehe Aufrufer).
+     * After a cancellation or timeout, read errors and partial output are consequences of ending the process, not the
+     * cause, so the cancellation is reported. If restic still ended regularly with 0, the result stands (see caller).
      */
     private fun throwIfStoppedByUs(
         cancellation: CancellationToken?,
@@ -169,7 +168,7 @@ private fun feedStandardInput(
         try {
             process.outputStream.use { standardInput.transferTo(it) }
         } catch (ignored: IOException) {
-            // restic hat sich beendet, bevor die Eingabe gelesen war; der Exit-Code erklärt den Grund
+            // restic exited before the input was read; the exit code explains why
         }
     }
 }
@@ -187,8 +186,8 @@ private fun startWatchdog(
 }
 
 /**
- * Liest stderr vollständig, auch wenn der Listener wirft: Bliebe die Pipe ungelesen, liefe sie voll,
- * restic blockierte beim Schreiben und der Aufruf hinge für immer. Der erste Listener-Fehler wird in [await] geworfen.
+ * Reads stderr completely, even if the listener throws: an unread pipe would fill up, restic would block while
+ * writing, and the call would hang forever. The first listener failure is thrown in [await].
  */
 private class StandardErrorReader(
     process: Process,
@@ -221,14 +220,7 @@ private class StandardErrorReader(
 
     private fun notifyListener(line: String) {
         if (listenerFailure.get() != null) return
-        try {
-            onLine?.invoke(line)
-        } catch (
-            // ein Listener darf alles werfen, stderr muss trotzdem weiter gelesen werden
-            @Suppress("TooGenericExceptionCaught")
-            failure: Throwable,
-        ) {
-            listenerFailure.compareAndSet(null, failure)
-        }
+        // a listener may throw anything, stderr must still be read to the end
+        runCatching { onLine?.invoke(line) }.onFailure { failure -> listenerFailure.compareAndSet(null, failure) }
     }
 }

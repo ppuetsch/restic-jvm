@@ -7,38 +7,38 @@ import java.time.format.DateTimeFormatter
 private val RESTIC_TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
 /**
- * Optionen für [Restic.backup], [Restic.backupStandardInput] und [Restic.backupCommandOutput] (`restic backup`).
- * Alle Flags der CLI sind abgedeckt.
+ * Options for [Restic.backup], [Restic.backupStandardInput] and [Restic.backupCommandOutput] (`restic backup`).
+ * Every flag of the CLI is covered.
  *
- * @property dryRun Nur zeigen, was gesichert würde (`--dry-run`).
- * @property excludes Ausschlussmuster (`--exclude`).
- * @property caseInsensitiveExcludes Ausschlussmuster ohne Beachtung der Groß-/Kleinschreibung (`--iexclude`).
- * @property excludeFiles Dateien mit Ausschlussmustern (`--exclude-file`).
- * @property caseInsensitiveExcludeFiles Dateien mit Ausschlussmustern ohne Groß-/Kleinschreibung (`--iexclude-file`).
- * @property excludeCaches Überspringt als Cache markierte Verzeichnisse (`--exclude-caches`).
- * @property excludeCloudFiles Überspringt nur in der Cloud liegende Dateien (`--exclude-cloud-files`).
- * @property excludeIfPresent Überspringt Verzeichnisse, die eine dieser Dateien enthalten (`--exclude-if-present`).
- * @property excludeLargerThan Überspringt Dateien über dieser Größe (`--exclude-larger-than`).
- * @property filesFrom Dateien mit zu sichernden Mustern (`--files-from`).
- * @property filesFromRaw Dateien mit NUL-getrennten Pfaden (`--files-from-raw`).
- * @property filesFromVerbatim Dateien mit zeilenweisen Pfaden ohne Musterauswertung (`--files-from-verbatim`).
- * @property force Liest alle Dateien neu, statt unveränderte zu überspringen (`--force`).
- * @property groupBy Gruppierung bei der Suche nach dem Eltern-Snapshot (`--group-by`).
- * @property host Hostname im Snapshot (`--host`).
- * @property ignoreCtime Ignoriert Änderungen der ctime bei der Erkennung geänderter Dateien (`--ignore-ctime`).
- * @property ignoreInode Ignoriert Inode-Änderungen bei der Erkennung geänderter Dateien (`--ignore-inode`).
- * @property noScan Verzichtet auf die vorherige Größenermittlung (`--no-scan`).
- * @property oneFileSystem Bleibt auf dem Dateisystem der Startpfade (`--one-file-system`).
- * @property parent Expliziter Eltern-Snapshot (`--parent`).
- * @property readConcurrency Anzahl parallel gelesener Dateien (`--read-concurrency`).
- * @property skipIfUnchanged Legt keinen Snapshot an, wenn sich nichts geändert hat (`--skip-if-unchanged`).
- * @property stdinFilename Dateiname im Snapshot bei Sicherung von stdin (`--stdin-filename`).
- * @property tags Tags des neuen Snapshots (`--tag`).
- * @property time Zeitpunkt des Snapshots (`--time`).
- * @property useFsSnapshot Sichert unter Windows aus einem VSS-Snapshot (`--use-fs-snapshot`).
- * @property withAtime Speichert auch die Zugriffszeit (`--with-atime`).
- * @property verbose Meldet jede Datei als [BackupEvent.FileAction] (`--verbose`).
- * @property cancellationToken Token, über das sich der Aufruf abbrechen lässt.
+ * @property dryRun Only show what would be backed up (`--dry-run`).
+ * @property excludes Exclude patterns (`--exclude`).
+ * @property caseInsensitiveExcludes Exclude patterns ignoring case (`--iexclude`).
+ * @property excludeFiles Files with exclude patterns (`--exclude-file`).
+ * @property caseInsensitiveExcludeFiles Files with exclude patterns ignoring case (`--iexclude-file`).
+ * @property excludeCaches Skips directories marked as cache (`--exclude-caches`).
+ * @property excludeCloudFiles Skips files that exist only in the cloud (`--exclude-cloud-files`).
+ * @property excludeIfPresent Skips directories containing one of these files (`--exclude-if-present`).
+ * @property excludeLargerThan Skips files above this size (`--exclude-larger-than`).
+ * @property filesFrom Files with patterns to back up (`--files-from`).
+ * @property filesFromRaw Files with NUL-separated paths (`--files-from-raw`).
+ * @property filesFromVerbatim Files with one path per line, without pattern matching (`--files-from-verbatim`).
+ * @property force Rereads all files instead of skipping unchanged ones (`--force`).
+ * @property groupBy Grouping used to find the parent snapshot (`--group-by`).
+ * @property host Host name in the snapshot (`--host`).
+ * @property ignoreCtime Ignores ctime changes when detecting changed files (`--ignore-ctime`).
+ * @property ignoreInode Ignores inode changes when detecting changed files (`--ignore-inode`).
+ * @property noScan Skips the initial size scan (`--no-scan`).
+ * @property oneFileSystem Stays on the file system of the start paths (`--one-file-system`).
+ * @property parent Explicit parent snapshot (`--parent`).
+ * @property readConcurrency Number of files read in parallel (`--read-concurrency`).
+ * @property skipIfUnchanged Creates no snapshot if nothing changed (`--skip-if-unchanged`).
+ * @property stdinFilename File name in the snapshot when backing up stdin (`--stdin-filename`).
+ * @property tags Tags of the new snapshot (`--tag`).
+ * @property time Time of the snapshot (`--time`).
+ * @property useFsSnapshot Backs up from a VSS snapshot on Windows (`--use-fs-snapshot`).
+ * @property withAtime Also stores the access time (`--with-atime`).
+ * @property verbose Reports every file as [BackupEvent.FileAction] (`--verbose`).
+ * @property cancellationToken Token that cancels the call.
  */
 public class BackupOptions private constructor(
     builder: Builder,
@@ -105,8 +105,7 @@ public class BackupOptions private constructor(
             optionalFlag("--verbose", verbose)
         }
 
-    /** Stellt [BackupOptions] zusammen; jede Methode setzt ein Flag und gibt den Builder zurück. */
-    @Suppress("TooManyFunctions") // eine Methode je restic-Flag; das Builder-API bildet die CLI vollständig ab
+    /** Builds [BackupOptions]; every method sets one flag and returns the builder. */
     public class Builder internal constructor() {
         internal var dryRun: Boolean = false
         internal val excludes: MutableList<String> = mutableListOf()
@@ -138,117 +137,117 @@ public class BackupOptions private constructor(
         internal var verbose: Boolean = false
         internal var cancellationToken: CancellationToken? = null
 
-        /** Zeigt nur, was gesichert würde, ohne Daten zu schreiben (`--dry-run`). */
+        /** Only shows what would be backed up, without writing data (`--dry-run`). */
         @JvmOverloads
         public fun dryRun(enabled: Boolean = true): Builder = apply { dryRun = enabled }
 
-        /** Schließt passende Pfade aus (`--exclude`), z.B. `*.tmp` oder `/home/user/.cache`; mehrfach möglich. */
+        /** Excludes matching paths (`--exclude`), for example `*.tmp` or `/home/user/.cache`; may be repeated. */
         public fun exclude(pattern: String): Builder = apply { excludes.add(pattern) }
 
-        /** Wie [exclude], ohne Beachtung der Groß-/Kleinschreibung (`--iexclude`). */
+        /** Like [exclude], ignoring case (`--iexclude`). */
         public fun caseInsensitiveExclude(pattern: String): Builder = apply { caseInsensitiveExcludes.add(pattern) }
 
-        /** Liest Ausschlussmuster zeilenweise aus einer Datei (`--exclude-file`). */
+        /** Reads exclude patterns line by line from a file (`--exclude-file`). */
         public fun excludeFile(file: Path): Builder = apply { excludeFiles.add(file) }
 
-        /** Wie [excludeFile], ohne Beachtung der Groß-/Kleinschreibung (`--iexclude-file`). */
+        /** Like [excludeFile], ignoring case (`--iexclude-file`). */
         public fun caseInsensitiveExcludeFile(file: Path): Builder = apply { caseInsensitiveExcludeFiles.add(file) }
 
-        /** Überspringt Verzeichnisse mit einer `CACHEDIR.TAG`-Datei (`--exclude-caches`). */
+        /** Skips directories containing a `CACHEDIR.TAG` file (`--exclude-caches`). */
         @JvmOverloads
         public fun excludeCaches(enabled: Boolean = true): Builder = apply { excludeCaches = enabled }
 
-        /** Überspringt Platzhalter von Cloud-Dateien, die nicht lokal vorliegen, etwa bei OneDrive (`--exclude-cloud-files`). */
+        /** Skips placeholders of cloud files that are not available locally, for example with OneDrive (`--exclude-cloud-files`). */
         @JvmOverloads
         public fun excludeCloudFiles(enabled: Boolean = true): Builder = apply { excludeCloudFiles = enabled }
 
-        /** Überspringt Verzeichnisse, die diese Datei enthalten (`--exclude-if-present`); Format `dateiname` oder `dateiname:header`. */
+        /** Skips directories containing this file (`--exclude-if-present`); format `filename` or `filename:header`. */
         public fun excludeIfPresent(filenameWithOptionalHeader: String): Builder =
             apply { excludeIfPresent.add(filenameWithOptionalHeader) }
 
-        /** Überspringt Dateien über dieser Größe (`--exclude-larger-than`); Suffix k/K, m/M, g/G, t/T, z.B. `10M`. */
+        /** Skips files above this size (`--exclude-larger-than`); suffix k/K, m/M, g/G, t/T, for example `10M`. */
         public fun excludeLargerThan(size: String): Builder = apply { excludeLargerThan = size }
 
-        /** Liest zu sichernde Pfade und Muster zeilenweise aus einer Datei (`--files-from`). */
+        /** Reads paths and patterns to back up line by line from a file (`--files-from`). */
         public fun filesFrom(file: Path): Builder = apply { filesFrom.add(file) }
 
-        /** Liest zu sichernde Pfade NUL-getrennt aus einer Datei, etwa aus `find -print0` (`--files-from-raw`). */
+        /** Reads NUL-separated paths to back up from a file, for example from `find -print0` (`--files-from-raw`). */
         public fun filesFromRaw(file: Path): Builder = apply { filesFromRaw.add(file) }
 
-        /** Liest zu sichernde Pfade zeilenweise, ohne Muster auszuwerten (`--files-from-verbatim`). */
+        /** Reads paths to back up line by line, without evaluating patterns (`--files-from-verbatim`). */
         public fun filesFromVerbatim(file: Path): Builder = apply { filesFromVerbatim.add(file) }
 
-        /** Liest alle Dateien neu, statt unveränderte anhand des Eltern-Snapshots zu überspringen (`--force`). */
+        /** Rereads all files instead of skipping unchanged ones based on the parent snapshot (`--force`). */
         @JvmOverloads
         public fun force(enabled: Boolean = true): Builder = apply { force = enabled }
 
-        /** Wie der Eltern-Snapshot gesucht wird (`--group-by`): Kombination aus `host`, `paths`, `tags`, durch Komma getrennt. */
+        /** How the parent snapshot is found (`--group-by`): a comma-separated combination of `host`, `paths`, `tags`. */
         public fun groupBy(group: String): Builder = apply { groupBy = group }
 
-        /** Hostname im Snapshot statt des Rechnernamens (`--host`). */
+        /** Host name in the snapshot instead of the machine name (`--host`). */
         public fun host(hostname: String): Builder = apply { host = hostname }
 
-        /** Erkennt geänderte Dateien ohne Blick auf die ctime (`--ignore-ctime`). */
+        /** Detects changed files without looking at the ctime (`--ignore-ctime`). */
         @JvmOverloads
         public fun ignoreCtime(enabled: Boolean = true): Builder = apply { ignoreCtime = enabled }
 
-        /** Erkennt geänderte Dateien ohne Blick auf die Inode-Nummer, etwa bei FUSE- oder Netzlaufwerken (`--ignore-inode`). */
+        /** Detects changed files without looking at the inode number, for example on FUSE or network drives (`--ignore-inode`). */
         @JvmOverloads
         public fun ignoreInode(enabled: Boolean = true): Builder = apply { ignoreInode = enabled }
 
-        /** Verzichtet auf die vorherige Größenermittlung; der Fortschritt kennt dann keine Gesamtgröße (`--no-scan`). */
+        /** Skips the initial size scan; progress then knows no total size (`--no-scan`). */
         @JvmOverloads
         public fun noScan(enabled: Boolean = true): Builder = apply { noScan = enabled }
 
-        /** Bleibt auf dem Dateisystem der Startpfade und folgt keinen Mountpoints (`--one-file-system`). */
+        /** Stays on the file system of the start paths and does not follow mount points (`--one-file-system`). */
         @JvmOverloads
         public fun oneFileSystem(enabled: Boolean = true): Builder = apply { oneFileSystem = enabled }
 
-        /** Vergleicht mit diesem Snapshot statt mit dem automatisch gewählten (`--parent`). */
+        /** Compares with this snapshot instead of the automatically chosen one (`--parent`). */
         public fun parent(snapshotId: String): Builder = apply { parent = snapshotId }
 
-        /** Anzahl der parallel gelesenen Dateien (`--read-concurrency`); restic-Standard ist 2. */
+        /** Number of files read in parallel (`--read-concurrency`); restic's default is 2. */
         public fun readConcurrency(files: Int): Builder = apply { readConcurrency = files }
 
-        /** Legt keinen Snapshot an, wenn sich gegenüber dem Eltern-Snapshot nichts geändert hat (`--skip-if-unchanged`). */
+        /** Creates no snapshot if nothing changed compared with the parent snapshot (`--skip-if-unchanged`). */
         @JvmOverloads
         public fun skipIfUnchanged(enabled: Boolean = true): Builder = apply { skipIfUnchanged = enabled }
 
-        /** Dateiname im Snapshot, wenn von stdin gesichert wird (`--stdin-filename`, Standard bei restic: `stdin`). */
+        /** File name in the snapshot when backing up stdin (`--stdin-filename`, restic's default: `stdin`). */
         public fun stdinFilename(filename: String): Builder = apply { stdinFilename = filename }
 
-        /** Versieht den Snapshot mit Tags (`--tag`); mehrfach möglich. */
+        /** Adds tags to the snapshot (`--tag`); may be repeated. */
         public fun tag(vararg tags: String): Builder = apply { this.tags.addAll(tags) }
 
-        /** Zeitpunkt des Snapshots in lokaler Zeit (`--time`); Standard ist jetzt. */
+        /** Time of the snapshot in local time (`--time`); defaults to now. */
         public fun time(time: LocalDateTime): Builder = apply { this.time = time }
 
-        /** Sichert unter Windows aus einem Volume-Shadow-Copy-Snapshot, damit geöffnete Dateien konsistent sind (`--use-fs-snapshot`). */
+        /** On Windows, backs up from a Volume Shadow Copy snapshot so open files are consistent (`--use-fs-snapshot`). */
         @JvmOverloads
         public fun useFsSnapshot(enabled: Boolean = true): Builder = apply { useFsSnapshot = enabled }
 
-        /** Speichert auch die Zugriffszeit der Dateien (`--with-atime`). */
+        /** Also stores the access time of the files (`--with-atime`). */
         @JvmOverloads
         public fun withAtime(enabled: Boolean = true): Builder = apply { withAtime = enabled }
 
-        /** Meldet zusätzlich jede Datei als [BackupEvent.FileAction] (`--verbose`). */
+        /** Additionally reports every file as [BackupEvent.FileAction] (`--verbose`). */
         @JvmOverloads
         public fun verbose(enabled: Boolean = true): Builder = apply { verbose = enabled }
 
-        /** Token, über das sich der Aufruf von einem anderen Thread aus abbrechen lässt. */
+        /** Token that cancels the call from another thread. */
         public fun cancellationToken(token: CancellationToken): Builder = apply { cancellationToken = token }
 
-        /** Erzeugt die unveränderlichen Optionen. */
+        /** Creates the immutable options. */
         public fun build(): BackupOptions = BackupOptions(this)
     }
 
-    /** Standardwerte und Einstieg in den [Builder]. */
+    /** Default values and entry point to the [Builder]. */
     public companion object {
-        /** Keine Flags gesetzt: restic-Standardverhalten. */
+        /** No flags set: restic's default behaviour. */
         @JvmField
         public val DEFAULT: BackupOptions = Builder().build()
 
-        /** Ein neuer [Builder] ohne gesetzte Flags. */
+        /** A new [Builder] with no flags set. */
         @JvmStatic
         public fun builder(): Builder = Builder()
     }

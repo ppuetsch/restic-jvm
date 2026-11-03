@@ -15,7 +15,7 @@ class VersionAndInitTest {
 
     @Test
     fun `version reports restic and go details`() {
-        val version = resticFor(temporaryDirectory.resolve("unused")).version()
+        val version = resticFor(temporaryDirectory.resolve("unused")).tools().version()
         assertTrue(version.isAtLeast(0, 17), version.toString())
         assertTrue(version.goVersion.startsWith("go"), version.toString())
         assertTrue(version.goOs.isNotEmpty() && version.goArch.isNotEmpty())
