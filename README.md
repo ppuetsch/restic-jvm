@@ -8,7 +8,7 @@
 [![Documentation](https://readthedocs.org/projects/restic-jvm/badge/?version=latest)](https://restic-jvm.readthedocs.io/)
 
 [![Release](https://img.shields.io/github/v/release/ppuetsch/restic-jvm?sort=semver)](https://github.com/ppuetsch/restic-jvm/releases/latest)
-[![Java](https://img.shields.io/badge/Java-25-orange?logo=openjdk)](https://openjdk.org/projects/jdk/25/)
+[![Java](https://img.shields.io/badge/Java-17%2B-orange?logo=openjdk)](https://openjdk.org/projects/jdk/17/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.4-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![restic](https://img.shields.io/badge/restic-0.18%20%7C%200.19-blue)](https://restic.net)
 [![License](https://img.shields.io/github/license/ppuetsch/restic-jvm)](LICENSE)
@@ -16,7 +16,7 @@
 Kotlin library (fully usable from Java) that drives the [restic](https://restic.net) backup CLI.
 It starts the `restic` binary, speaks its documented `--json` interface and maps results to typed objects.
 
-- JVM 25, a single runtime dependency (`jackson-databind`, never exposed in the public API)
+- Java 17 or newer, a single runtime dependency (`jackson-databind`, never exposed in the public API)
 - Repositories are addressed with restic connection strings: `C:/backups/repo`, `sftp:user@host:/path`, `rclone:remote:path`, `s3:...`
 - Passwords never appear on the command line (environment variable, file or command)
 - Streaming results (backup progress, `ls`, `restore`, `diff`) via listeners, no extra dependencies
@@ -202,6 +202,9 @@ Global flags (`--no-lock`, `--compression`, `--limit-upload`, `--option`, ...) a
 - restic's JSON is always returned as typed objects, never as raw strings; `catText` is only for non-JSON objects.
 
 ## Build
+
+Building needs JDK 25; the library is compiled for Java 17 (bytecode and API), and
+`-PtestJavaVersion=17` runs the tests on a Java 17 runtime, as CI does for the restic 0.18.1 legs.
 
 ```
 ./gradlew build                   # needs a restic binary; set RESTIC_BINARY to its path if it is not on the PATH
