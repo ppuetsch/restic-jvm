@@ -22,7 +22,7 @@ It starts the `restic` binary, speaks its documented `--json` interface and maps
 - Streaming results (backup progress, `ls`, `restore`, `diff`) via listeners, no extra dependencies
 - Every restic command and flag has a counterpart; tested end to end against real repositories on Linux and Windows
 
-You need the `restic` binary (0.17 or newer) on the `PATH`, or pass its location with `binary(...)`.
+restic itself comes either from the `PATH`, from `binary(...)`, or bundled with the library (see below).
 
 API reference for every release: **[restic-jvm.readthedocs.io](https://restic-jvm.readthedocs.io/)**. Its start page
 has more examples: listing locks, iterating snapshots, finding the snapshots that contain a file, reading a file into
@@ -37,6 +37,24 @@ dependencies {
     implementation("io.github.ppuetsch:restic-jvm:0.7.0")
 }
 ```
+
+### Bundled restic
+
+To run with nothing but Java installed, add the artifact with the restic binary for the platform the service runs on:
+
+```kotlin
+runtimeOnly("io.github.ppuetsch:restic-jvm-binary-linux-x86_64:0.7.0")
+```
+
+Available: `linux-x86_64`, `linux-aarch64`, `windows-x86_64`, `macos-x86_64`, `macos-aarch64`, or
+`restic-jvm-binaries-all` for all of them (the library then picks the matching one at runtime). Name the platform
+the service *runs* on, not the one it is built on: a Linux Docker image built on Windows needs `linux-x86_64`.
+
+Without `binary(...)`, the library uses the bundled binary for the running platform if one is on the class path, and
+`restic` from the `PATH` otherwise. On first use it extracts the binary into the user's cache directory
+(`bundledBinaryDirectory(...)` changes that, for example for read-only containers) and checks its SHA-256 before every
+first run in a JVM. The binaries are restic's official release builds (BSD 2-Clause, license included); the build
+pins their checksums, which match restic's signed `SHA256SUMS`.
 
 ## Kotlin
 

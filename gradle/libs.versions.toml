@@ -1,4 +1,6 @@
 [versions]
+# restic shipped in the restic-jvm-binary-* artifacts; CI tests the library against it
+restic-bundled = "0.19.1"
 kotlin = "2.4.21"
 ktlint-gradle = "14.2.0"
 ktlint-engine = "1.8.0"

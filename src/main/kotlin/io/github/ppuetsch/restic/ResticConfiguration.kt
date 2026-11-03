@@ -3,7 +3,10 @@ package io.github.ppuetsch.restic
 import java.nio.file.Path
 import java.time.Duration
 
-/** Name of the restic binary when [ResticConfiguration.Builder.binary] is not set; it is looked up in the `PATH`. */
+/**
+ * Name of the restic binary when [ResticConfiguration.Builder.binary] is not set and no `restic-jvm-binary-*` artifact for
+ * the running platform is on the class path; it is looked up in the `PATH`.
+ */
 public const val DEFAULT_RESTIC_BINARY: String = "restic"
 
 /** Compression level for newly written data (`--compression`); only has an effect on repositories of format 2 or later. */
@@ -34,7 +37,9 @@ public enum class Compression(
  *     .build();
  * ```
  *
- * @property binary Path or name of the restic binary.
+ * @property binary Path or name of the restic binary: the one set with [Builder.binary], otherwise the restic shipped in a
+ *   `restic-jvm-binary-*` artifact for the running platform (extracted on first use), otherwise [DEFAULT_RESTIC_BINARY].
+ * @property bundledBinaryDirectory Where a shipped restic binary is extracted to.
  * @property repository Repository as a connection string (`--repo`).
  * @property repositoryFile File holding the connection string (`--repository-file`).
  * @property passwordFile File holding the repository password (`--password-file`).
@@ -66,7 +71,11 @@ public enum class Compression(
 public class ResticConfiguration private constructor(
     builder: Builder,
 ) {
-    public val binary: String = builder.binary
+    private val explicitBinary: String? = builder.binary
+    public val bundledBinaryDirectory: Path = builder.bundledBinaryDirectory ?: HostPlatform.defaultCacheDirectory()
+    public val binary: String by lazy {
+        explicitBinary ?: BundledRestic.extractedBinary(bundledBinaryDirectory)?.toString() ?: DEFAULT_RESTIC_BINARY
+    }
     public val repository: String? = builder.repository
     public val repositoryFile: Path? = builder.repositoryFile
     public val passwordFile: Path? = builder.passwordFile
@@ -130,7 +139,8 @@ public class ResticConfiguration private constructor(
 
     /** Builds a [ResticConfiguration]; every method sets one value and returns the builder. */
     public class Builder internal constructor() {
-        internal var binary: String = DEFAULT_RESTIC_BINARY
+        internal var binary: String? = null
+        internal var bundledBinaryDirectory: Path? = null
         internal var repository: String? = null
         internal var repositoryFile: Path? = null
         internal var passwordFile: Path? = null
@@ -159,8 +169,17 @@ public class ResticConfiguration private constructor(
         internal var workingDirectory: Path? = null
         internal var timeout: Duration? = null
 
-        /** Path or name of the restic binary; defaults to [DEFAULT_RESTIC_BINARY] from the `PATH`. */
+        /**
+         * Path or name of the restic binary. Without it, a `restic-jvm-binary-*` artifact for the running platform is used
+         * if one is on the class path, otherwise [DEFAULT_RESTIC_BINARY] from the `PATH`.
+         */
         public fun binary(binary: String): Builder = apply { this.binary = binary }
+
+        /**
+         * Directory a shipped restic binary is extracted to; it must allow executing files. Defaults to a `restic-jvm`
+         * folder in the user's cache directory (`%LOCALAPPDATA%`, `~/Library/Caches` or `$XDG_CACHE_HOME`/`~/.cache`).
+         */
+        public fun bundledBinaryDirectory(directory: Path): Builder = apply { this.bundledBinaryDirectory = directory }
 
         /** Connection string as for `restic --repo`, for example `C:/backups`, `sftp:user@host:/path`, `rclone:remote:path`. */
         public fun repository(repository: String): Builder = apply { this.repository = repository }
