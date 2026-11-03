@@ -7,6 +7,7 @@
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ppuetsch/restic-jvm/badge)](https://scorecard.dev/viewer/?uri=github.com/ppuetsch/restic-jvm)
 [![Documentation](https://readthedocs.org/projects/restic-jvm/badge/?version=latest)](https://restic-jvm.readthedocs.io/)
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.ppuetsch/restic-jvm)](https://central.sonatype.com/artifact/io.github.ppuetsch/restic-jvm)
 [![Release](https://img.shields.io/github/v/release/ppuetsch/restic-jvm?sort=semver)](https://github.com/ppuetsch/restic-jvm/releases/latest)
 [![Java](https://img.shields.io/badge/Java-17%2B-orange?logo=openjdk)](https://openjdk.org/projects/jdk/17/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.4-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
