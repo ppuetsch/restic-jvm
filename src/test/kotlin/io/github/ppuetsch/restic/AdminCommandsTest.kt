@@ -37,11 +37,23 @@ class AdminCommandsTest {
 
     @Test
     fun `key list shows the current key`() {
-        val keys = restic.listKeys()
+        val keys = restic.keys().list()
         val key = keys.single()
         assertTrue(key.current)
-        assertEquals(64, restic.list(ListObjectType.KEYS).single().length)
-        assertTrue(restic.list(ListObjectType.KEYS).single().startsWith(key.id))
+        assertEquals(
+            64,
+            restic
+                .list(ListObjectType.KEYS)
+                .single()
+                .id.length,
+        )
+        assertTrue(
+            restic
+                .list(ListObjectType.KEYS)
+                .single()
+                .id
+                .startsWith(key.id),
+        )
         assertNotNull(key.created)
         assertTrue(key.userName.isNotEmpty() && key.hostName.isNotEmpty())
     }
@@ -49,28 +61,28 @@ class AdminCommandsTest {
     @Test
     fun `key add with a new password makes the new password usable`() {
         val result =
-            restic.addKey {
+            restic.keys().add {
                 newPassword("second-password")
                 user("alice")
                 host("laptop")
             }
         assertEquals(64, result.keyId?.length)
-        assertEquals(2, restic.listKeys().size)
+        assertEquals(2, restic.keys().list().size)
         val other = resticWithPassword("second-password")
-        assertEquals(2, other.listKeys().size)
-        assertTrue(other.listKeys().any { it.userName == "alice" && it.hostName == "laptop" && it.current })
+        assertEquals(2, other.keys().list().size)
+        assertTrue(other.keys().list().any { it.userName == "alice" && it.hostName == "laptop" && it.current })
     }
 
     @Test
     fun `key add from a password file`() {
         val passwordFile = temporaryDirectory.resolve("new-pw.txt").also { it.writeText("from-file") }
-        restic.addKey(NewKeyOptions.builder().newPasswordFile(passwordFile).build())
-        assertEquals(2, resticWithPassword("from-file").listKeys().size)
+        restic.keys().add(NewKeyOptions.builder().newPasswordFile(passwordFile).build())
+        assertEquals(2, resticWithPassword("from-file").keys().list().size)
     }
 
     @Test
     fun `key add without password`() {
-        restic.addKey { newInsecureNoPassword() }
+        restic.keys().add { newInsecureNoPassword() }
         val noPassword =
             Restic(
                 ResticConfiguration
@@ -81,45 +93,63 @@ class AdminCommandsTest {
                     .insecureNoPassword()
                     .build(),
             )
-        assertEquals(2, noPassword.listKeys().size)
+        assertEquals(2, noPassword.keys().list().size)
     }
 
     @Test
     fun `key remove deletes another key`() {
-        val added = restic.addKey { newPassword("temporary") }
-        restic.removeKey(added.keyId.orEmpty())
-        assertEquals(1, restic.listKeys().size)
-        assertThrows<WrongPasswordException> { resticWithPassword("temporary").listKeys() }
+        val added = restic.keys().add { newPassword("temporary") }
+        restic.keys().remove(added.keyId.orEmpty())
+        assertEquals(1, restic.keys().list().size)
+        assertThrows<WrongPasswordException> { resticWithPassword("temporary").keys().list() }
     }
 
     @Test
     fun `key passwd replaces the current key`() {
-        restic.changePassword { newPassword("changed-password") }
-        assertThrows<WrongPasswordException> { restic.listKeys() }
+        restic.keys().changePassword { newPassword("changed-password") }
+        assertThrows<WrongPasswordException> { restic.keys().list() }
         val changed = resticWithPassword("changed-password")
-        assertEquals(1, changed.listKeys().size)
+        assertEquals(1, changed.keys().list().size)
         assertTrue(changed.snapshots().isEmpty())
     }
 
     @Test
     fun `unlock removes stale locks and accepts remove all`() {
-        restic.unlock()
-        restic.unlock(removeAll = true)
-        assertEquals(emptyList<String>(), restic.list(ListObjectType.LOCKS))
+        restic.maintenance().unlock()
+        restic.maintenance().unlock(removeAll = true)
+        assertTrue(restic.list(ListObjectType.LOCKS).isEmpty())
     }
 
     @Test
     fun `migrate lists available migrations`() {
-        val output = restic.migrate()
+        val output = restic.maintenance().migrate()
         assertTrue(output.lines.isNotEmpty())
-        assertTrue(restic.migrate(force = true).lines.isNotEmpty())
+        assertTrue(
+            restic
+                .maintenance()
+                .migrate(force = true)
+                .lines
+                .isNotEmpty(),
+        )
     }
 
     @Test
     fun `cache with all flags`() {
-        assertTrue(restic.cache().lines.isNotEmpty())
-        assertTrue(restic.cache { noSize() }.lines.isNotEmpty())
-        restic.cache {
+        assertTrue(
+            restic
+                .maintenance()
+                .cache()
+                .lines
+                .isNotEmpty(),
+        )
+        assertTrue(
+            restic
+                .maintenance()
+                .cache { noSize() }
+                .lines
+                .isNotEmpty(),
+        )
+        restic.maintenance().cache {
             cleanup()
             maxAgeDays(1000)
         }
@@ -127,7 +157,7 @@ class AdminCommandsTest {
 
     @Test
     fun `features lists feature flags`() {
-        val features = restic.features()
+        val features = restic.maintenance().features()
         assertTrue(features.isNotEmpty())
         val flag = features.first { it.name == "safe-forget-keep-tags" }
         assertEquals("stable", flag.stage)
@@ -138,23 +168,41 @@ class AdminCommandsTest {
     @Test
     fun `recover and repair index and packs`() {
         fixture.backup()
-        assertTrue(restic.recover().lines.isNotEmpty())
-        assertTrue(restic.repairIndex().lines.isNotEmpty())
-        assertTrue(restic.repairIndex(readAllPacks = true).lines.isNotEmpty())
-        assertTrue(restic.check().isHealthy())
-        val pack = restic.list(ListObjectType.PACKS).first()
+        assertTrue(
+            restic
+                .maintenance()
+                .recover()
+                .lines
+                .isNotEmpty(),
+        )
+        assertTrue(
+            restic
+                .repair()
+                .index()
+                .lines
+                .isNotEmpty(),
+        )
+        assertTrue(
+            restic
+                .repair()
+                .index(readAllPacks = true)
+                .lines
+                .isNotEmpty(),
+        )
+        assertTrue(restic.maintenance().check().isHealthy())
+        val pack = restic.list(ListObjectType.PACKS).first().id
         val packBackupDirectory = temporaryDirectory.resolve("pack-backups").also(Files::createDirectories)
-        resticFor(fixture.repository) { workingDirectory(packBackupDirectory) }.repairPacks(listOf(pack))
+        resticFor(fixture.repository) { workingDirectory(packBackupDirectory) }.repair().packs(listOf(pack))
         assertTrue(Files.exists(packBackupDirectory.resolve("pack-$pack")), "restic keeps a copy of the repaired pack")
     }
 
     @Test
     fun `repair snapshots with filters`() {
         fixture.backup { tag("t") }
-        val dryRun = restic.repairSnapshots(RepairSnapshotsOptions.builder().dryRun().build())
+        val dryRun = restic.repair().snapshots(RepairSnapshotsOptions.builder().dryRun().build())
         assertTrue(dryRun.lines.isNotEmpty())
         val id = restic.snapshots().single().id
-        restic.repairSnapshots {
+        restic.repair().snapshots {
             snapshotId(id)
             host(restic.snapshots().single().hostname)
             tag("t")

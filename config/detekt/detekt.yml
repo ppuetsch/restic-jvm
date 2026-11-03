@@ -4,3 +4,15 @@ config:
 style:
   MaxLineLength:
     maxLineLength: 140
+
+complexity:
+  TooManyFunctions:
+    # Restic is a facade: every command it offers directly comes as a Java method plus a Kotlin builder-lambda variant,
+    # and it hands out the topic facades (files(), maintenance(), ...). 24 keeps it and every facade small enough to
+    # read in one go; the detekt default would force splitting single commands across classes.
+    allowedFunctionsPerClass: 24
+    # Options builders have one method per restic flag on purpose: the builder mirrors the CLI one to one.
+    excludes:
+      - '**/test/**'
+      - '**/*Options.kt'
+      - '**/ResticConfiguration.kt'

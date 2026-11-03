@@ -14,7 +14,7 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** Nutzt die API wie ein Java-Fremdnutzer: nur öffentliche Typen, keine Kotlin-Besonderheiten. */
+/** Uses the API like an outside Java user: public types only, no Kotlin specifics. */
 class JavaUsageTest {
     @Test
     void configurationBuilderIsUsableFromJava() {
@@ -39,7 +39,7 @@ class JavaUsageTest {
                 .password("pw")
                 .build());
 
-        assertTrue(restic.version().isAtLeast(0, 17, 0));
+        assertTrue(restic.tools().version().isAtLeast(0, 17, 0));
         InitResult result = restic.init(InitOptions.builder().repositoryVersion("2").build());
         assertEquals(64, result.getId().length());
         assertThrows(ResticFailedException.class, restic::init);
@@ -83,7 +83,7 @@ class JavaUsageTest {
         assertEquals(1, snapshots.size());
 
         List<String> names = new ArrayList<>();
-        restic.ls(Restic.LATEST, LsOptions.builder().recursive().build(), node -> names.add(node.getName()));
+        restic.files().ls(Restic.LATEST, LsOptions.builder().recursive().build(), node -> names.add(node.getName()));
         assertTrue(names.contains("a.txt"));
 
         List<FindSnapshotMatches> found = restic.find(List.of("*.txt"));
@@ -103,13 +103,13 @@ class JavaUsageTest {
         Files.writeString(source.resolve("a.txt"), "hello");
         restic.backup(List.of(source));
 
-        String filePathInSnapshot = restic.listNodes(Restic.LATEST, LsOptions.builder().recursive().build())
+        String filePathInSnapshot = restic.files().listNodes(Restic.LATEST, LsOptions.builder().recursive().build())
                 .getNodes().stream().filter(node -> node.getName().equals("a.txt")).findFirst().orElseThrow().getPath();
         java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
-        restic.dump(Restic.LATEST, filePathInSnapshot, output);
+        restic.files().dump(Restic.LATEST, filePathInSnapshot, output);
         assertEquals("hello", output.toString(java.nio.charset.StandardCharsets.UTF_8));
 
-        assertTrue(restic.catText(CatObjectType.CONFIG).contains("chunker_polynomial"));
+        assertTrue(restic.cat().text(CatObjectType.CONFIG).contains("chunker_polynomial"));
 
         RestoreSummary summary = restic.restore(
                 Restic.LATEST + ":" + filePathInSnapshot.substring(0, filePathInSnapshot.lastIndexOf('/')),
@@ -138,10 +138,10 @@ class JavaUsageTest {
         assertEquals(1, forgotten.removedSnapshots().size());
         restic.forget(ForgetOptions.builder().keepLast(1).build());
 
-        PruneResult pruned = restic.prune();
+        PruneResult pruned = restic.maintenance().prune();
         assertFalse(pruned.getOutputLines().isEmpty());
-        assertTrue(restic.check(CheckOptions.builder().readData().build()).isHealthy());
-        assertEquals(1, restic.stats(StatsOptions.builder().mode(StatsMode.RAW_DATA).build()).getSnapshotsCount());
+        assertTrue(restic.maintenance().check(CheckOptions.builder().readData().build()).isHealthy());
+        assertEquals(1, restic.maintenance().stats(StatsOptions.builder().mode(StatsMode.RAW_DATA).build()).getSnapshotsCount());
     }
 
     @Test
@@ -159,10 +159,10 @@ class JavaUsageTest {
         Files.writeString(source.resolve("a.txt"), "two");
         String second = restic.backup(List.of(source)).getSummary().getSnapshotId();
 
-        DiffResult diff = restic.diffAll(first, second);
+        DiffResult diff = restic.files().diffAll(first, second);
         assertEquals(1, diff.getStatistics().getChangedFiles());
 
-        TagResult tagged = restic.tag(TagOptions.builder().snapshotId(second).add("java").build());
+        TagResult tagged = restic.modify().tag(TagOptions.builder().snapshotId(second).add("java").build());
         assertEquals(1, tagged.getChangedSnapshots());
         assertEquals(2, restic.list(ListObjectType.SNAPSHOTS).size());
 
@@ -172,7 +172,7 @@ class JavaUsageTest {
                 .password("pw")
                 .build());
         target.init();
-        CopyResult copied = target.copy(CopyOptions.builder()
+        CopyResult copied = target.modify().copy(CopyOptions.builder()
                 .fromRepository(temporaryDirectory.resolve("repo").toString())
                 .fromPassword("pw")
                 .build());
@@ -189,14 +189,14 @@ class JavaUsageTest {
                 .build());
         restic.init();
 
-        KeyAddResult added = restic.addKey(NewKeyOptions.builder().newPassword("second").user("bob").build());
-        assertEquals(2, restic.listKeys().size());
-        restic.removeKey(added.getKeyId());
-        assertEquals(1, restic.listKeys().size());
+        KeyAddResult added = restic.keys().add(NewKeyOptions.builder().newPassword("second").user("bob").build());
+        assertEquals(2, restic.keys().list().size());
+        restic.keys().remove(added.getKeyId());
+        assertEquals(1, restic.keys().list().size());
 
-        restic.unlock();
-        assertTrue(restic.features().stream().anyMatch(flag -> flag.getName().equals("safe-forget-keep-tags")));
-        assertFalse(restic.migrate().getLines().isEmpty());
+        restic.maintenance().unlock();
+        assertTrue(restic.maintenance().features().stream().anyMatch(flag -> flag.getName().equals("safe-forget-keep-tags")));
+        assertFalse(restic.maintenance().migrate().getLines().isEmpty());
     }
 
     @Test
@@ -204,12 +204,12 @@ class JavaUsageTest {
         String binary = System.getenv("RESTIC_BINARY") != null ? System.getenv("RESTIC_BINARY") : "restic";
         Restic restic = new Restic(ResticConfiguration.builder().binary(binary).build());
 
-        assertTrue(restic.help("backup").contains("restic backup"));
-        assertTrue(restic.help().contains("Available Commands"));
-        assertTrue(restic.completion(CompletionShell.BASH).contains("restic"));
-        assertFalse(restic.extendedOptions().isEmpty());
+        assertTrue(restic.tools().help("backup").contains("restic backup"));
+        assertTrue(restic.tools().help().contains("Available Commands"));
+        assertTrue(restic.tools().completion(CompletionShell.BASH).contains("restic"));
+        assertFalse(restic.tools().extendedOptions().isEmpty());
         Path completionFile = temporaryDirectory.resolve("c.bash");
-        restic.generate(GenerateOptions.builder().bashCompletion(completionFile).build());
+        restic.tools().generate(GenerateOptions.builder().bashCompletion(completionFile).build());
         assertTrue(Files.size(completionFile) > 0);
     }
 
@@ -226,41 +226,41 @@ class JavaUsageTest {
         assertTrue(restic.list(ListObjectType.SNAPSHOTS, null).isEmpty());
 
         java.util.List<String> lines = new java.util.ArrayList<>();
-        CheckResult checked = restic.check(CheckOptions.DEFAULT, lines::add);
+        CheckResult checked = restic.maintenance().check(CheckOptions.DEFAULT, lines::add);
         assertTrue(checked.isHealthy());
         assertEquals(checked.getOutputLines(), lines);
 
-        PruneResult pruned = restic.prune(PruneOptions.DEFAULT, line -> {});
+        PruneResult pruned = restic.maintenance().prune(PruneOptions.DEFAULT, line -> {});
         assertNotNull(pruned.getBytesFreed());
 
         CancellationToken cancelled = new CancellationToken();
         cancelled.cancel();
-        assertThrows(ResticCancelledException.class, () -> restic.unlock(false, cancelled));
-        assertThrows(ResticCancelledException.class, () -> restic.features(cancelled));
+        assertThrows(ResticCancelledException.class, () -> restic.maintenance().unlock(false, cancelled));
+        assertThrows(ResticCancelledException.class, () -> restic.maintenance().features(cancelled));
         java.util.List<String> helpPath = java.util.List.of("backup");
-        assertThrows(ResticCancelledException.class, () -> restic.help(helpPath, cancelled));
+        assertThrows(ResticCancelledException.class, () -> restic.tools().help(helpPath, cancelled));
         DiffOptions cancelledDiff = DiffOptions.builder().cancellationToken(cancelled).build();
-        assertThrows(ResticCancelledException.class, () -> restic.diffAll("a", "b", cancelledDiff));
-        assertFalse(restic.version(new CancellationToken()).getVersion().isEmpty());
+        assertThrows(ResticCancelledException.class, () -> restic.files().diffAll("a", "b", cancelledDiff));
+        assertFalse(restic.tools().version(new CancellationToken()).getVersion().isEmpty());
         BackupEvent backupEvent = new BackupEvent.Error("/home/me/locked.db", "archival", "permission denied");
         if (backupEvent instanceof BackupEvent.Error error) {
             assertEquals("/home/me/locked.db: permission denied", error.readable());
         }
         LsOptions cancelledLs = LsOptions.builder().cancellationToken(cancelled).build();
         assertEquals(cancelled, cancelledLs.getCancellationToken());
-        assertThrows(ResticCancelledException.class, () -> restic.listNodes(Restic.LATEST, cancelledLs));
+        assertThrows(ResticCancelledException.class, () -> restic.files().listNodes(Restic.LATEST, cancelledLs));
         SnapshotsOptions cancelledSnapshots = SnapshotsOptions.builder().cancellationToken(cancelled).build();
         assertThrows(ResticCancelledException.class, () -> restic.snapshots(cancelledSnapshots));
         java.util.List<String> patterns = java.util.List.of("*.txt");
         FindOptions cancelledFind = FindOptions.builder().cancellationToken(cancelled).build();
         assertThrows(ResticCancelledException.class, () -> restic.find(patterns, cancelledFind));
         StatsOptions cancelledStats = StatsOptions.builder().cancellationToken(cancelled).build();
-        assertThrows(ResticCancelledException.class, () -> restic.stats(cancelledStats));
-        assertThrows(ResticCancelledException.class, () -> restic.ls(Restic.LATEST, LsOptions.DEFAULT, cancelled, null));
+        assertThrows(ResticCancelledException.class, () -> restic.maintenance().stats(cancelledStats));
+        assertThrows(ResticCancelledException.class, () -> restic.files().ls(Restic.LATEST, LsOptions.DEFAULT, cancelled, null));
 
         java.util.List<String> outputLines = new java.util.ArrayList<>();
         java.util.List<String> errorLines = new java.util.ArrayList<>();
-        PruneResult prunedAgain = restic.prune(PruneOptions.DEFAULT, new OutputLineListener() {
+        PruneResult prunedAgain = restic.maintenance().prune(PruneOptions.DEFAULT, new OutputLineListener() {
             @Override
             public void onLine(String line) {
                 outputLines.add(line);

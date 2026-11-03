@@ -34,7 +34,7 @@ class ToolAndMountTest {
         val zsh = temporaryDirectory.resolve("restic.zsh")
         val powershell = temporaryDirectory.resolve("restic.ps1")
         val man = temporaryDirectory.resolve("man").createDirectories()
-        restic.generate {
+        restic.tools().generate {
             bashCompletion(bash)
             fishCompletion(fish)
             zshCompletion(zsh)
@@ -49,20 +49,20 @@ class ToolAndMountTest {
     @Test
     fun `completion scripts can be read as text`() {
         CompletionShell.entries.forEach { shell ->
-            assertTrue(restic.completion(shell).contains("restic"), shell.name)
+            assertTrue(restic.tools().completion(shell).contains("restic"), shell.name)
         }
     }
 
     @Test
     fun `help prints the usage of a command`() {
-        assertTrue(restic.help("backup").contains("restic backup"))
-        assertTrue(restic.help().contains("Available Commands"))
-        assertTrue(restic.help("key", "add").contains("key add"))
+        assertTrue(restic.tools().help("backup").contains("restic backup"))
+        assertTrue(restic.tools().help().contains("Available Commands"))
+        assertTrue(restic.tools().help("key", "add").contains("key add"))
     }
 
     @Test
     fun `extended options are parsed`() {
-        val options = restic.extendedOptions()
+        val options = restic.tools().extendedOptions()
         assertTrue(options.any { it.name == "local.connections" }, options.take(3).toString())
         assertTrue(options.all { it.description.isNotEmpty() })
     }
@@ -73,9 +73,9 @@ class ToolAndMountTest {
         val output = temporaryDirectory.resolve(executableName)
         val result =
             try {
-                restic.selfUpdate(output)
+                restic.tools().selfUpdate(output)
             } catch (rejectedByGitHub: ResticFailedException) {
-                // Geteilte CI-Runner laufen ins Rate-Limit der GitHub-API; das prüft nicht die Library, sondern die Umgebung
+                // shared CI runners hit the GitHub API rate limit; that tests the environment, not the library
                 assumeFalse(rejectedByGitHub.errorMessage.contains("403"), rejectedByGitHub.errorMessage)
                 throw rejectedByGitHub
             }
@@ -100,7 +100,7 @@ class ToolAndMountTest {
     @Test
     fun `mount flags exist in the installed restic`() {
         assumeTrue(System.getProperty("os.name").startsWith("Linux"), "mount is not available on this platform")
-        val help = restic.help("mount")
+        val help = restic.tools().help("mount")
         val expectedFlags = listOf("--allow-other", "--no-default-permissions", "--owner-root", "--path-template")
         val expectedTemplateFlags = listOf("--time-template", "--host", "--path", "--tag")
         (expectedFlags + expectedTemplateFlags).forEach { assertTrue(help.contains(it), "$it missing in: $help") }
@@ -111,7 +111,7 @@ class ToolAndMountTest {
         assumeTrue(mountIsSupported(), "FUSE is not available")
         fixture.backup()
         val mountpoint = temporaryDirectory.resolve("mnt").createDirectories()
-        restic.mount(mountpoint, MountOptions.builder().ownerRoot().build()).use { handle ->
+        restic.files().mount(mountpoint, MountOptions.builder().ownerRoot().build()).use { handle ->
             handle.awaitMounted(Duration.ofSeconds(60))
             assertTrue(handle.isRunning())
             val latest = mountpoint.resolve("snapshots").resolve("latest").toRealPath()
@@ -124,7 +124,7 @@ class ToolAndMountTest {
     fun `mount reports failure when the repository cannot be opened`() {
         assumeTrue(System.getProperty("os.name").startsWith("Linux"), "mount is not available on this platform")
         val broken = resticFor(temporaryDirectory.resolve("does-not-exist"))
-        val handle = broken.mount(temporaryDirectory.resolve("mnt2").createDirectories())
+        val handle = broken.files().mount(temporaryDirectory.resolve("mnt2").createDirectories())
         try {
             val failure = runCatching { handle.awaitMounted(Duration.ofSeconds(30)) }.exceptionOrNull()
             assertTrue(failure is ResticCommandException, failure.toString())

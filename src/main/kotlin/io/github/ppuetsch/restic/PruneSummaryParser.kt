@@ -21,11 +21,11 @@ private val BYTES_PER_UNIT: Map<String, Long> =
     )
 
 /**
- * Liest die Kennzahlen aus der Textausgabe von `restic prune` (getestet mit restic 0.18).
+ * Reads the figures from the text output of `restic prune` (tested with restic 0.18).
  *
- * Ohne `--verbose` nennt restic die Packs nur dort, wo es etwas tut („removing N old packs“, Fortschrittszeile
- * „N / M packs repacked“). Fehlen diese Zeilen, obwohl die Zusammenfassung („total prune“) vorhanden ist, war nichts
- * zu tun und die Anzahl ist 0. Ohne Zusammenfassung bleiben die Werte `null`.
+ * Without `--verbose`, restic mentions packs only where it does something ("removing N old packs", progress line
+ * "N / M packs repacked"). If these lines are missing although the summary ("total prune") is present, there was
+ * nothing to do and the count is 0. Without a summary the values stay `null`.
  */
 internal object PruneSummaryParser {
     fun parse(lines: List<String>): PruneResult {

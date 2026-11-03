@@ -2,30 +2,30 @@ package io.github.ppuetsch.restic
 
 import tools.jackson.databind.JsonNode
 
-/** Grobe Ursache eines fehlgeschlagenen restic-Aufrufs, abgeleitet aus Exit-Code und Meldung. */
+/** Rough cause of a failed restic call, derived from exit code and message. */
 public enum class ResticErrorKind {
-    /** Das Passwort passt zu keinem Schlüssel des Repositorys (Exit-Code 12). */
+    /** The password matches no key of the repository (exit code 12). */
     WRONG_PASSWORD,
 
-    /** Ein anderer Prozess hält eine Sperre (Exit-Code 11). */
+    /** Another process holds a lock (exit code 11). */
     REPOSITORY_LOCKED,
 
-    /** Unter der Adresse liegt kein Repository (Exit-Code 10). */
+    /** There is no repository at the given location (exit code 10). */
     REPOSITORY_NOT_FOUND,
 
-    /** Einzelne Quelldateien waren nicht lesbar (Exit-Code 3). */
+    /** Some source files could not be read (exit code 3). */
     SOURCE_UNREADABLE,
 
-    /** restic wurde durch ein Signal unterbrochen (Exit-Code 130). */
+    /** restic was interrupted by a signal (exit code 130). */
     INTERRUPTED,
 
-    /** Backend nicht erreichbar: Verbindung verweigert, Host unbekannt, Zeitüberschreitung. */
+    /** Backend not reachable: connection refused, unknown host, timeout. */
     NETWORK,
 
-    /** Backend lehnt die Zugangsdaten oder Berechtigung ab. */
+    /** The backend rejects the credentials or the permission. */
     AUTHENTICATION,
 
-    /** Keine der übrigen Ursachen erkennbar; Details stehen in [ResticCommandException.errorMessage]. */
+    /** None of the other causes applies; details are in [ResticCommandException.errorMessage]. */
     OTHER,
 }
 
@@ -62,14 +62,14 @@ private val AUTHENTICATION_HINTS: List<String> =
         "401 unauthorized",
     )
 
-/** Macht aus restic-Ausgabezeilen Klartext, damit nach außen nie rohes JSON gelangt. */
+/** Turns restic's output lines into plain text so raw JSON never leaks out. */
 internal object ErrorOutput {
     fun readableMessage(standardError: String): String =
         standardError.lineSequence().mapNotNull(::readableLine).joinToString(LINE_SEPARATOR)
 
     /**
-     * `exit_error` und `error` werden auf ihre Meldung reduziert, andere JSON-Meldungen auf `message` oder ihren Typ;
-     * Text bleibt unverändert. Leerzeilen ergeben `null`.
+     * `exit_error` and `error` are reduced to their message, other JSON messages to `message` or their type;
+     * text stays unchanged. Blank lines yield `null`.
      */
     fun readableLine(line: String): String? =
         when {
@@ -111,13 +111,13 @@ internal object ErrorOutput {
     }
 }
 
-/** Einheitliche Klartextform aller restic-Fehlermeldungen zu einer Datei: `pfad: meldung`. */
+/** Uniform plain-text form of all of restic's error messages about a file: `path: message`. */
 internal fun readableError(
     item: String?,
     message: String,
 ): String = if (item.isNullOrEmpty()) message else "$item: $message"
 
-/** Leitet stderr-Zeilen als Klartext an den Listener weiter und sammelt sie optional. */
+/** Forwards stderr lines as plain text to the listener and optionally collects them. */
 internal fun readableErrorLines(
     listener: OutputLineListener?,
     collected: MutableList<String>? = null,

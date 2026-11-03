@@ -20,7 +20,7 @@ private val EXIT_TIMEOUT: Duration = Duration.ofSeconds(20)
 
 private typealias CancellableCommand = (Restic, CancellationToken, Path) -> Unit
 
-/** Die Befehle, die der Dienst laut Anforderung mindestens abbrechen können muss; für sie wird der ganze Prozessbaum geprüft. */
+/** The commands the service must at least be able to cancel; for them the whole process tree is checked. */
 private val PROCESS_TREE_COMMANDS: Set<String> = setOf("ls", "unlock", "init", "list", "cat", "snapshots", "check", "prune")
 
 class CancellationTest {
@@ -34,7 +34,7 @@ class CancellationTest {
 
     private fun readingCommands(): Map<String, CancellableCommand> =
         mapOf(
-            "version" to { restic, token, _ -> restic.version(token) },
+            "version" to { restic, token, _ -> restic.tools().version(token) },
             "init" to { restic, token, _ -> restic.init(cancellationToken = token) },
             "backup" to { restic, token, directory -> restic.backup(listOf(directory), backupOptions(token)) },
             "backupStandardInput" to {
@@ -47,8 +47,8 @@ class CancellationTest {
             "backupCommandOutput" to { restic, token, _ -> restic.backupCommandOutput(listOf("true"), backupOptions(token)) },
             "snapshots" to { restic, token, _ -> restic.snapshots(cancellationToken = token) },
             "snapshotGroups" to { restic, token, _ -> restic.snapshotGroups(cancellationToken = token) },
-            "ls" to { restic, token, _ -> restic.ls(Restic.LATEST, LsOptions.DEFAULT, token, null) },
-            "listNodes" to { restic, token, _ -> restic.listNodes(cancellationToken = token) },
+            "ls" to { restic, token, _ -> restic.files().ls(Restic.LATEST, LsOptions.DEFAULT, token, null) },
+            "listNodes" to { restic, token, _ -> restic.files().listNodes(cancellationToken = token) },
             "find" to { restic, token, _ -> restic.find(listOf("*.txt"), FindOptions.DEFAULT, token) },
             "findObjects" to { restic, token, _ -> restic.findObjects(FindObjectKind.BLOB, listOf("abc"), FindOptions.DEFAULT, token) },
             "restore" to {
@@ -58,23 +58,23 @@ class CancellationTest {
                 ->
                 restic.restore(Restic.LATEST, directory, RestoreOptions.builder().cancellationToken(token).build())
             },
-            "dump" to { restic, token, _ -> restic.dump(Restic.LATEST, "/a", ByteArrayOutputStream(), DumpOptions.DEFAULT, token) },
+            "dump" to { restic, token, _ -> restic.files().dump(Restic.LATEST, "/a", ByteArrayOutputStream(), DumpOptions.DEFAULT, token) },
             "dumpToFile" to {
                 restic,
                 token,
                 directory,
                 ->
-                restic.dumpToFile(Restic.LATEST, "/a", directory.resolve("out"), DumpOptions.DEFAULT, token)
+                restic.files().dumpToFile(Restic.LATEST, "/a", directory.resolve("out"), DumpOptions.DEFAULT, token)
             },
-            "cat" to { restic, token, _ -> restic.cat(CatObjectType.CONFIG, null, ByteArrayOutputStream(), token) },
-            "catText" to { restic, token, _ -> restic.catText(CatObjectType.CONFIG, cancellationToken = token) },
-            "catConfig" to { restic, token, _ -> restic.catConfig(token) },
-            "catMasterKey" to { restic, token, _ -> restic.catMasterKey(token) },
-            "catSnapshot" to { restic, token, _ -> restic.catSnapshot("abc", token) },
-            "catKey" to { restic, token, _ -> restic.catKey("abc", token) },
-            "catLock" to { restic, token, _ -> restic.catLock("abc", token) },
-            "catTree" to { restic, token, _ -> restic.catTree("abc", token) },
-            "catIndex" to { restic, token, _ -> restic.catIndex("abc", token) },
+            "cat" to { restic, token, _ -> restic.cat().raw(CatObjectType.CONFIG, null, ByteArrayOutputStream(), token) },
+            "catText" to { restic, token, _ -> restic.cat().text(CatObjectType.CONFIG, cancellationToken = token) },
+            "catConfig" to { restic, token, _ -> restic.cat().config(token) },
+            "catMasterKey" to { restic, token, _ -> restic.cat().masterKey(token) },
+            "catSnapshot" to { restic, token, _ -> restic.cat().snapshot("abc", token) },
+            "catKey" to { restic, token, _ -> restic.cat().key("abc", token) },
+            "catLock" to { restic, token, _ -> restic.cat().lock("abc", token) },
+            "catTree" to { restic, token, _ -> restic.cat().tree("abc", token) },
+            "catIndex" to { restic, token, _ -> restic.cat().index("abc", token) },
         )
 
     private fun maintenanceCommands(): Map<String, CancellableCommand> =
@@ -88,15 +88,15 @@ class CancellationTest {
                         .build(),
                 )
             },
-            "prune" to { restic, token, _ -> restic.prune(PruneOptions.builder().cancellationToken(token).build()) },
-            "check" to { restic, token, _ -> restic.check(CheckOptions.builder().cancellationToken(token).build()) },
-            "stats" to { restic, token, _ -> restic.stats(cancellationToken = token) },
-            "diff" to { restic, token, _ -> restic.diff("a", "b", DiffOptions.builder().cancellationToken(token).build()) },
-            "diffAll" to { restic, token, _ -> restic.diffAll("a", "b", DiffOptions.builder().cancellationToken(token).build()) },
-            "tag" to { restic, token, _ -> restic.tag(TagOptions.builder().add("x").build(), token) },
-            "rewrite" to { restic, token, _ -> restic.rewrite(RewriteOptions.builder().cancellationToken(token).build()) },
+            "prune" to { restic, token, _ -> restic.maintenance().prune(PruneOptions.builder().cancellationToken(token).build()) },
+            "check" to { restic, token, _ -> restic.maintenance().check(CheckOptions.builder().cancellationToken(token).build()) },
+            "stats" to { restic, token, _ -> restic.maintenance().stats(cancellationToken = token) },
+            "diff" to { restic, token, _ -> restic.files().diff("a", "b", DiffOptions.builder().cancellationToken(token).build()) },
+            "diffAll" to { restic, token, _ -> restic.files().diffAll("a", "b", DiffOptions.builder().cancellationToken(token).build()) },
+            "tag" to { restic, token, _ -> restic.modify().tag(TagOptions.builder().add("x").build(), token) },
+            "rewrite" to { restic, token, _ -> restic.modify().rewrite(RewriteOptions.builder().cancellationToken(token).build()) },
             "copy" to { restic, token, _ ->
-                restic.copy(
+                restic.modify().copy(
                     CopyOptions
                         .builder()
                         .fromRepository("other")
@@ -109,24 +109,26 @@ class CancellationTest {
     private fun administrationCommands(): Map<String, CancellableCommand> =
         mapOf(
             "list" to { restic, token, _ -> restic.list(ListObjectType.SNAPSHOTS, token) },
-            "listBlobs" to { restic, token, _ -> restic.listBlobs(token) },
-            "listKeys" to { restic, token, _ -> restic.listKeys(token) },
-            "addKey" to { restic, token, _ -> restic.addKey(NewKeyOptions.builder().newPassword("neu").build(), token) },
-            "changePassword" to { restic, token, _ -> restic.changePassword(NewKeyOptions.builder().newPassword("neu").build(), token) },
-            "removeKey" to { restic, token, _ -> restic.removeKey("abc", token) },
-            "unlock" to { restic, token, _ -> restic.unlock(cancellationToken = token) },
-            "migrate" to { restic, token, _ -> restic.migrate(emptyList(), false, token) },
-            "cache" to { restic, token, _ -> restic.cache(CacheOptions.DEFAULT, token) },
-            "features" to { restic, token, _ -> restic.features(token) },
-            "recover" to { restic, token, _ -> restic.recover(token) },
-            "repairIndex" to { restic, token, _ -> restic.repairIndex(false, token) },
-            "repairPacks" to { restic, token, _ -> restic.repairPacks(listOf("abc"), token) },
-            "repairSnapshots" to { restic, token, _ -> restic.repairSnapshots(RepairSnapshotsOptions.DEFAULT, token) },
-            "generate" to { restic, token, directory -> restic.generate(GenerateOptions.builder().manDirectory(directory).build(), token) },
-            "completion" to { restic, token, _ -> restic.completion(CompletionShell.BASH, token) },
-            "selfUpdate" to { restic, token, _ -> restic.selfUpdate(null, token) },
-            "help" to { restic, token, _ -> restic.help(listOf("backup"), token) },
-            "extendedOptions" to { restic, token, _ -> restic.extendedOptions(token) },
+            "list blobs" to { restic, token, _ -> restic.list(ListObjectType.BLOBS, token) },
+            "listKeys" to { restic, token, _ -> restic.keys().list(token) },
+            "addKey" to { restic, token, _ -> restic.keys().add(NewKeyOptions.builder().newPassword("neu").build(), token) },
+            "changePassword" to
+                { restic, token, _ -> restic.keys().changePassword(NewKeyOptions.builder().newPassword("neu").build(), token) },
+            "removeKey" to { restic, token, _ -> restic.keys().remove("abc", token) },
+            "unlock" to { restic, token, _ -> restic.maintenance().unlock(cancellationToken = token) },
+            "migrate" to { restic, token, _ -> restic.maintenance().migrate(emptyList(), false, token) },
+            "cache" to { restic, token, _ -> restic.maintenance().cache(CacheOptions.DEFAULT, token) },
+            "features" to { restic, token, _ -> restic.maintenance().features(token) },
+            "recover" to { restic, token, _ -> restic.maintenance().recover(token) },
+            "repairIndex" to { restic, token, _ -> restic.repair().index(false, token) },
+            "repairPacks" to { restic, token, _ -> restic.repair().packs(listOf("abc"), token) },
+            "repairSnapshots" to { restic, token, _ -> restic.repair().snapshots(RepairSnapshotsOptions.DEFAULT, token) },
+            "generate" to
+                { restic, token, directory -> restic.tools().generate(GenerateOptions.builder().manDirectory(directory).build(), token) },
+            "completion" to { restic, token, _ -> restic.tools().completion(CompletionShell.BASH, token) },
+            "selfUpdate" to { restic, token, _ -> restic.tools().selfUpdate(null, token) },
+            "help" to { restic, token, _ -> restic.tools().help(listOf("backup"), token) },
+            "extendedOptions" to { restic, token, _ -> restic.tools().extendedOptions(token) },
         )
 
     private fun backupOptions(token: CancellationToken): BackupOptions = BackupOptions.builder().cancellationToken(token).build()
@@ -172,15 +174,16 @@ class CancellationTest {
 
     private fun commandsWithTokenInOptions(): Map<String, CancellableCommand> =
         mapOf(
-            "ls" to { restic, token, _ -> restic.ls(Restic.LATEST, LsOptions.builder().cancellationToken(token).build()) },
-            "listNodes" to { restic, token, _ -> restic.listNodes(Restic.LATEST, LsOptions.builder().cancellationToken(token).build()) },
+            "ls" to { restic, token, _ -> restic.files().ls(Restic.LATEST, LsOptions.builder().cancellationToken(token).build()) },
+            "listNodes" to
+                { restic, token, _ -> restic.files().listNodes(Restic.LATEST, LsOptions.builder().cancellationToken(token).build()) },
             "snapshots" to { restic, token, _ -> restic.snapshots(SnapshotsOptions.builder().cancellationToken(token).build()) },
             "snapshotGroups" to { restic, token, _ -> restic.snapshotGroups(SnapshotsOptions.builder().cancellationToken(token).build()) },
             "find" to { restic, token, _ -> restic.find(listOf("*.txt"), FindOptions.builder().cancellationToken(token).build()) },
             "findObjects" to { restic, token, _ ->
                 restic.findObjects(FindObjectKind.BLOB, listOf("abc"), FindOptions.builder().cancellationToken(token).build())
             },
-            "stats" to { restic, token, _ -> restic.stats(StatsOptions.builder().cancellationToken(token).build()) },
+            "stats" to { restic, token, _ -> restic.maintenance().stats(StatsOptions.builder().cancellationToken(token).build()) },
         )
 
     @TestFactory
@@ -201,11 +204,16 @@ class CancellationTest {
         val cancelledInOptions = LsOptions.builder().cancellationToken(CancellationToken().also(CancellationToken::cancel)).build()
         val cancelledExplicitly = CancellationToken().also(CancellationToken::cancel)
 
-        assertThrows<ResticOutputException> { fake.restic().ls(Restic.LATEST, cancelledInOptions, CancellationToken(), null) }
+        assertThrows<ResticOutputException> { fake.restic().files().ls(Restic.LATEST, cancelledInOptions, CancellationToken(), null) }
         assertThrows<ResticCancelledException> {
-            fake.restic().ls(Restic.LATEST, LsOptions.builder().cancellationToken(CancellationToken()).build(), cancelledExplicitly, null)
+            fake.restic().files().ls(
+                Restic.LATEST,
+                LsOptions.builder().cancellationToken(CancellationToken()).build(),
+                cancelledExplicitly,
+                null,
+            )
         }
-        assertThrows<ResticCancelledException> { fake.restic().listNodes(Restic.LATEST, LsOptions.DEFAULT, cancelledExplicitly) }
+        assertThrows<ResticCancelledException> { fake.restic().files().listNodes(Restic.LATEST, LsOptions.DEFAULT, cancelledExplicitly) }
     }
 
     @Test

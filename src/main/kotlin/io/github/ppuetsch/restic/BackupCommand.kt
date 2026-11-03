@@ -2,7 +2,7 @@ package io.github.ppuetsch.restic
 
 import java.io.InputStream
 
-/** Alles danach ist ein Pfad bzw. Kommando, auch wenn es mit `-` beginnt. */
+/** Everything after this is a path or command, even if it starts with `-`. */
 private const val END_OF_OPTIONS: String = "--"
 
 private val BACKUP_WITH_JSON_OUTPUT: List<String> = listOf("backup", "--json")

@@ -1,13 +1,13 @@
 package io.github.ppuetsch.restic
 
 /**
- * Gemeinsame Snapshot-Auswahl vieler Befehle (`--host`, `--path`, `--tag`).
- * Mehrere Hosts oder Pfade sind eine ODER-Auswahl; innerhalb einer Tag-Gruppe müssen alle Tags zutreffen,
- * mehrere Tag-Gruppen sind ODER-verknüpft.
+ * Snapshot selection shared by many commands (`--host`, `--path`, `--tag`).
+ * Several hosts or paths form an OR selection; within one tag group all tags must match,
+ * several tag groups are combined with OR.
  *
- * @property hosts Zulässige Hosts.
- * @property paths Zulässige gesicherte Pfade.
- * @property tagGroups Tag-Gruppen, von denen eine vollständig zutreffen muss.
+ * @property hosts Allowed hosts.
+ * @property paths Allowed backed-up paths.
+ * @property tagGroups Tag groups, one of which must match completely.
  */
 public class SnapshotFilter private constructor(
     builder: Builder,
@@ -23,32 +23,32 @@ public class SnapshotFilter private constructor(
             tagGroups.forEach { optionalValue("--tag", it.joinToString(",")) }
         }
 
-    /** Stellt einen [SnapshotFilter] zusammen; jede Methode erweitert die Auswahl und gibt den Builder zurück. */
+    /** Builds a [SnapshotFilter]; every method widens the selection and returns the builder. */
     public class Builder internal constructor() {
         internal val hosts: MutableList<String> = mutableListOf()
         internal val paths: MutableList<String> = mutableListOf()
         internal val tagGroups: MutableList<List<String>> = mutableListOf()
 
-        /** Lässt Snapshots dieses Hosts zu; mehrfach möglich. */
+        /** Allows snapshots of this host; may be repeated. */
         public fun host(hostname: String): Builder = apply { hosts.add(hostname) }
 
-        /** Lässt Snapshots zu, die genau diesen absoluten Pfad gesichert haben; mehrfach möglich. */
+        /** Allows snapshots that backed up exactly this absolute path; may be repeated. */
         public fun path(absolutePath: String): Builder = apply { paths.add(absolutePath) }
 
-        /** Alle übergebenen Tags müssen auf den Snapshot zutreffen. */
+        /** All given tags must apply to the snapshot. */
         public fun tag(vararg tags: String): Builder = apply { tagGroups.add(tags.toList()) }
 
-        /** Erzeugt den unveränderlichen Filter. */
+        /** Creates the immutable filter. */
         public fun build(): SnapshotFilter = SnapshotFilter(this)
     }
 
-    /** Der leere Filter und Einstieg in den [Builder]. */
+    /** The empty filter and entry point to the [Builder]. */
     public companion object {
-        /** Wählt alle Snapshots. */
+        /** Selects all snapshots. */
         @JvmField
         public val NONE: SnapshotFilter = Builder().build()
 
-        /** Ein neuer [Builder] ohne Einschränkung. */
+        /** A new [Builder] without restrictions. */
         @JvmStatic
         public fun builder(): Builder = Builder()
     }

@@ -1,14 +1,14 @@
 package io.github.ppuetsch.restic
 
 /**
- * Optionen für [Restic.snapshots] und [Restic.snapshotGroups] (`restic snapshots`).
+ * Options for [Restic.snapshots] and [Restic.snapshotGroups] (`restic snapshots`).
  *
- * @property cancellationToken Token, über das sich der Aufruf abbrechen lässt.
- * @property filter Auswahl der Snapshots nach Host, Pfad und Tags.
- * @property groupBy Gruppierung (`--group-by`).
- * @property latest Nur die letzten n Snapshots je Gruppe (`--latest`).
- * @property compact Kürzere Ausgabe (`--compact`).
- * @property snapshotIds Beschränkung auf bestimmte Snapshots.
+ * @property cancellationToken Token that cancels the call.
+ * @property filter Selects snapshots by host, path and tags.
+ * @property groupBy Grouping (`--group-by`).
+ * @property latest Only the last n snapshots per group (`--latest`).
+ * @property compact Shorter output (`--compact`).
+ * @property snapshotIds Restriction to certain snapshots.
  */
 public class SnapshotsOptions private constructor(
     builder: Builder,
@@ -29,7 +29,7 @@ public class SnapshotsOptions private constructor(
             addAll(snapshotIds)
         }
 
-    /** Stellt [SnapshotsOptions] zusammen; jede Methode setzt ein Flag und gibt den Builder zurück. */
+    /** Builds [SnapshotsOptions]; every method sets one flag and returns the builder. */
     public class Builder internal constructor() {
         internal var cancellationToken: CancellationToken? = null
         internal val filter: SnapshotFilter.Builder = SnapshotFilter.builder()
@@ -38,42 +38,42 @@ public class SnapshotsOptions private constructor(
         internal var compact: Boolean = false
         internal val snapshotIds: MutableList<String> = mutableListOf()
 
-        /** Nur Snapshots dieses Hosts (`--host`); mehrfach möglich. */
+        /** Only snapshots of this host (`--host`); may be repeated. */
         public fun host(hostname: String): Builder = apply { filter.host(hostname) }
 
-        /** Nur Snapshots, die genau diesen Pfad gesichert haben (`--path`); mehrfach möglich. */
+        /** Only snapshots that backed up exactly this path (`--path`); may be repeated. */
         public fun path(absolutePath: String): Builder = apply { filter.path(absolutePath) }
 
-        /** Nur Snapshots, die alle diese Tags tragen (`--tag`); mehrere Aufrufe sind ODER-verknüpft. */
+        /** Only snapshots carrying all of these tags (`--tag`); several calls are combined with OR. */
         public fun tag(vararg tags: String): Builder = apply { filter.tag(*tags) }
 
-        /** Kombination aus `host`, `paths`, `tags`; leer deaktiviert die Gruppierung. */
+        /** A combination of `host`, `paths`, `tags`; empty turns grouping off. */
         public fun groupBy(group: String): Builder = apply { groupBy = group }
 
-        /** Nur die letzten n Snapshots je Host und Pfad. */
+        /** Only the last n snapshots per host and path. */
         public fun latest(count: Int): Builder = apply { latest = count }
 
-        /** Kürzere Textausgabe (`--compact`); das JSON-Ergebnis bleibt gleich. */
+        /** Shorter text output (`--compact`); the JSON result stays the same. */
         @JvmOverloads
         public fun compact(enabled: Boolean = true): Builder = apply { compact = enabled }
 
-        /** Beschränkt die Ausgabe auf bestimmte Snapshots (ID, Kurz-ID oder `latest`). */
+        /** Restricts the output to certain snapshots (ID, short ID or `latest`). */
         public fun snapshotId(id: String): Builder = apply { snapshotIds.add(id) }
 
-        /** Bricht den Aufruf ab; ein direkt an [Restic] übergebenes Token hat Vorrang. */
+        /** Cancels the call; a token passed directly to [Restic] takes precedence. */
         public fun cancellationToken(token: CancellationToken): Builder = apply { cancellationToken = token }
 
-        /** Erzeugt die unveränderlichen Optionen. */
+        /** Creates the immutable options. */
         public fun build(): SnapshotsOptions = SnapshotsOptions(this)
     }
 
-    /** Standardwerte und Einstieg in den [Builder]. */
+    /** Default values and entry point to the [Builder]. */
     public companion object {
-        /** Keine Flags gesetzt: alle Snapshots. */
+        /** No flags set: all snapshots. */
         @JvmField
         public val DEFAULT: SnapshotsOptions = Builder().build()
 
-        /** Ein neuer [Builder] ohne gesetzte Flags. */
+        /** A new [Builder] with no flags set. */
         @JvmStatic
         public fun builder(): Builder = Builder()
     }

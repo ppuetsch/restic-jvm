@@ -4,12 +4,12 @@ import tools.jackson.databind.JsonNode
 import java.time.Instant
 
 /**
- * Die Konfiguration des Repositorys (`restic cat config`).
+ * The repository configuration (`restic cat config`).
  *
- * @property version Format-Version des Repositorys: 1 ohne, 2 mit Kompression.
- * @property id Eindeutige ID des Repositorys.
- * @property chunkerPolynomial Polynom, mit dem restic Dateien in Blobs zerlegt; Repositorys mit gleichem Polynom
- *   deduplizieren gemeinsam, siehe [InitOptions.Builder.copyChunkerParams].
+ * @property version Repository format version: 1 without, 2 with compression.
+ * @property id Unique ID of the repository.
+ * @property chunkerPolynomial Polynomial restic uses to split files into blobs; repositories with the same polynomial
+ *   deduplicate together, see [InitOptions.Builder.copyChunkerParams].
  */
 public data class RepositoryConfig(
     val version: Int,
@@ -18,11 +18,11 @@ public data class RepositoryConfig(
 )
 
 /**
- * Das Hauptschlüsselmaterial des Repositorys (`restic cat masterkey`); geheim zu behandeln.
+ * The repository's master key material (`restic cat masterkey`); treat it as a secret.
  *
- * @property macKey Schlüssel für die Poly1305-Authentifizierung, Base64.
- * @property macRandom Zufallsanteil der Poly1305-Authentifizierung, Base64.
- * @property encryptionKey AES-256-Schlüssel für die Daten, Base64.
+ * @property macKey Key for the Poly1305 authentication, Base64.
+ * @property macRandom Random part of the Poly1305 authentication, Base64.
+ * @property encryptionKey AES-256 key for the data, Base64.
  */
 public data class MasterKey(
     val macKey: String,
@@ -31,65 +31,19 @@ public data class MasterKey(
 )
 
 /**
- * Eine Schlüsseldatei des Repositorys (`restic cat key`): der mit dem Passwort verschlüsselte Hauptschlüssel.
+ * An entry of a tree object: a file, a directory or another file type.
  *
- * @property created Anlagezeitpunkt.
- * @property username Benutzer, der den Schlüssel angelegt hat.
- * @property hostname Rechner, auf dem der Schlüssel angelegt wurde.
- * @property kdf Schlüsselableitungsfunktion, bei restic immer `scrypt`.
- * @property n scrypt-Parameter N (Kostenfaktor).
- * @property r scrypt-Parameter r (Blockgröße).
- * @property p scrypt-Parameter p (Parallelität).
- * @property salt Salt der Schlüsselableitung, Base64.
- * @property data Der verschlüsselte Hauptschlüssel, Base64.
- */
-public data class RepositoryKey(
-    val created: Instant?,
-    val username: String,
-    val hostname: String,
-    val kdf: String,
-    val n: Long,
-    val r: Long,
-    val p: Long,
-    val salt: String,
-    val data: String,
-)
-
-/**
- * Eine Sperrdatei des Repositorys (`restic cat lock`).
- *
- * @property time Zeitpunkt, zu dem die Sperre angelegt oder zuletzt erneuert wurde.
- * @property exclusive `true` bei einer exklusiven Sperre, etwa von `prune`.
- * @property hostname Rechner des sperrenden Prozesses.
- * @property username Benutzer des sperrenden Prozesses.
- * @property pid Prozess-ID des sperrenden Prozesses.
- * @property uid Benutzer-ID unter Unix, sonst `null`.
- * @property gid Gruppen-ID unter Unix, sonst `null`.
- */
-public data class RepositoryLock(
-    val time: Instant?,
-    val exclusive: Boolean,
-    val hostname: String,
-    val username: String,
-    val pid: Long,
-    val uid: Long?,
-    val gid: Long?,
-)
-
-/**
- * Ein Eintrag eines Tree-Objekts: eine Datei, ein Verzeichnis oder ein anderer Dateityp.
- *
- * @property name Name ohne Pfad.
- * @property type `file`, `dir`, `symlink` oder ein anderer Dateityp.
- * @property mode Unix-Dateimodus.
- * @property modificationTime Letzte Änderung.
- * @property size Größe in Bytes, nur bei Dateien.
- * @property uid Benutzer-ID des Eigentümers.
- * @property gid Gruppen-ID des Eigentümers.
- * @property user Name des Eigentümers.
- * @property group Name der Gruppe.
- * @property content Blob-IDs der Dateiinhalte in Reihenfolge.
- * @property subtree Tree-ID des Unterverzeichnisses, nur bei Verzeichnissen.
+ * @property name Name without path.
+ * @property type `file`, `dir`, `symlink` or another file type.
+ * @property mode Unix file mode.
+ * @property modificationTime Last modification.
+ * @property size Size in bytes, files only.
+ * @property uid User ID of the owner.
+ * @property gid Group ID of the owner.
+ * @property user Name of the owner.
+ * @property group Name of the group.
+ * @property content IDs of the content blobs, in order.
+ * @property subtree Tree ID of the subdirectory, directories only.
  */
 public data class TreeNode(
     val name: String,
@@ -106,51 +60,12 @@ public data class TreeNode(
 )
 
 /**
- * Ein Verzeichnis im Repository (`restic cat tree`).
+ * A directory in the repository (`restic cat tree`).
  *
- * @property nodes Die Einträge des Verzeichnisses.
+ * @property nodes The entries of the directory.
  */
 public data class TreeObject(
     val nodes: List<TreeNode>,
-)
-
-/**
- * Ein Blob innerhalb eines Packs laut Index.
- *
- * @property id ID des Blobs.
- * @property type `data` oder `tree`.
- * @property offset Position im Pack in Bytes.
- * @property length Länge im Pack in Bytes, verschlüsselt und gegebenenfalls komprimiert.
- * @property uncompressedLength Länge vor der Kompression; `null`, wenn der Blob nicht komprimiert ist.
- */
-public data class IndexBlob(
-    val id: String,
-    val type: String,
-    val offset: Long,
-    val length: Long,
-    val uncompressedLength: Long?,
-)
-
-/**
- * Ein Pack laut Index.
- *
- * @property id ID der Pack-Datei.
- * @property blobs Die Blobs in diesem Pack.
- */
-public data class IndexPack(
-    val id: String,
-    val blobs: List<IndexBlob>,
-)
-
-/**
- * Eine Indexdatei des Repositorys (`restic cat index`).
- *
- * @property supersedes IDs älterer Indexdateien, die diese ersetzt.
- * @property packs Die erfassten Packs mit ihren Blobs.
- */
-public data class IndexObject(
-    val supersedes: List<String>,
-    val packs: List<IndexPack>,
 )
 
 internal fun repositoryConfigFrom(node: JsonNode) =
@@ -159,8 +74,8 @@ internal fun repositoryConfigFrom(node: JsonNode) =
 internal fun masterKeyFrom(node: JsonNode) =
     MasterKey(node.get("mac")?.text("k").orEmpty(), node.get("mac")?.text("r").orEmpty(), node.text("encrypt"))
 
-internal fun repositoryKeyFrom(node: JsonNode) =
-    RepositoryKey(
+internal fun keyContentFrom(node: JsonNode) =
+    KeyContent(
         created = node.instantOrNull("created"),
         username = node.text("username"),
         hostname = node.text("hostname"),
@@ -172,8 +87,8 @@ internal fun repositoryKeyFrom(node: JsonNode) =
         data = node.text("data"),
     )
 
-internal fun repositoryLockFrom(node: JsonNode) =
-    RepositoryLock(
+internal fun lockContentFrom(node: JsonNode) =
+    LockContent(
         time = node.instantOrNull("time"),
         exclusive = node.booleanOrNull("exclusive") ?: false,
         hostname = node.text("hostname"),
@@ -200,8 +115,8 @@ private fun treeNodeFrom(node: JsonNode) =
         subtree = node.textOrNull("subtree"),
     )
 
-internal fun indexObjectFrom(node: JsonNode) =
-    IndexObject(node.textList("supersedes"), node.get("packs")?.mapElements(::indexPackFrom).orEmpty())
+internal fun indexContentFrom(node: JsonNode) =
+    IndexContent(node.textList("supersedes"), node.get("packs")?.mapElements(::indexPackFrom).orEmpty())
 
 private fun indexPackFrom(node: JsonNode) = IndexPack(node.text("id"), node.get("blobs")?.mapElements(::indexBlobFrom).orEmpty())
 

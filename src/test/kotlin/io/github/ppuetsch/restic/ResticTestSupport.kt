@@ -1,6 +1,10 @@
 package io.github.ppuetsch.restic
 
+import java.io.PipedInputStream
+import java.io.PipedOutputStream
 import java.nio.file.Path
+import java.time.Duration
+import kotlin.concurrent.thread
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
 
@@ -22,7 +26,7 @@ internal fun resticFor(
             .build(),
     )
 
-/** Ein frisches lokales Repository samt Quellverzeichnis mit drei Dateien (`a.txt`, `debug.log`, `sub/b.txt`). */
+/** A fresh local repository and a source directory with three files (`a.txt`, `debug.log`, `sub/b.txt`). */
 internal class RepositoryFixture(
     workDirectory: Path,
 ) {
@@ -47,4 +51,41 @@ internal class RepositoryFixture(
                 listOf(source),
                 configure = configure,
             ).summary
+}
+
+private val LOCK_POLL_INTERVAL: Duration = Duration.ofMillis(100)
+private val LOCK_WAIT_LIMIT: Duration = Duration.ofSeconds(30)
+
+/**
+ * Keeps a real, non-exclusive lock on the repository: a backup from standard input that waits for input. [close] ends
+ * the input, so restic finishes regularly, stores an empty file as a new snapshot and releases its lock. (Cancelling
+ * would kill restic and leave a stale lock behind.)
+ */
+class HeldLock(
+    private val restic: Restic,
+) : AutoCloseable {
+    private val silentInput = PipedOutputStream()
+    private val waitingBackup =
+        thread(isDaemon = true) {
+            runCatching {
+                restic.backupStandardInput(PipedInputStream(silentInput))
+            }
+        }
+
+    init {
+        awaitLock()
+    }
+
+    private fun awaitLock() {
+        val deadline = System.nanoTime() + LOCK_WAIT_LIMIT.toNanos()
+        while (restic.list(ListObjectType.LOCKS).isEmpty()) {
+            check(System.nanoTime() < deadline) { "restic took no lock within $LOCK_WAIT_LIMIT" }
+            Thread.sleep(LOCK_POLL_INTERVAL.toMillis())
+        }
+    }
+
+    override fun close() {
+        silentInput.close()
+        waitingBackup.join(LOCK_WAIT_LIMIT.toMillis())
+    }
 }

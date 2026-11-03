@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.IntStream;
 
 /**
  * Stand-in for the restic binary, run through the Java source launcher so it behaves the same on Linux and Windows.
@@ -37,9 +38,9 @@ public final class FakeRestic {
     }
 
     private static void floodStandardError(int lines) {
-        for (int line = 0; line < lines; line++) {
-            System.err.println("warning: line " + line + " of a long diagnostic output that fills the pipe buffer");
-        }
+        IntStream.range(0, lines)
+                .mapToObj(line -> "warning: line " + line + " of a long diagnostic output that fills the pipe buffer")
+                .forEach(System.err::println);
     }
 
     private static Process startSleepingChild() throws IOException {

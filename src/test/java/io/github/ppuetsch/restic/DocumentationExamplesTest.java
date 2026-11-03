@@ -8,21 +8,18 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Führt die Java-Beispiele aus docs/module.md aus, damit die Doku nicht von der API abweicht. */
+/** Runs the Java examples from docs/module.md so the documentation cannot drift away from the API. */
 class DocumentationExamplesTest {
     private static final String SPECIAL_FILE = "mySpecialFile.txt";
-    private static final String SPECIAL_CONTENT = "nur in einem Snapshot";
+    private static final String SPECIAL_CONTENT = "only in one snapshot";
 
-    /** Ein beliebiges Java-Objekt, das gesichert werden soll. */
+    /** Any Java object that should be backed up. */
     record Settings(String name, int retries) {
     }
 
@@ -42,7 +39,7 @@ class DocumentationExamplesTest {
                 .build());
         restic.init();
         source = Files.createDirectories(temporaryDirectory.resolve("source").resolve("nested"));
-        Files.writeString(source.resolve("other.txt"), "immer da");
+        Files.writeString(source.resolve("other.txt"), "always there");
         restic.backup(List.of(source));
         Files.writeString(source.resolve(SPECIAL_FILE), SPECIAL_CONTENT);
         restic.backup(List.of(source));
@@ -50,48 +47,46 @@ class DocumentationExamplesTest {
 
     @Test
     void printAllLocks() {
-        List<String> printed = new ArrayList<>();
+        HeldLock heldLock = new HeldLock(restic);
+        try {
+            List<String> lines = restic.list(ListObjectType.LOCKS).stream()
+                    .map(lock -> lock.getId() + ": pid " + lock.getPid() + " on " + lock.getHostname() + " since " + lock.getTime()
+                            + (lock.getExclusive() ? " (exclusive)" : ""))
+                    .toList();
+            lines.forEach(System.out::println);
 
-        for (String lockId : restic.list(ListObjectType.LOCKS)) {
-            RepositoryLock lock = restic.catLock(lockId);
-            printed.add(lockId + ": pid " + lock.getPid() + " on " + lock.getHostname() + " since " + lock.getTime()
-                    + (lock.getExclusive() ? " (exclusive)" : ""));
+            assertEquals(1, lines.size());
+            assertTrue(lines.getFirst().contains(": pid "));
+        } finally {
+            heldLock.close();
         }
-
-        assertTrue(printed.isEmpty(), "an idle repository holds no locks");
     }
 
     @Test
     void iterateAllSnapshots() {
-        List<String> printed = new ArrayList<>();
+        List<String> lines = restic.snapshots().stream()
+                .map(snapshot -> snapshot.getShortId() + " " + snapshot.getTime() + " " + snapshot.getHostname() + " " + snapshot.getPaths())
+                .toList();
+        lines.forEach(System.out::println);
 
-        for (Snapshot snapshot : restic.snapshots()) {
-            printed.add(snapshot.getShortId() + " " + snapshot.getTime() + " " + snapshot.getHostname() + " " + snapshot.getPaths());
-        }
-
-        assertEquals(2, printed.size());
+        assertEquals(2, lines.size());
     }
 
     @Test
     void snapshotsContainingAFile() {
-        Set<String> snapshotIds = restic.find(List.of(SPECIAL_FILE)).stream()
-                .map(FindSnapshotMatches::getSnapshotId)
-                .collect(Collectors.toSet());
-        List<Snapshot> snapshotsWithFile = restic.snapshots().stream()
-                .filter(snapshot -> snapshotIds.contains(snapshot.getId()))
+        List<Snapshot> snapshotsWithFile = restic.find(List.of(SPECIAL_FILE)).stream()
+                .map(FindSnapshotMatches::getSnapshot)
                 .toList();
 
-        assertEquals(1, snapshotsWithFile.size());
-        assertEquals(restic.snapshots().get(1).getId(), snapshotsWithFile.get(0).getId());
+        assertEquals(List.of(restic.snapshots().getLast().getId()), snapshotsWithFile.stream().map(Snapshot::getId).toList());
     }
 
     @Test
     void extractAFileIntoMemory() {
-        FindSnapshotMatches hit = restic.find(List.of(SPECIAL_FILE)).get(0);
-        String pathInSnapshot = hit.getMatches().get(0).getPath();
+        FindSnapshotMatches hit = restic.find(List.of(SPECIAL_FILE)).getFirst();
 
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        restic.dump(hit.getSnapshotId(), pathInSnapshot, buffer);
+        restic.files().dump(hit.getSnapshotId(), hit.getMatches().getFirst().getPath(), buffer);
         String content = buffer.toString(StandardCharsets.UTF_8);
 
         assertEquals(SPECIAL_CONTENT, content);
@@ -108,7 +103,7 @@ class DocumentationExamplesTest {
                 BackupOptions.builder().stdinFilename("settings.json").tag("settings").build());
 
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        restic.dump(result.getSummary().getSnapshotId(), "/settings.json", buffer);
+        restic.files().dump(result.getSummary().getSnapshotId(), "/settings.json", buffer);
         Settings restored = mapper.readValue(buffer.toByteArray(), Settings.class);
 
         assertEquals(settings, restored);

@@ -3,28 +3,28 @@ package io.github.ppuetsch.restic
 import java.nio.file.Path
 import java.time.Duration
 
-/** Name der restic-Binary, wenn [ResticConfiguration.Builder.binary] nicht gesetzt ist; gesucht wird sie im `PATH`. */
+/** Name of the restic binary when [ResticConfiguration.Builder.binary] is not set; it is looked up in the `PATH`. */
 public const val DEFAULT_RESTIC_BINARY: String = "restic"
 
-/** Kompressionsstufe für neu geschriebene Daten (`--compression`); wirkt nur bei Repositorys ab Format 2. */
+/** Compression level for newly written data (`--compression`); only has an effect on repositories of format 2 or later. */
 public enum class Compression(
     internal val cliValue: String,
 ) {
-    /** Schneller Kompromiss aus Geschwindigkeit und Größe; Standard von restic. */
+    /** Fast compromise between speed and size; restic's default. */
     AUTO("auto"),
 
-    /** Keine Kompression. */
+    /** No compression. */
     OFF("off"),
 
-    /** Stärkste Kompression auf Kosten der Geschwindigkeit. */
+    /** Strongest compression at the cost of speed. */
     MAX("max"),
 }
 
 /**
- * Unveränderliche Verbindungs- und Prozesseinstellungen samt aller globalen restic-Flags; Grundlage einer [Restic]-Instanz.
+ * Immutable connection and process settings including all of restic's global flags; the basis of a [Restic] instance.
  *
- * Ein Passwort im Klartext wird nie als Argument übergeben, sondern über die Umgebungsvariable `RESTIC_PASSWORD`,
- * damit es nicht in der Prozessliste auftaucht.
+ * A plain-text password is never passed as an argument but through the environment variable `RESTIC_PASSWORD`,
+ * so it does not show up in the process list.
  *
  * ```java
  * ResticConfiguration configuration = ResticConfiguration.builder()
@@ -34,34 +34,34 @@ public enum class Compression(
  *     .build();
  * ```
  *
- * @property binary Pfad oder Name der restic-Binary.
- * @property repository Repository als Connection-String (`--repo`).
- * @property repositoryFile Datei, die den Connection-String enthält (`--repository-file`).
- * @property passwordFile Datei mit dem Repository-Passwort (`--password-file`).
- * @property passwordCommand Kommando, das das Passwort ausgibt (`--password-command`).
- * @property password Passwort im Klartext, übergeben als `RESTIC_PASSWORD`.
- * @property insecureNoPassword Repository ohne Passwort (`--insecure-no-password`).
- * @property keyHint ID des zuerst zu probierenden Schlüssels (`--key-hint`).
- * @property caCertificate Zusätzliches CA-Zertifikat für TLS (`--cacert`).
- * @property tlsClientCertificate Client-Zertifikat samt Schlüssel für TLS (`--tls-client-cert`).
- * @property insecureTls Schaltet die Prüfung von TLS-Zertifikaten ab (`--insecure-tls`).
- * @property cacheDirectory Eigenes Cache-Verzeichnis (`--cache-dir`).
- * @property noCache Arbeitet ohne lokalen Cache (`--no-cache`).
- * @property cleanupCache Entfernt alte Cache-Verzeichnisse (`--cleanup-cache`).
- * @property compression Kompressionsstufe (`--compression`).
- * @property packSizeMebibytes Zielgröße neuer Pack-Dateien in MiB (`--pack-size`).
- * @property noExtraVerify Spart die zusätzliche Prüfung vor dem Hochladen (`--no-extra-verify`).
- * @property noLock Arbeitet ohne Sperre, nur für lesende Befehle (`--no-lock`).
- * @property retryLock Wie lange auf eine fremde Sperre gewartet wird (`--retry-lock`).
- * @property stuckRequestTimeout Ab wann ein hängender Backend-Request neu gestartet wird (`--stuck-request-timeout`).
- * @property limitDownloadKibPerSecond Download-Limit in KiB/s (`--limit-download`).
- * @property limitUploadKibPerSecond Upload-Limit in KiB/s (`--limit-upload`).
- * @property httpUserAgent User-Agent für HTTP-Backends (`--http-user-agent`).
- * @property extendedOptions Backend-Optionen (`--option key=value`).
- * @property verbosity Anzahl `--verbose`.
- * @property environment Zusätzliche Umgebungsvariablen für den restic-Prozess, etwa Zugangsdaten eines Backends.
- * @property workingDirectory Arbeitsverzeichnis des restic-Prozesses; relative Pfade beziehen sich darauf.
- * @property timeout Maximale Laufzeit eines einzelnen Aufrufs.
+ * @property binary Path or name of the restic binary.
+ * @property repository Repository as a connection string (`--repo`).
+ * @property repositoryFile File holding the connection string (`--repository-file`).
+ * @property passwordFile File holding the repository password (`--password-file`).
+ * @property passwordCommand Command that prints the password (`--password-command`).
+ * @property password Password in plain text, passed as `RESTIC_PASSWORD`.
+ * @property insecureNoPassword Repository without a password (`--insecure-no-password`).
+ * @property keyHint ID of the key to try first (`--key-hint`).
+ * @property caCertificate Additional CA certificate for TLS (`--cacert`).
+ * @property tlsClientCertificate Client certificate with key for TLS (`--tls-client-cert`).
+ * @property insecureTls Turns off verification of TLS certificates (`--insecure-tls`).
+ * @property cacheDirectory Custom cache directory (`--cache-dir`).
+ * @property noCache Works without a local cache (`--no-cache`).
+ * @property cleanupCache Removes old cache directories (`--cleanup-cache`).
+ * @property compression Compression level (`--compression`).
+ * @property packSizeMebibytes Target size of new pack files in MiB (`--pack-size`).
+ * @property noExtraVerify Skips the extra check before uploading (`--no-extra-verify`).
+ * @property noLock Works without a lock, for read-only commands only (`--no-lock`).
+ * @property retryLock How long to wait for another process's lock (`--retry-lock`).
+ * @property stuckRequestTimeout When a stuck backend request is restarted (`--stuck-request-timeout`).
+ * @property limitDownloadKibPerSecond Download limit in KiB/s (`--limit-download`).
+ * @property limitUploadKibPerSecond Upload limit in KiB/s (`--limit-upload`).
+ * @property httpUserAgent User agent for HTTP backends (`--http-user-agent`).
+ * @property extendedOptions Backend options (`--option key=value`).
+ * @property verbosity Number of `--verbose`.
+ * @property environment Additional environment variables for the restic process, for example credentials of a backend.
+ * @property workingDirectory Working directory of the restic process; relative paths are resolved against it.
+ * @property timeout Maximum duration of a single call.
  */
 public class ResticConfiguration private constructor(
     builder: Builder,
@@ -128,8 +128,7 @@ public class ResticConfiguration private constructor(
             password?.let { put(PASSWORD_VARIABLE, it) }
         }
 
-    /** Stellt eine [ResticConfiguration] zusammen; jede Methode setzt einen Wert und gibt den Builder zurück. */
-    @Suppress("TooManyFunctions") // eine Methode je restic-Flag; das Builder-API bildet die CLI vollständig ab
+    /** Builds a [ResticConfiguration]; every method sets one value and returns the builder. */
     public class Builder internal constructor() {
         internal var binary: String = DEFAULT_RESTIC_BINARY
         internal var repository: String? = null
@@ -160,70 +159,70 @@ public class ResticConfiguration private constructor(
         internal var workingDirectory: Path? = null
         internal var timeout: Duration? = null
 
-        /** Pfad oder Name der restic-Binary; Standard ist [DEFAULT_RESTIC_BINARY] aus dem `PATH`. */
+        /** Path or name of the restic binary; defaults to [DEFAULT_RESTIC_BINARY] from the `PATH`. */
         public fun binary(binary: String): Builder = apply { this.binary = binary }
 
-        /** Connection-String wie bei `restic --repo`, z.B. `C:/backups`, `sftp:user@host:/path`, `rclone:remote:path`. */
+        /** Connection string as for `restic --repo`, for example `C:/backups`, `sftp:user@host:/path`, `rclone:remote:path`. */
         public fun repository(repository: String): Builder = apply { this.repository = repository }
 
-        /** Datei, die den Connection-String enthält (`--repository-file`); Alternative zu [repository]. */
+        /** File holding the connection string (`--repository-file`); alternative to [repository]. */
         public fun repositoryFile(file: Path): Builder = apply { this.repositoryFile = file }
 
-        /** Datei, deren erste Zeile das Repository-Passwort ist (`--password-file`). */
+        /** File whose first line is the repository password (`--password-file`). */
         public fun passwordFile(file: Path): Builder = apply { this.passwordFile = file }
 
-        /** Kommando, dessen Ausgabe das Passwort ist (`--password-command`), z.B. `pass show restic`. */
+        /** Command whose output is the password (`--password-command`), for example `pass show restic`. */
         public fun passwordCommand(command: String): Builder = apply { this.passwordCommand = command }
 
-        /** Passwort im Klartext; wird über die Umgebungsvariable `RESTIC_PASSWORD` übergeben, nie als Argument. */
+        /** Password in plain text; passed through the environment variable `RESTIC_PASSWORD`, never as an argument. */
         public fun password(password: String): Builder = apply { this.password = password }
 
-        /** Für Repositorys ohne Passwort (`--insecure-no-password`); nur für Tests gedacht. */
+        /** For repositories without a password (`--insecure-no-password`); meant for tests only. */
         @JvmOverloads
         public fun insecureNoPassword(enabled: Boolean = true): Builder = apply { this.insecureNoPassword = enabled }
 
-        /** Schlüssel-ID, die restic zuerst probiert (`--key-hint`); beschleunigt Repositorys mit vielen Schlüsseln. */
+        /** Key ID restic tries first (`--key-hint`); speeds up repositories with many keys. */
         public fun keyHint(keyId: String): Builder = apply { this.keyHint = keyId }
 
-        /** Zusätzliches CA-Zertifikat, etwa für einen REST-Server mit eigener CA (`--cacert`). */
+        /** Additional CA certificate, for example for a REST server with its own CA (`--cacert`). */
         public fun caCertificate(file: Path): Builder = apply { this.caCertificate = file }
 
-        /** PEM-Datei mit Client-Zertifikat und Schlüssel für TLS-Authentifizierung (`--tls-client-cert`). */
+        /** PEM file with client certificate and key for TLS authentication (`--tls-client-cert`). */
         public fun tlsClientCertificate(file: Path): Builder = apply { this.tlsClientCertificate = file }
 
-        /** Schaltet die Prüfung von TLS-Zertifikaten ab (`--insecure-tls`); nur für Tests gedacht. */
+        /** Turns off verification of TLS certificates (`--insecure-tls`); meant for tests only. */
         @JvmOverloads
         public fun insecureTls(enabled: Boolean = true): Builder = apply { this.insecureTls = enabled }
 
-        /** Eigenes Cache-Verzeichnis statt des Standards im Benutzerprofil (`--cache-dir`). */
+        /** Custom cache directory instead of the default in the user profile (`--cache-dir`). */
         public fun cacheDirectory(directory: Path): Builder = apply { this.cacheDirectory = directory }
 
-        /** Arbeitet ohne lokalen Cache (`--no-cache`); spart Platz, macht viele Befehle aber deutlich langsamer. */
+        /** Works without a local cache (`--no-cache`); saves space, but makes many commands much slower. */
         @JvmOverloads
         public fun noCache(enabled: Boolean = true): Builder = apply { this.noCache = enabled }
 
-        /** Entfernt alte Cache-Verzeichnisse anderer Repositorys (`--cleanup-cache`). */
+        /** Removes old cache directories of other repositories (`--cleanup-cache`). */
         @JvmOverloads
         public fun cleanupCache(enabled: Boolean = true): Builder = apply { this.cleanupCache = enabled }
 
-        /** Kompressionsstufe für neu geschriebene Daten (`--compression`). */
+        /** Compression level for newly written data (`--compression`). */
         public fun compression(compression: Compression): Builder = apply { this.compression = compression }
 
-        /** Zielgröße neuer Pack-Dateien in MiB (`--pack-size`); größere Packs bedeuten weniger Dateien im Backend. */
+        /** Target size of new pack files in MiB (`--pack-size`); larger packs mean fewer files in the backend. */
         public fun packSizeMebibytes(mebibytes: Int): Builder = apply { this.packSizeMebibytes = mebibytes }
 
-        /** Spart die zusätzliche Prüfung der Daten vor dem Hochladen (`--no-extra-verify`). */
+        /** Skips the extra check of the data before uploading (`--no-extra-verify`). */
         @JvmOverloads
         public fun noExtraVerify(enabled: Boolean = true): Builder = apply { this.noExtraVerify = enabled }
 
-        /** Arbeitet ohne Repository-Sperre (`--no-lock`); nur für lesende Befehle, etwa auf schreibgeschützten Medien. */
+        /** Works without a repository lock (`--no-lock`); only for read-only commands, for example on read-only media. */
         @JvmOverloads
         public fun noLock(enabled: Boolean = true): Builder = apply { this.noLock = enabled }
 
-        /** Wie lange restic auf eine fremde Sperre wartet, statt sofort abzubrechen (`--retry-lock`). */
+        /** How long restic waits for another process's lock instead of giving up right away (`--retry-lock`). */
         public fun retryLock(duration: Duration): Builder = apply { this.retryLock = duration }
 
-        /** Ab wann ein hängender Backend-Request abgebrochen und wiederholt wird (`--stuck-request-timeout`). */
+        /** When a stuck backend request is aborted and retried (`--stuck-request-timeout`). */
         public fun stuckRequestTimeout(duration: Duration): Builder = apply { this.stuckRequestTimeout = duration }
 
         /** Download-Limit in KiB/s (`--limit-download`). */
@@ -232,31 +231,31 @@ public class ResticConfiguration private constructor(
         /** Upload-Limit in KiB/s (`--limit-upload`). */
         public fun limitUploadKibPerSecond(rate: Long): Builder = apply { this.limitUploadKibPerSecond = rate }
 
-        /** User-Agent für HTTP-basierte Backends (`--http-user-agent`). */
+        /** User agent for HTTP-based backends (`--http-user-agent`). */
         public fun httpUserAgent(userAgent: String): Builder = apply { this.httpUserAgent = userAgent }
 
-        /** Entspricht `--option key=value`, z.B. `sftp.command` oder `s3.storage-class`; siehe [Restic.extendedOptions]. */
+        /** Corresponds to `--option key=value`, for example `sftp.command` or `s3.storage-class`; see [ToolCommands.extendedOptions]. */
         public fun extendedOption(
             key: String,
             value: String,
         ): Builder = apply { extendedOptions[key] = value }
 
-        /** Anzahl `--verbose` (0 bis 2); beeinflusst vor allem die Textausgabe von Befehlen ohne JSON. */
+        /** Number of `--verbose` (0 to 2); mainly affects the text output of commands without JSON. */
         public fun verbosity(level: Int): Builder = apply { this.verbosity = level }
 
-        /** Setzt eine Umgebungsvariable für den restic-Prozess, z.B. `AWS_ACCESS_KEY_ID` für ein S3-Backend. */
+        /** Sets an environment variable for the restic process, for example `AWS_ACCESS_KEY_ID` for an S3 backend. */
         public fun environment(
             name: String,
             value: String,
         ): Builder = apply { environment[name] = value }
 
-        /** Arbeitsverzeichnis des restic-Prozesses; relative Pfade in Argumenten beziehen sich darauf. */
+        /** Working directory of the restic process; relative paths in arguments are resolved against it. */
         public fun workingDirectory(directory: Path): Builder = apply { this.workingDirectory = directory }
 
-        /** Maximale Laufzeit eines einzelnen restic-Aufrufs; danach wird er beendet und wirft [ResticTimeoutException]. */
+        /** Maximum duration of a single restic call; after that it is ended and throws [ResticTimeoutException]. */
         public fun timeout(timeout: Duration): Builder = apply { this.timeout = timeout }
 
-        /** Erzeugt die unveränderliche Konfiguration. */
+        /** Creates the immutable configuration. */
         public fun build(): ResticConfiguration = ResticConfiguration(this)
     }
 
@@ -264,11 +263,11 @@ public class ResticConfiguration private constructor(
     public companion object {
         private const val PASSWORD_VARIABLE: String = "RESTIC_PASSWORD"
 
-        /** Ein neuer [Builder] ohne gesetzte Werte. */
+        /** A new [Builder] with no values set. */
         @JvmStatic
         public fun builder(): Builder = Builder()
     }
 }
 
-/** Go-Dauer für restic; Bruchteile von Sekunden in Millisekunden, damit z.B. 500 ms nicht zu `0s` (= aus) werden. */
+/** Go duration for restic; fractions of a second in milliseconds, so that 500 ms, for example, do not become `0s` (= off). */
 private fun goDuration(duration: Duration): String = if (duration.toNanosPart() == 0) "${duration.seconds}s" else "${duration.toMillis()}ms"

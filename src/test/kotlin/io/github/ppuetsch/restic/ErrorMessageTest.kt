@@ -7,7 +7,7 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 
-/** Die Fixtures sind unveränderte Ausgaben von restic 0.18.1 (`--json`). */
+/** The fixtures are unchanged output of restic 0.18.1 (`--json`). */
 private const val WRONG_PASSWORD_STDERR =
     """{"message_type":"exit_error","code":12,"message":"Fatal: wrong password or no key found"}"""
 

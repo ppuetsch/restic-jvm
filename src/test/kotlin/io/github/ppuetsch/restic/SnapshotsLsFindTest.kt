@@ -106,7 +106,7 @@ class SnapshotsLsFindTest {
     @Test
     fun `ls recursive lists every entry`() {
         fixture.backup()
-        val result = restic.listNodes(Restic.LATEST, LsOptions.builder().recursive().build())
+        val result = restic.files().listNodes(Restic.LATEST, LsOptions.builder().recursive().build())
         val files =
             result.nodes
                 .filter { it.isFile() }
@@ -122,7 +122,7 @@ class SnapshotsLsFindTest {
     fun `ls streams nodes to the listener and returns the snapshot`() {
         val id = fixture.backup().snapshotId.orEmpty()
         val seen = mutableListOf<String>()
-        val snapshot = restic.ls(id, LsOptions.builder().recursive().build()) { seen += it.name }
+        val snapshot = restic.files().ls(id, LsOptions.builder().recursive().build()) { seen += it.name }
         assertEquals(id, snapshot.id)
         assertTrue(seen.containsAll(listOf("a.txt", "b.txt")), seen.toString())
     }
@@ -132,15 +132,17 @@ class SnapshotsLsFindTest {
         fixture.backup()
         val directory =
             restic
+                .files()
                 .listNodes("latest", LsOptions.builder().recursive().build())
                 .nodes
                 .first { it.name == "sub" }
                 .path
-        val inside = restic.listNodes("latest", LsOptions.builder().directory(directory).build()).nodes
+        val inside = restic.files().listNodes("latest", LsOptions.builder().directory(directory).build()).nodes
         assertEquals(listOf("sub", "b.txt"), inside.map { it.name })
 
         val bySize =
             restic
+                .files()
                 .listNodes(
                     "latest",
                     LsOptions
@@ -153,6 +155,7 @@ class SnapshotsLsFindTest {
         assertEquals(bySize.sortedBy { it.size }.map { it.name }, bySize.map { it.name })
         val reversed =
             restic
+                .files()
                 .listNodes(
                     "latest",
                     LsOptions
@@ -176,11 +179,15 @@ class SnapshotsLsFindTest {
             host("beta")
             tag("b")
         }
-        assertEquals("beta", restic.ls("latest", LsOptions.builder().host("beta").build()).hostname)
-        assertEquals(listOf("a"), restic.ls("latest", LsOptions.builder().tag("a").build()).tags)
+        assertEquals("beta", restic.files().ls("latest", LsOptions.builder().host("beta").build()).hostname)
+        assertEquals(listOf("a"), restic.files().ls("latest", LsOptions.builder().tag("a").build()).tags)
         assertEquals(
             fixture.source.toString(),
-            restic.ls("latest", LsOptions.builder().path(fixture.source.toString()).build()).paths.single(),
+            restic
+                .files()
+                .ls("latest", LsOptions.builder().path(fixture.source.toString()).build())
+                .paths
+                .single(),
         )
     }
 

@@ -9,7 +9,7 @@ import java.time.OffsetDateTime
 internal object Json {
     private val mapper = JsonMapper.builder().build()
 
-    /** `null` für Zeilen, die kein JSON sind, z.B. Fortschrittstext zwischen den JSON-Zeilen. */
+    /** `null` for lines that are not JSON, for example progress text between the JSON lines. */
     fun parseOrNull(text: String): JsonNode? =
         if (text.isBlank()) {
             null
@@ -22,8 +22,8 @@ internal object Json {
         }
 
     /**
-     * Die Elemente der JSON-Arrays in der Ausgabe. Andere Zeilen, etwa der Text von `find --show-pack-id` hinter dem
-     * Dokument oder `null` für eine leere Liste, werden übergangen; Jackson 3 lehnt Text hinter einem Dokument ab.
+     * The elements of the JSON arrays in the output. Other lines, such as the text `find --show-pack-id` prints after the
+     * document or `null` for an empty list, are skipped; Jackson 3 rejects text after a document.
      */
     fun arrayElements(lines: List<String>): List<JsonNode> =
         lines.mapNotNull(::parseOrNull).filter(JsonNode::isArray).flatMap(JsonNode::toList)
@@ -54,5 +54,5 @@ internal fun JsonNode.doubleOrNull(field: String): Double? = get(field)?.takeUnl
 
 internal fun JsonNode.booleanOrNull(field: String): Boolean? = get(field)?.takeUnless { it.isNull }?.asBoolean()
 
-/** Jackson 3 hat ein eigenes `JsonNode.map`, das Kotlins `map` über die Array-Elemente verdeckt. */
+/** Jackson 3 has its own `JsonNode.map`, which hides Kotlin's `map` over the array elements. */
 internal fun <T> JsonNode.mapElements(transform: (JsonNode) -> T): List<T> = toList().map(transform)

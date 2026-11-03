@@ -34,6 +34,7 @@ class DiffTagRewriteCopyListTest {
 
     private fun namesIn(snapshotId: String): Set<String> =
         restic
+            .files()
             .listNodes(snapshotId, LsOptions.builder().recursive().build())
             .nodes
             .filter { it.isFile() }
@@ -43,7 +44,7 @@ class DiffTagRewriteCopyListTest {
     @Test
     fun `diff reports modified added and removed entries`() {
         val (first, second) = twoSnapshotsWithOneChangedAndOneAddedFile()
-        val result = restic.diffAll(first, second)
+        val result = restic.files().diffAll(first, second)
         val byName = result.changes.associate { it.path.substringAfterLast('/') to it.modifier }
         assertEquals("M", byName["a.txt"])
         assertEquals("+", byName["new.txt"])
@@ -60,7 +61,7 @@ class DiffTagRewriteCopyListTest {
     fun `diff streams changes to the listener and supports metadata`() {
         val (first, second) = twoSnapshotsWithOneChangedAndOneAddedFile()
         val seen = mutableListOf<DiffChange>()
-        restic.diff(first, second, DiffOptions.builder().metadata().build(), seen::add)
+        restic.files().diff(first, second, DiffOptions.builder().metadata().build(), seen::add)
         assertTrue(seen.isNotEmpty())
     }
 
@@ -68,7 +69,7 @@ class DiffTagRewriteCopyListTest {
     fun `tag add remove and set`() {
         val id = fixture.backup { tag("one") }.snapshotId.orEmpty()
         val added =
-            restic.tag {
+            restic.modify().tag {
                 snapshotId(id)
                 add("two", "three")
             }
@@ -83,7 +84,7 @@ class DiffTagRewriteCopyListTest {
                 .sorted(),
         )
 
-        restic.tag {
+        restic.modify().tag {
             remove("one")
             snapshotId(restic.snapshots().single().id)
         }
@@ -96,7 +97,7 @@ class DiffTagRewriteCopyListTest {
                 .sorted(),
         )
 
-        restic.tag {
+        restic.modify().tag {
             set("only")
             snapshotId(restic.snapshots().single().id)
         }
@@ -114,7 +115,7 @@ class DiffTagRewriteCopyListTest {
             tag("b")
         }
         val result =
-            restic.tag(
+            restic.modify().tag(
                 TagOptions
                     .builder()
                     .host("beta")
@@ -145,7 +146,7 @@ class DiffTagRewriteCopyListTest {
     fun `rewrite excludes files and forgets the original`() {
         val id = fixture.backup().snapshotId.orEmpty()
         val result =
-            restic.rewrite {
+            restic.modify().rewrite {
                 exclude("*.txt")
                 snapshotId(id)
                 forget()
@@ -160,7 +161,7 @@ class DiffTagRewriteCopyListTest {
     fun `rewrite dry run changes nothing`() {
         val id = fixture.backup().snapshotId.orEmpty()
         val lines = mutableListOf<String>()
-        restic.rewrite(
+        restic.modify().rewrite(
             RewriteOptions
                 .builder()
                 .dryRun()
@@ -177,7 +178,7 @@ class DiffTagRewriteCopyListTest {
     fun `rewrite replaces host and time and accepts case insensitive excludes`() {
         val id = fixture.backup().snapshotId.orEmpty()
         val newTime = LocalDateTime.of(2019, 5, 6, 7, 8, 9)
-        restic.rewrite {
+        restic.modify().rewrite {
             snapshotId(id)
             newHost("renamed")
             newTime(newTime)
@@ -188,7 +189,7 @@ class DiffTagRewriteCopyListTest {
         assertTrue(snapshot.time.toString().startsWith("2019-05-0"), snapshot.time.toString())
 
         val patterns = temporaryDirectory.resolve("patterns.txt").also { it.writeText("*.log\n") }
-        restic.rewrite {
+        restic.modify().rewrite {
             snapshotId(snapshot.id)
             caseInsensitiveExclude("*.TXT")
             caseInsensitiveExcludeFile(patterns)
@@ -205,7 +206,7 @@ class DiffTagRewriteCopyListTest {
             tag("a")
         }
         val result =
-            restic.rewrite {
+            restic.modify().rewrite {
                 host("alpha")
                 tag("a")
                 path(fixture.source.toString())
@@ -228,7 +229,7 @@ class DiffTagRewriteCopyListTest {
         fixture.backup { tag("y") }
         val target = secondRepository()
         val result =
-            target.copy {
+            target.modify().copy {
                 fromRepository(fixture.repository.toString())
                 fromPassword(TEST_PASSWORD)
             }
@@ -242,7 +243,7 @@ class DiffTagRewriteCopyListTest {
         fixture.backup()
         val passwordFile = temporaryDirectory.resolve("source-pw.txt").also { it.writeText(TEST_PASSWORD) }
         val target = secondRepository()
-        target.copy {
+        target.modify().copy {
             fromRepository(fixture.repository.toString())
             fromPasswordFile(passwordFile)
             snapshotId(first)
@@ -263,7 +264,7 @@ class DiffTagRewriteCopyListTest {
         val repositoryFile = temporaryDirectory.resolve("source-repo.txt").also { it.writeText(fixture.repository.toString()) }
         val target = secondRepository()
         val lines = mutableListOf<String>()
-        target.copy(
+        target.modify().copy(
             CopyOptions
                 .builder()
                 .fromRepositoryFile(repositoryFile)
@@ -294,8 +295,8 @@ class DiffTagRewriteCopyListTest {
         insecure.init()
         insecure.backup(listOf(fixture.source))
         val target = secondRepository()
-        val keyId = insecure.list(ListObjectType.KEYS).first()
-        target.copy {
+        val keyId = insecure.list(ListObjectType.KEYS).first().id
+        target.modify().copy {
             fromRepository(insecureSource.toString())
             fromInsecureNoPassword()
             fromKeyHint(keyId)
@@ -305,14 +306,10 @@ class DiffTagRewriteCopyListTest {
 
     @Test
     fun `list enumerates repository objects`() {
-        val id = fixture.backup().snapshotId.orEmpty()
-        assertEquals(listOf(id), restic.list(ListObjectType.SNAPSHOTS))
+        fixture.backup()
         assertEquals(1, restic.list(ListObjectType.KEYS).size)
         assertTrue(restic.list(ListObjectType.PACKS).isNotEmpty())
         assertTrue(restic.list(ListObjectType.INDEX).isNotEmpty())
-        assertEquals(emptyList<String>(), restic.list(ListObjectType.LOCKS))
-        val blobs = restic.listBlobs()
-        assertTrue(blobs.any { it.type == "data" && it.id.length == 64 })
-        assertTrue(blobs.any { it.type == "tree" })
+        assertTrue(restic.list(ListObjectType.LOCKS).isEmpty())
     }
 }

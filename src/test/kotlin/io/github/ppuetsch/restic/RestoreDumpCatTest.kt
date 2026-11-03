@@ -35,11 +35,12 @@ class RestoreDumpCatTest {
 
     private fun restoredFile(name: String): Path? = restoredFiles().firstOrNull { it.name == name }
 
-    /** Nur das Quellverzeichnis wiederherstellen, weil Windows die Zeitstempel von Vorfahren wie C:\Users nicht setzen darf. */
+    /** Restores only the source directory, because Windows may not set the timestamps of ancestors such as C:\Users. */
     private fun sourceSpec(): String = "latest:" + snapshotPathOf("source")
 
     private fun snapshotPathOf(name: String): String =
         restic
+            .files()
             .listNodes("latest", LsOptions.builder().recursive().build())
             .nodes
             .first {
@@ -161,18 +162,18 @@ class RestoreDumpCatTest {
     @Test
     fun `dump streams file content`() {
         val output = ByteArrayOutputStream()
-        restic.dump("latest", snapshotPathOf("a.txt"), output)
+        restic.files().dump("latest", snapshotPathOf("a.txt"), output)
         assertEquals("hello", output.toString(Charsets.UTF_8))
     }
 
     @Test
     fun `dump of a directory is a tar or zip archive`() {
         val directory = snapshotPathOf("sub")
-        val tar = ByteArrayOutputStream().also { restic.dump("latest", directory, it) }.toByteArray()
+        val tar = ByteArrayOutputStream().also { restic.files().dump("latest", directory, it) }.toByteArray()
         assertTrue(String(tar, Charsets.ISO_8859_1).contains("b.txt"))
         val zip =
             ByteArrayOutputStream().also {
-                restic.dump("latest", directory, it, DumpOptions.builder().archiveFormat(ArchiveFormat.ZIP).build())
+                restic.files().dump("latest", directory, it, DumpOptions.builder().archiveFormat(ArchiveFormat.ZIP).build())
             }
         assertEquals("PK", String(zip.toByteArray(), 0, 2, Charsets.ISO_8859_1))
     }
@@ -186,43 +187,43 @@ class RestoreDumpCatTest {
                 .host(restic.snapshots().single().hostname)
                 .path(fixture.source.toString())
                 .build()
-        restic.dumpToFile("latest", snapshotPathOf("a.txt"), out, options)
+        restic.files().dumpToFile("latest", snapshotPathOf("a.txt"), out, options)
         assertEquals("hello", out.readText())
     }
 
     @Test
     fun `cat prints config snapshot and tree objects as text`() {
-        assertTrue(restic.catText(CatObjectType.CONFIG).contains("chunker_polynomial"))
+        assertTrue(restic.cat().text(CatObjectType.CONFIG).contains("chunker_polynomial"))
         val snapshot = restic.snapshots().single()
-        assertTrue(restic.catText(CatObjectType.SNAPSHOT, snapshot.id).contains(snapshot.tree))
-        assertTrue(restic.catText(CatObjectType.MASTERKEY).contains("encrypt"))
-        assertTrue(restic.catText(CatObjectType.TREE, snapshot.id).contains("\"nodes\""))
+        assertTrue(restic.cat().text(CatObjectType.SNAPSHOT, snapshot.id).contains(snapshot.tree))
+        assertTrue(restic.cat().text(CatObjectType.MASTERKEY).contains("encrypt"))
+        assertTrue(restic.cat().text(CatObjectType.TREE, snapshot.id).contains("\"nodes\""))
     }
 
     @Test
     fun `cat of blob writes raw bytes`() {
         val blobId = blobIds().first()
         val output = ByteArrayOutputStream()
-        restic.cat(CatObjectType.BLOB, blobId, output)
+        restic.cat().raw(CatObjectType.BLOB, blobId, output)
         assertTrue(output.size() > 0)
     }
 
     @Test
     fun `cat requires an id for types that need one`() {
-        assertThrows<IllegalArgumentException> { restic.catText(CatObjectType.SNAPSHOT) }
+        assertThrows<IllegalArgumentException> { restic.cat().text(CatObjectType.SNAPSHOT) }
     }
 
     @Test
     fun `cat of other object types`() {
         val lines = mutableListOf<String>()
         ProcessRunner(restic.configuration).runChecked(listOf("list", "keys"), lines::add)
-        assertTrue(restic.catText(CatObjectType.KEY, lines.first().trim()).contains("kdf"))
+        assertTrue(restic.cat().text(CatObjectType.KEY, lines.first().trim()).contains("kdf"))
         val index = mutableListOf<String>()
         ProcessRunner(restic.configuration).runChecked(listOf("list", "index"), index::add)
-        assertTrue(restic.catText(CatObjectType.INDEX, index.first().trim()).contains("packs"))
+        assertTrue(restic.cat().text(CatObjectType.INDEX, index.first().trim()).contains("packs"))
         val packs = mutableListOf<String>()
         ProcessRunner(restic.configuration).runChecked(listOf("list", "packs"), packs::add)
-        assertTrue(ByteArrayOutputStream().also { restic.cat(CatObjectType.PACK, packs.first().trim(), output = it) }.size() > 0)
+        assertTrue(ByteArrayOutputStream().also { restic.cat().raw(CatObjectType.PACK, packs.first().trim(), output = it) }.size() > 0)
     }
 
     private fun blobIds(): List<String> {

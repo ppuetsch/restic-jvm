@@ -1,14 +1,13 @@
 # Module restic-jvm
 
-Kotlin-Library, die die [restic](https://restic.net)-CLI steuert und aus Java genauso gut nutzbar ist wie aus Kotlin.
-Sie startet die `restic`-Binary, spricht deren dokumentierte `--json`-Schnittstelle und bildet die Ergebnisse auf
-Typen ab.
+Kotlin library that drives the [restic](https://restic.net) CLI and is just as convenient from Java as from Kotlin.
+It starts the `restic` binary, speaks its documented `--json` interface and maps the results to types.
 
-## Einstieg
+## Getting started
 
-Alles beginnt bei [Restic][io.github.ppuetsch.restic.Restic]: eine Instanz je Repository, erzeugt aus einer
-[ResticConfiguration][io.github.ppuetsch.restic.ResticConfiguration]. Jeder restic-Befehl ist eine Methode; seine Flags stellt ein
-Options-Builder zusammen, z.B. [BackupOptions][io.github.ppuetsch.restic.BackupOptions].
+Everything starts at [Restic][io.github.ppuetsch.restic.Restic]: one instance per repository, created from a
+[ResticConfiguration][io.github.ppuetsch.restic.ResticConfiguration]. Every restic command is a method; an options
+builder collects its flags, for example [BackupOptions][io.github.ppuetsch.restic.BackupOptions].
 
 ```kotlin
 val restic = Restic(
@@ -36,89 +35,101 @@ BackupResult result = restic.backup(
         BackupOptions.builder().tag("daily").exclude("*.tmp").build());
 ```
 
-## Grundregeln
+## Where to find a command
 
-- **Passwörter** landen nie auf der Kommandozeile, sondern in Umgebungsvariablen, Dateien oder Kommandos.
-- **Fehler** sind eine versiegelte Hierarchie unter [ResticException][io.github.ppuetsch.restic.ResticException]; der Exit-Code von
-  restic bestimmt die Unterklasse, [ResticErrorKind][io.github.ppuetsch.restic.ResticErrorKind] grenzt die Ursache weiter ein.
-- **Abbrechen** geht über ein [CancellationToken][io.github.ppuetsch.restic.CancellationToken], das restic samt Kindprozessen beendet.
-- **Laufende Ausgabe** (Fortschritt, Einträge von `ls`, Änderungen von `diff`) kommt über Listener, ohne alles im
-  Speicher zu sammeln.
+The everyday commands are methods of [Restic][io.github.ppuetsch.restic.Restic]: `init`, `backup`, `snapshots`, `list`,
+`find`, `restore` and `forget`. Everything else is grouped by topic:
 
-## Beispiele
+| Call | Commands |
+|---|---|
+| `restic.files()` | `ls`, `dump`, `diff`, `mount` |
+| `restic.modify()` | `tag`, `rewrite`, `copy` |
+| `restic.maintenance()` | `prune`, `check`, `stats`, `unlock`, `migrate`, `cache`, `recover`, `features` |
+| `restic.repair()` | `index`, `packs`, `snapshots` |
+| `restic.keys()` | `list`, `add`, `changePassword`, `remove` |
+| `restic.cat()` | `config`, `snapshot`, `key`, `lock`, `tree`, `index`, `masterKey`, `raw`, `text` |
+| `restic.tools()` | `version`, `generate`, `completion`, `selfUpdate`, `help`, `extendedOptions` |
 
-Alle Beispiele gehen von einer fertigen `restic`-Instanz aus und laufen so als Tests gegen ein echtes Repository
+## Ground rules
+
+- **Passwords** never appear on the command line; they go through environment variables, files or commands.
+- **Errors** form a sealed hierarchy below [ResticException][io.github.ppuetsch.restic.ResticException]; restic's
+  exit code selects the subclass, and [ResticErrorKind][io.github.ppuetsch.restic.ResticErrorKind] narrows down the cause.
+- **Cancelling** works through a [CancellationToken][io.github.ppuetsch.restic.CancellationToken], which ends restic
+  together with its child processes.
+- **Running output** (progress, entries of `ls`, changes of `diff`) arrives through listeners, without collecting
+  everything in memory.
+- **Repository objects** returned by [Restic.list][io.github.ppuetsch.restic.Restic.list] know their ID right away and
+  read the rest on first access, once; see [RepositoryObject][io.github.ppuetsch.restic.RepositoryObject].
+
+## Examples
+
+All examples assume a ready `restic` instance and run as tests against a real repository
 (`DocumentationExamplesTest`, `DocumentationExamplesKotlinTest`).
 
-### Alle Sperren eines Repositorys ausgeben
+### Print all locks of a repository
 
-[Restic.list][io.github.ppuetsch.restic.Restic.list] liefert die IDs der Sperrdateien,
-[Restic.catLock][io.github.ppuetsch.restic.Restic.catLock] den Inhalt. Ein Repository ohne laufenden restic-Prozess
-hat in der Regel keine Sperren; übrig gebliebene entfernt [Restic.unlock][io.github.ppuetsch.restic.Restic.unlock].
+[Restic.list][io.github.ppuetsch.restic.Restic.list] with `LOCKS` returns [Lock][io.github.ppuetsch.restic.Lock]
+objects. Their content is read on the first access to a property such as `pid`, with a single `restic cat lock` that
+fills all properties at once. A repository nobody is working on usually has no locks; stale ones are removed by
+[restic.maintenance().unlock()][io.github.ppuetsch.restic.MaintenanceCommands.unlock].
 
 ```java
-for (String lockId : restic.list(ListObjectType.LOCKS)) {
-    RepositoryLock lock = restic.catLock(lockId);
-    System.out.println(lockId + ": pid " + lock.getPid() + " on " + lock.getHostname() + " since " + lock.getTime()
-            + (lock.getExclusive() ? " (exclusive)" : ""));
-}
+restic.list(ListObjectType.LOCKS).stream()
+        .map(lock -> lock.getId() + ": pid " + lock.getPid() + " on " + lock.getHostname() + " since " + lock.getTime()
+                + (lock.getExclusive() ? " (exclusive)" : ""))
+        .forEach(System.out::println);
 ```
 
 ```kotlin
-restic.list(ListObjectType.LOCKS).forEach { lockId ->
-    val lock = restic.catLock(lockId)
-    println("$lockId: pid ${lock.pid} on ${lock.hostname} since ${lock.time}" + if (lock.exclusive) " (exclusive)" else "")
-}
+restic.list(ListObjectType.LOCKS)
+    .map { lock -> "${lock.id}: pid ${lock.pid} on ${lock.hostname} since ${lock.time}" + if (lock.exclusive) " (exclusive)" else "" }
+    .forEach(::println)
 ```
 
-### Alle Snapshots durchlaufen
+### Iterate over all snapshots
 
-[Restic.snapshots][io.github.ppuetsch.restic.Restic.snapshots] liefert sie vom ältesten zum neuesten; mit
-[SnapshotsOptions][io.github.ppuetsch.restic.SnapshotsOptions] lässt sich nach Host, Pfad oder Tag filtern.
+[Restic.snapshots][io.github.ppuetsch.restic.Restic.snapshots] returns them oldest first;
+[SnapshotsOptions][io.github.ppuetsch.restic.SnapshotsOptions] filters by host, path or tag.
 
 ```java
-for (Snapshot snapshot : restic.snapshots()) {
-    System.out.println(snapshot.getShortId() + " " + snapshot.getTime() + " " + snapshot.getHostname() + " " + snapshot.getPaths());
-}
+restic.snapshots().stream()
+        .map(snapshot -> snapshot.getShortId() + " " + snapshot.getTime() + " " + snapshot.getHostname() + " " + snapshot.getPaths())
+        .forEach(System.out::println);
 ```
 
 ```kotlin
-restic.snapshots().forEach { snapshot ->
-    println("${snapshot.shortId} ${snapshot.time} ${snapshot.hostname} ${snapshot.paths}")
-}
+restic.snapshots()
+    .map { "${it.shortId} ${it.time} ${it.hostname} ${it.paths}" }
+    .forEach(::println)
 ```
 
-### Alle Snapshots, die eine bestimmte Datei enthalten
+### All snapshots that contain a certain file
 
-[Restic.find][io.github.ppuetsch.restic.Restic.find] sucht nach Namensmustern (`*` und `?` erlaubt) und nennt je
-Snapshot die Treffer.
+[Restic.find][io.github.ppuetsch.restic.Restic.find] searches by name pattern (`*` and `?` allowed) and lists the
+matches per snapshot. Each result reads its [Snapshot][io.github.ppuetsch.restic.Snapshot] on first access.
 
 ```java
-Set<String> snapshotIds = restic.find(List.of("mySpecialFile.txt")).stream()
-        .map(FindSnapshotMatches::getSnapshotId)
-        .collect(Collectors.toSet());
-List<Snapshot> snapshotsWithFile = restic.snapshots().stream()
-        .filter(snapshot -> snapshotIds.contains(snapshot.getId()))
+List<Snapshot> snapshotsWithFile = restic.find(List.of("mySpecialFile.txt")).stream()
+        .map(FindSnapshotMatches::getSnapshot)
         .toList();
 ```
 
 ```kotlin
-val snapshotIds = restic.find(listOf("mySpecialFile.txt")).map { it.snapshotId }.toSet()
-val snapshotsWithFile = restic.snapshots().filter { it.id in snapshotIds }
+val snapshotsWithFile = restic.find(listOf("mySpecialFile.txt")).map { it.snapshot }
 ```
 
-### Eine Datei in den Speicher holen
+### Read a file into memory
 
-[Restic.dump][io.github.ppuetsch.restic.Restic.dump] schreibt eine Datei aus dem Snapshot in einen beliebigen
-`OutputStream`, hier in ein Byte-Array. Der Pfad ist der im Snapshot, unter Windows also z.B. `/C/Users/me/notes.txt`;
-am einfachsten nimmt man ihn aus einem Treffer von `find`.
+[restic.files().dump][io.github.ppuetsch.restic.FileCommands.dump] writes a file from a snapshot to any `OutputStream`, here a byte
+array. The path is the one inside the snapshot, on Windows for example `/C/Users/me/notes.txt`; the easiest way to get
+it is from a `find` match.
 
 ```java
-FindSnapshotMatches hit = restic.find(List.of("mySpecialFile.txt")).get(0);
-String pathInSnapshot = hit.getMatches().get(0).getPath();
+FindSnapshotMatches hit = restic.find(List.of("mySpecialFile.txt")).getFirst();
 
 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-restic.dump(hit.getSnapshotId(), pathInSnapshot, buffer);
+restic.files().dump(hit.getSnapshotId(), hit.getMatches().getFirst().getPath(), buffer);
 String content = buffer.toString(StandardCharsets.UTF_8);
 ```
 
@@ -126,15 +137,15 @@ String content = buffer.toString(StandardCharsets.UTF_8);
 val hit = restic.find(listOf("mySpecialFile.txt")).first()
 
 val buffer = ByteArrayOutputStream()
-restic.dump(hit.snapshotId, hit.matches.first().path, buffer)
+restic.files().dump(hit.snapshotId, hit.matches.first().path, buffer)
 val content = buffer.toString(Charsets.UTF_8)
 ```
 
-### Ein Java-Objekt sichern und zurückholen
+### Back up a Java object and get it back
 
-restic sichert Bytes; das Objekt wird also zuerst serialisiert, hier mit Jackson als JSON (jedes andere Format geht
-genauso). [Restic.backupStandardInput][io.github.ppuetsch.restic.Restic.backupStandardInput] legt die Bytes als eine
-Datei im Wurzelverzeichnis des Snapshots ab, ihr Name kommt aus `stdinFilename`.
+restic stores bytes, so the object is serialized first, here with Jackson as JSON (any other format works the same
+way). [Restic.backupStandardInput][io.github.ppuetsch.restic.Restic.backupStandardInput] stores the bytes as one file
+in the root of the snapshot, named by `stdinFilename`.
 
 ```java
 record Settings(String name, int retries) {}
@@ -148,11 +159,11 @@ BackupResult result = restic.backupStandardInput(
         BackupOptions.builder().stdinFilename("settings.json").tag("settings").build());
 
 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-restic.dump(result.getSummary().getSnapshotId(), "/settings.json", buffer);
+restic.files().dump(result.getSummary().getSnapshotId(), "/settings.json", buffer);
 Settings restored = mapper.readValue(buffer.toByteArray(), Settings.class);
 ```
 
 # Package io.github.ppuetsch.restic
 
-Die gesamte öffentliche API: die Fassade [Restic][io.github.ppuetsch.restic.Restic], die Konfiguration, je Befehl ein
-Options-Builder und die Ergebnistypen.
+The whole public API: the facade [Restic][io.github.ppuetsch.restic.Restic], the configuration, one options builder
+per command and the result types.

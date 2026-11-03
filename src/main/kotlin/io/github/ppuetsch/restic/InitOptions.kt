@@ -3,18 +3,18 @@ package io.github.ppuetsch.restic
 import java.nio.file.Path
 
 /**
- * Optionen für [Restic.init] (`restic init`). Die `from*`-Werte nennen ein bestehendes Repository, dessen
- * Chunker-Parameter übernommen werden sollen.
+ * Options for [Restic.init] (`restic init`). The `from*` values name an existing repository whose chunker
+ * parameters should be copied.
  *
- * @property repositoryVersion Format des neuen Repositorys (`--repository-version`).
- * @property copyChunkerParams Übernimmt die Chunker-Parameter des Quell-Repositorys (`--copy-chunker-params`).
- * @property fromRepository Quell-Repository als Connection-String (`--from-repo`).
- * @property fromRepositoryFile Datei mit dem Connection-String der Quelle (`--from-repository-file`).
- * @property fromPasswordFile Passwortdatei der Quelle (`--from-password-file`).
- * @property fromPasswordCommand Passwort-Kommando der Quelle (`--from-password-command`).
- * @property fromPassword Passwort der Quelle im Klartext, übergeben als `RESTIC_FROM_PASSWORD`.
- * @property fromKeyHint Schlüssel-ID, die bei der Quelle zuerst probiert wird (`--from-key-hint`).
- * @property fromInsecureNoPassword Quelle ohne Passwort (`--from-insecure-no-password`).
+ * @property repositoryVersion Format of the new repository (`--repository-version`).
+ * @property copyChunkerParams Copies the chunker parameters of the source repository (`--copy-chunker-params`).
+ * @property fromRepository Source repository as a connection string (`--from-repo`).
+ * @property fromRepositoryFile File holding the source's connection string (`--from-repository-file`).
+ * @property fromPasswordFile Password file of the source (`--from-password-file`).
+ * @property fromPasswordCommand Password command of the source (`--from-password-command`).
+ * @property fromPassword Password of the source in plain text, passed as `RESTIC_FROM_PASSWORD`.
+ * @property fromKeyHint Key ID tried first on the source (`--from-key-hint`).
+ * @property fromInsecureNoPassword Source without a password (`--from-insecure-no-password`).
  */
 public class InitOptions private constructor(
     builder: Builder,
@@ -43,7 +43,7 @@ public class InitOptions private constructor(
 
     internal fun environment(): Map<String, String> = fromPassword?.let { mapOf("RESTIC_FROM_PASSWORD" to it) }.orEmpty()
 
-    /** Stellt [InitOptions] zusammen; jede Methode setzt ein Flag und gibt den Builder zurück. */
+    /** Builds [InitOptions]; every method sets one flag and returns the builder. */
     public class Builder internal constructor() {
         internal var repositoryVersion: String? = null
         internal var copyChunkerParams: Boolean = false
@@ -55,49 +55,49 @@ public class InitOptions private constructor(
         internal var fromKeyHint: String? = null
         internal var fromInsecureNoPassword: Boolean = false
 
-        /** Format des neuen Repositorys (`--repository-version`): `1`, `2`, `latest` oder `stable`. */
+        /** Format of the new repository (`--repository-version`): `1`, `2`, `latest` or `stable`. */
         public fun repositoryVersion(version: String): Builder = apply { repositoryVersion = version }
 
         /**
-         * Übernimmt die Chunker-Parameter des Quell-Repositorys (`--copy-chunker-params`), damit [Restic.copy] zwischen
-         * beiden Repositorys dedupliziert.
+         * Copies the chunker parameters of the source repository (`--copy-chunker-params`), so that [ModifyCommands.copy]
+         * deduplicates between both repositories.
          */
         @JvmOverloads
         public fun copyChunkerParams(enabled: Boolean = true): Builder = apply { copyChunkerParams = enabled }
 
-        /** Quell-Repository als Connection-String (`--from-repo`). */
+        /** Source repository as a connection string (`--from-repo`). */
         public fun fromRepository(repository: String): Builder = apply { fromRepository = repository }
 
-        /** Datei mit dem Connection-String des Quell-Repositorys (`--from-repository-file`). */
+        /** File holding the connection string of the source repository (`--from-repository-file`). */
         public fun fromRepositoryFile(file: Path): Builder = apply { fromRepositoryFile = file }
 
-        /** Datei mit dem Passwort des Quell-Repositorys (`--from-password-file`). */
+        /** File holding the password of the source repository (`--from-password-file`). */
         public fun fromPasswordFile(file: Path): Builder = apply { fromPasswordFile = file }
 
-        /** Kommando, das das Passwort des Quell-Repositorys ausgibt (`--from-password-command`). */
+        /** Command that prints the password of the source repository (`--from-password-command`). */
         public fun fromPasswordCommand(command: String): Builder = apply { fromPasswordCommand = command }
 
-        /** Passwort des Quell-Repositorys; wird über `RESTIC_FROM_PASSWORD` übergeben, nie als Argument. */
+        /** Password of the source repository; passed through `RESTIC_FROM_PASSWORD`, never as an argument. */
         public fun fromPassword(password: String): Builder = apply { fromPassword = password }
 
-        /** Schlüssel-ID, die beim Quell-Repository zuerst probiert wird (`--from-key-hint`). */
+        /** Key ID tried first on the source repository (`--from-key-hint`). */
         public fun fromKeyHint(keyId: String): Builder = apply { fromKeyHint = keyId }
 
-        /** Quell-Repository ohne Passwort (`--from-insecure-no-password`). */
+        /** Source repository without a password (`--from-insecure-no-password`). */
         @JvmOverloads
         public fun fromInsecureNoPassword(enabled: Boolean = true): Builder = apply { fromInsecureNoPassword = enabled }
 
-        /** Erzeugt die unveränderlichen Optionen. */
+        /** Creates the immutable options. */
         public fun build(): InitOptions = InitOptions(this)
     }
 
-    /** Standardwerte und Einstieg in den [Builder]. */
+    /** Default values and entry point to the [Builder]. */
     public companion object {
-        /** Keine Flags gesetzt: neues Repository im aktuellen Standardformat. */
+        /** No flags set: a new repository in the current default format. */
         @JvmField
         public val DEFAULT: InitOptions = Builder().build()
 
-        /** Ein neuer [Builder] ohne gesetzte Flags. */
+        /** A new [Builder] with no flags set. */
         @JvmStatic
         public fun builder(): Builder = Builder()
     }

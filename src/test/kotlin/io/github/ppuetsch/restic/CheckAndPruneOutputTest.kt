@@ -26,7 +26,7 @@ private class RecordingListener : OutputLineListener {
     }
 }
 
-/** Die Prune-Zeilen sind unveränderte Ausgabe von restic 0.18.1. */
+/** The prune lines are unchanged output of restic 0.18.1. */
 private val PRUNE_WITH_DELETION =
     arrayOf(
         "out loading indexes...",
@@ -71,7 +71,7 @@ class CheckAndPruneOutputTest {
             )
         val listener = RecordingListener()
 
-        val result = fake.restic().check(CheckOptions.DEFAULT, listener)
+        val result = fake.restic().maintenance().check(CheckOptions.DEFAULT, listener)
 
         assertEquals(result.outputLines, listener.standardOutput)
         assertEquals("using temporary cache in /tmp/x", result.outputLines.first())
@@ -103,7 +103,7 @@ class CheckAndPruneOutputTest {
                 """out {"message_type":"summary","num_errors":0,"broken_packs":null,"suggest_repair_index":false,"suggest_prune":false}""",
             )
 
-        val result = fake.restic().check()
+        val result = fake.restic().maintenance().check()
 
         assertTrue(result.isHealthy())
         assertEquals(1, result.outputLines.size)
@@ -115,7 +115,7 @@ class CheckAndPruneOutputTest {
         repository.backup()
         val listener = RecordingListener()
 
-        val result = repository.restic.check(CheckOptions.DEFAULT, listener)
+        val result = repository.restic.maintenance().check(CheckOptions.DEFAULT, listener)
 
         assertTrue(result.isHealthy())
         assertTrue(result.outputLines.any { it.startsWith("check finished") }, result.outputLines.toString())
@@ -126,7 +126,7 @@ class CheckAndPruneOutputTest {
     fun `prune reports packs and freed bytes from a deletion run`() {
         val listener = RecordingListener()
 
-        val result = FakeRestic(temporaryDirectory, *PRUNE_WITH_DELETION).restic().prune(PruneOptions.DEFAULT, listener)
+        val result = FakeRestic(temporaryDirectory, *PRUNE_WITH_DELETION).restic().maintenance().prune(PruneOptions.DEFAULT, listener)
 
         assertEquals(PRUNE_WITH_DELETION.size, result.outputLines.size)
         assertEquals(result.outputLines, listener.standardOutput)
@@ -138,7 +138,7 @@ class CheckAndPruneOutputTest {
 
     @Test
     fun `prune takes the last repack progress and converts units`() {
-        val result = FakeRestic(temporaryDirectory, *PRUNE_WITH_REPACK).restic().prune()
+        val result = FakeRestic(temporaryDirectory, *PRUNE_WITH_REPACK).restic().maintenance().prune()
 
         assertEquals(2, result.packsRepacked)
         assertEquals(3, result.packsDeleted)
@@ -156,7 +156,7 @@ class CheckAndPruneOutputTest {
                 "out to delete:    2 packs",
             )
 
-        val result = fake.restic().prune()
+        val result = fake.restic().maintenance().prune()
 
         assertEquals(Triple(5, 1, 2), Triple(result.packsToKeep, result.packsRepacked, result.packsDeleted))
         assertEquals(1024L, result.bytesFreed)
@@ -164,7 +164,7 @@ class CheckAndPruneOutputTest {
 
     @Test
     fun `prune figures stay null when restic prints no summary`() {
-        val result = FakeRestic(temporaryDirectory, "out something unexpected").restic().prune()
+        val result = FakeRestic(temporaryDirectory, "out something unexpected").restic().maintenance().prune()
 
         assertEquals(listOf("something unexpected"), result.outputLines)
         assertNull(result.bytesFreed)
@@ -182,7 +182,7 @@ class CheckAndPruneOutputTest {
                 """out {"message_type":"summary","num_errors":1,"broken_packs":["abc"]}""",
             )
 
-        val result = fake.restic().check(CheckOptions.DEFAULT, listener)
+        val result = fake.restic().maintenance().check(CheckOptions.DEFAULT, listener)
 
         assertEquals(listOf("pack/abc: pack damaged"), listener.standardError)
         assertEquals(listener.standardError, result.errorOutputLines)
@@ -200,7 +200,7 @@ class CheckAndPruneOutputTest {
 
         val failure =
             assertTimeoutPreemptively<IllegalStateException>(LISTENER_FAILURE_TIMEOUT) {
-                assertThrows<IllegalStateException> { fake.restic().prune(PruneOptions.DEFAULT, failingListener) }
+                assertThrows<IllegalStateException> { fake.restic().maintenance().prune(PruneOptions.DEFAULT, failingListener) }
             }
 
         assertEquals("listener broke", failure.message)
@@ -214,7 +214,7 @@ class CheckAndPruneOutputTest {
             temporaryDirectory,
             "err warning: slow backend",
             "out total prune: 0 blobs / 0 B",
-        ).restic().prune(PruneOptions.DEFAULT, listener)
+        ).restic().maintenance().prune(PruneOptions.DEFAULT, listener)
 
         assertEquals(listOf("warning: slow backend"), listener.standardError)
     }
@@ -230,7 +230,7 @@ class CheckAndPruneOutputTest {
         repository.backup()
         repository.restic.forget { keepLast(1) }
 
-        val result = repository.restic.prune()
+        val result = repository.restic.maintenance().prune()
 
         assertTrue(result.bytesFreed != null, result.outputLines.toString())
         assertTrue(result.packsDeleted != null && result.packsRepacked != null, result.outputLines.toString())

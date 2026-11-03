@@ -1,12 +1,12 @@
 package io.github.ppuetsch.restic
 
 /**
- * Version der restic-Binary, wie [Restic.version] sie liefert.
+ * Version of the restic binary, as [ToolCommands.version] returns it.
  *
- * @property version Versionsnummer, z.B. `0.19.1`.
- * @property goVersion Go-Version, mit der restic gebaut wurde.
- * @property goOs Betriebssystem der Binary, z.B. `linux` oder `windows`.
- * @property goArch Prozessorarchitektur der Binary, z.B. `amd64`.
+ * @property version Version number, for example `0.19.1`.
+ * @property goVersion Go version restic was built with.
+ * @property goOs Operating system of the binary, for example `linux` or `windows`.
+ * @property goArch Processor architecture of the binary, for example `amd64`.
  */
 public data class ResticVersion(
     val version: String,
@@ -14,7 +14,7 @@ public data class ResticVersion(
     val goOs: String,
     val goArch: String,
 ) {
-    /** `true`, wenn diese Version mindestens `major.minor.patch` ist; Vorabversionen zählen wie ihre Basisversion. */
+    /** `true` if this version is at least `major.minor.patch`; pre-releases count as their base version. */
     public fun isAtLeast(
         major: Int,
         minor: Int,
@@ -30,10 +30,10 @@ public data class ResticVersion(
 }
 
 /**
- * Ergebnis von [Restic.init].
+ * Result of [Restic.init].
  *
- * @property id ID des neuen Repositorys.
- * @property repository Ort des Repositorys, wie restic ihn meldet.
+ * @property id ID of the new repository.
+ * @property repository Location of the repository, as restic reports it.
  */
 public data class InitResult(
     val id: String,
