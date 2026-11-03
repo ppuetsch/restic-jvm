@@ -88,7 +88,9 @@ internal object BundledRestic {
             check(writtenHash == bundled.sha256) {
                 "The bundled restic for ${bundled.platform} does not match its recorded SHA-256; the artifact is damaged"
             }
-            partial.toFile().setExecutable(true, false)
+            check(partial.toFile().setExecutable(true, false)) {
+                "Cannot make the restic binary in ${target.parent} executable; choose another bundledBinaryDirectory"
+            }
             moveIntoPlace(partial, target, bundled.sha256)
         } finally {
             Files.deleteIfExists(partial)
