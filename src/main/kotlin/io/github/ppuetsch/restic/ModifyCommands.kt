@@ -4,8 +4,6 @@ package io.github.ppuetsch.restic
 public class ModifyCommands internal constructor(
     private val runner: ProcessRunner,
 ) {
-    private val rewriteAndCopyCommand = RewriteAndCopyCommand(runner)
-
     /** Changes tags of snapshots (`restic tag`); restic creates new snapshots for this and removes the old ones. */
     @JvmOverloads
     public fun tag(
@@ -26,7 +24,7 @@ public class ModifyCommands internal constructor(
     public fun rewrite(
         options: RewriteOptions,
         listener: OutputLineListener? = null,
-    ): RewriteResult = rewriteAndCopyCommand.rewrite(options, listener)
+    ): RewriteResult = RewriteAndCopyCommand(runner).rewrite(options, listener)
 
     /** Kotlin variant of [rewrite] that builds the options with a builder lambda. */
     @JvmSynthetic
@@ -42,7 +40,7 @@ public class ModifyCommands internal constructor(
     public fun copy(
         options: CopyOptions,
         listener: OutputLineListener? = null,
-    ): CopyResult = rewriteAndCopyCommand.copy(options, listener)
+    ): CopyResult = RewriteAndCopyCommand(runner).copy(options, listener)
 
     /** Kotlin variant of [copy] that builds the options with a builder lambda. */
     @JvmSynthetic

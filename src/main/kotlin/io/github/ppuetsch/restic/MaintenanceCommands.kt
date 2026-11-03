@@ -4,9 +4,6 @@ package io.github.ppuetsch.restic
 public class MaintenanceCommands internal constructor(
     private val runner: ProcessRunner,
 ) {
-    private val pruneCommand = PruneCommand(runner)
-    private val checkAndStatsCommand = CheckAndStatsCommand(runner)
-
     /**
      * Frees space no snapshot references any more (`restic prune`).
      *
@@ -16,7 +13,7 @@ public class MaintenanceCommands internal constructor(
     public fun prune(
         options: PruneOptions = PruneOptions.DEFAULT,
         listener: OutputLineListener? = null,
-    ): PruneResult = pruneCommand.prune(options, listener)
+    ): PruneResult = PruneCommand(runner).prune(options, listener)
 
     /** Kotlin variant of [prune] that builds the options with a builder lambda. */
     @JvmSynthetic
@@ -34,7 +31,7 @@ public class MaintenanceCommands internal constructor(
     public fun check(
         options: CheckOptions = CheckOptions.DEFAULT,
         listener: OutputLineListener? = null,
-    ): CheckResult = checkAndStatsCommand.check(options, listener)
+    ): CheckResult = CheckAndStatsCommand(runner).check(options, listener)
 
     /** Kotlin variant of [check] that builds the options with a builder lambda. */
     @JvmSynthetic
