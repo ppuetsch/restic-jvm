@@ -13,6 +13,7 @@ import tools.jackson.databind.JsonNode
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.LocalDateTime
+import kotlin.concurrent.thread
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
 
@@ -233,7 +234,7 @@ class BackupTest {
         hangingProgram.writeText("public class Hang { public static void main(String[] a) throws Exception { Thread.sleep(60000); } }")
         val javaLauncher = Path.of(System.getProperty("java.home"), "bin", "java").toString()
         val token = CancellationToken()
-        Thread.ofVirtual().start {
+        thread(isDaemon = true) {
             Thread.sleep(3000)
             token.cancel()
         }

@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
 buildscript {
@@ -33,6 +34,13 @@ group = "io.github.ppuetsch"
 version = "0.7.0"
 
 val repositoryUrl = "https://github.com/ppuetsch/restic-jvm"
+
+// Users need at least this Java version: Jackson 3 requires 17. The build itself runs on a newer JDK.
+val minimumJavaVersion = 17
+val buildJavaVersion = 25
+
+// CI runs the tests once on the minimum version to prove the bytecode and API level really work there.
+val testJavaVersion = providers.gradleProperty("testJavaVersion").map(String::toInt).orElse(buildJavaVersion)
 
 // Untergrenzen knapp unter dem Stand unter Windows, wo die FUSE-Mount-Tests entfallen.
 val minimumLineCoverage = "0.90".toBigDecimal()
@@ -150,10 +158,13 @@ sonar {
 }
 
 kotlin {
-    jvmToolchain(25)
+    jvmToolchain(buildJavaVersion)
     explicitApi()
     compilerOptions {
         allWarningsAsErrors.set(true)
+        jvmTarget.set(JvmTarget.fromTarget(minimumJavaVersion.toString()))
+        // rejects JDK APIs newer than the minimum version, not only newer bytecode
+        freeCompilerArgs.add("-Xjdk-release=$minimumJavaVersion")
     }
 
     // Fängt versehentliche Änderungen am öffentlichen API ab; Absicht wird mit updateLegacyAbi bestätigt.
@@ -162,6 +173,7 @@ kotlin {
 }
 
 tasks.withType<JavaCompile>().configureEach {
+    options.release.set(minimumJavaVersion)
     options.compilerArgs.addAll(listOf("-Xlint:all", "-Werror"))
 }
 
@@ -220,6 +232,7 @@ tasks.jar {
 
 tasks.test {
     useJUnitPlatform()
+    javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(testJavaVersion.map(JavaLanguageVersion::of)) })
     finalizedBy(tasks.jacocoTestReport)
     testLogging {
         events("passed", "failed", "skipped")

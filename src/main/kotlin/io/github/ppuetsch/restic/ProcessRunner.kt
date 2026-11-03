@@ -16,8 +16,13 @@ import java.util.concurrent.atomic.AtomicReference
 
 private const val LINE_FEED: Char = '\n'
 
-/** Blocking reads of process streams do not belong in the common ForkJoinPool. */
-internal val STREAM_READERS: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
+/**
+ * Blocking reads of process streams do not belong in the common ForkJoinPool. Every running restic needs up to three
+ * readers at once, so the pool grows on demand; idle threads end after a minute, and as daemons they never keep the
+ * JVM alive. (Virtual threads would fit better but need Java 21, the library supports 17.)
+ */
+internal val STREAM_READERS: ExecutorService =
+    Executors.newCachedThreadPool { task -> Thread(task, "restic-stream-reader").apply { isDaemon = true } }
 
 private val WATCHDOG: ScheduledExecutorService =
     Executors.newSingleThreadScheduledExecutor { task -> Thread(task, "restic-watchdog").apply { isDaemon = true } }

@@ -56,7 +56,7 @@ class DocumentationExamplesTest {
             lines.forEach(System.out::println);
 
             assertEquals(1, lines.size());
-            assertTrue(lines.getFirst().contains(": pid "));
+            assertTrue(lines.get(0).contains(": pid "));
         } finally {
             heldLock.close();
         }
@@ -78,15 +78,15 @@ class DocumentationExamplesTest {
                 .map(FindSnapshotMatches::getSnapshot)
                 .toList();
 
-        assertEquals(List.of(restic.snapshots().getLast().getId()), snapshotsWithFile.stream().map(Snapshot::getId).toList());
+        assertEquals(List.of(restic.snapshots().get(restic.snapshots().size() - 1).getId()), snapshotsWithFile.stream().map(Snapshot::getId).toList());
     }
 
     @Test
     void extractAFileIntoMemory() {
-        FindSnapshotMatches hit = restic.find(List.of(SPECIAL_FILE)).getFirst();
+        FindSnapshotMatches hit = restic.find(List.of(SPECIAL_FILE)).get(0);
 
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        restic.files().dump(hit.getSnapshotId(), hit.getMatches().getFirst().getPath(), buffer);
+        restic.files().dump(hit.getSnapshotId(), hit.getMatches().get(0).getPath(), buffer);
         String content = buffer.toString(StandardCharsets.UTF_8);
 
         assertEquals(SPECIAL_CONTENT, content);

@@ -126,10 +126,10 @@ array. The path is the one inside the snapshot, on Windows for example `/C/Users
 it is from a `find` match.
 
 ```java
-FindSnapshotMatches hit = restic.find(List.of("mySpecialFile.txt")).getFirst();
+FindSnapshotMatches hit = restic.find(List.of("mySpecialFile.txt")).get(0);
 
 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-restic.files().dump(hit.getSnapshotId(), hit.getMatches().getFirst().getPath(), buffer);
+restic.files().dump(hit.getSnapshotId(), hit.getMatches().get(0).getPath(), buffer);
 String content = buffer.toString(StandardCharsets.UTF_8);
 ```
 
