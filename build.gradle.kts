@@ -70,8 +70,22 @@ repositories {
     mavenCentral()
 }
 
+// The tests run on this machine, so they get the binary artifact of this machine's platform (if there is one).
+val testMachinePlatform: String? =
+    run {
+        val operatingSystem = System.getProperty("os.name").lowercase()
+        val architecture = if (System.getProperty("os.arch") in setOf("aarch64", "arm64")) "aarch64" else "x86_64"
+        when {
+            operatingSystem.startsWith("windows") -> "windows-$architecture".takeIf { architecture == "x86_64" }
+            operatingSystem.startsWith("mac") -> "macos-$architecture"
+            operatingSystem.startsWith("linux") -> "linux-$architecture"
+            else -> null
+        }
+    }
+
 dependencies {
     implementation(libs.jackson.databind)
+    testMachinePlatform?.let { testRuntimeOnly(project(":restic-jvm-binary-$it")) }
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
@@ -276,6 +290,8 @@ tasks.register("printVersion") {
     doLast { println(projectVersion) }
 }
 
+apply(from = "gradle/publishing.gradle.kts")
+
 publishing {
     publications {
         create<MavenPublication>("library") {
@@ -285,46 +301,13 @@ publishing {
             pom {
                 name.set("restic-jvm")
                 description.set("Kotlin/Java library that drives the restic backup CLI")
-                url.set(repositoryUrl)
                 licenses {
                     license {
                         name.set("The Apache License, Version 2.0")
                         url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
                     }
                 }
-                developers {
-                    developer {
-                        id.set("ppuetsch")
-                        name.set("Philip Puetsch")
-                        url.set("https://github.com/ppuetsch")
-                    }
-                }
-                scm {
-                    url.set(repositoryUrl)
-                    connection.set("scm:git:$repositoryUrl.git")
-                    developerConnection.set("scm:git:ssh://git@github.com/ppuetsch/restic-jvm.git")
-                }
             }
         }
-    }
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/ppuetsch/restic-jvm")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
-}
-
-signing {
-    val signingKey = providers.environmentVariable("SIGNING_KEY").orNull?.takeIf(String::isNotBlank)
-    val signingPassword = providers.environmentVariable("SIGNING_PASSWORD").orNull
-    isRequired = false
-    if (signingKey != null) {
-        useInMemoryPgpKeys(signingKey, signingPassword)
-        sign(publishing.publications["library"])
     }
 }

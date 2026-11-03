@@ -1615,6 +1615,7 @@ public final class io/github/ppuetsch/restic/ResticConfiguration {
 	public static final field Companion Lio/github/ppuetsch/restic/ResticConfiguration$Companion;
 	public static final fun builder ()Lio/github/ppuetsch/restic/ResticConfiguration$Builder;
 	public final fun getBinary ()Ljava/lang/String;
+	public final fun getBundledBinaryDirectory ()Ljava/nio/file/Path;
 	public final fun getCaCertificate ()Ljava/nio/file/Path;
 	public final fun getCacheDirectory ()Ljava/nio/file/Path;
 	public final fun getCleanupCache ()Z
@@ -1647,6 +1648,7 @@ public final class io/github/ppuetsch/restic/ResticConfiguration {
 public final class io/github/ppuetsch/restic/ResticConfiguration$Builder {
 	public final fun binary (Ljava/lang/String;)Lio/github/ppuetsch/restic/ResticConfiguration$Builder;
 	public final fun build ()Lio/github/ppuetsch/restic/ResticConfiguration;
+	public final fun bundledBinaryDirectory (Ljava/nio/file/Path;)Lio/github/ppuetsch/restic/ResticConfiguration$Builder;
 	public final fun caCertificate (Ljava/nio/file/Path;)Lio/github/ppuetsch/restic/ResticConfiguration$Builder;
 	public final fun cacheDirectory (Ljava/nio/file/Path;)Lio/github/ppuetsch/restic/ResticConfiguration$Builder;
 	public final fun cleanupCache ()Lio/github/ppuetsch/restic/ResticConfiguration$Builder;

@@ -52,6 +52,9 @@ The everyday commands are methods of [Restic][io.github.ppuetsch.restic.Restic]:
 
 ## Ground rules
 
+- **restic** comes from [ResticConfiguration.Builder.binary][io.github.ppuetsch.restic.ResticConfiguration.Builder.binary],
+  otherwise from a `restic-jvm-binary-<platform>` artifact on the class path (extracted and checked on first use),
+  otherwise from the `PATH`.
 - **Passwords** never appear on the command line; they go through environment variables, files or commands.
 - **Errors** form a sealed hierarchy below [ResticException][io.github.ppuetsch.restic.ResticException]; restic's
   exit code selects the subclass, and [ResticErrorKind][io.github.ppuetsch.restic.ResticErrorKind] narrows down the cause.

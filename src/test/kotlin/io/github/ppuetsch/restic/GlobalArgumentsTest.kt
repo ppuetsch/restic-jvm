@@ -143,7 +143,8 @@ class GlobalArgumentsTest {
     fun `defaults are off and empty`() {
         val configuration = ResticConfiguration.builder().build()
 
-        assertEquals("restic", configuration.binary)
+        // which binary is used by default depends on the class path; BundledResticTest covers that
+        assertTrue(configuration.bundledBinaryDirectory.endsWith("restic-jvm"))
         assertFalse(configuration.insecureNoPassword || configuration.insecureTls || configuration.noCache)
         assertFalse(configuration.cleanupCache || configuration.noExtraVerify || configuration.noLock)
         assertNull(configuration.workingDirectory)
