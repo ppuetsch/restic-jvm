@@ -11,6 +11,7 @@ import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
+import java.util.Locale
 import kotlin.io.path.createDirectories
 import kotlin.io.path.readText
 import kotlin.io.path.writeBytes
@@ -111,7 +112,7 @@ class BundledResticTest {
     }
 
     private fun sha256Hex(content: ByteArray): String =
-        MessageDigest.getInstance("SHA-256").digest(content).joinToString("") { "%02x".format(it) }
+        MessageDigest.getInstance("SHA-256").digest(content).joinToString("") { "%02x".format(Locale.ROOT, it) }
 
     private fun bundledResticVersion(): String =
         checkNotNull(
