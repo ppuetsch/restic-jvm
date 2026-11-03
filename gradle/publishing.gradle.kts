@@ -1,5 +1,6 @@
 // Publishing shared by all artifacts: the POM fields Maven Central requires, signing and the target repository.
-// Each project creates its publication and sets name, description and licenses itself.
+// Each project creates its publication and sets name, description and licenses itself. All artifacts go to one local
+// Maven repository; scripts/publish_to_central.py uploads it to Maven Central as a single deployment.
 
 apply(plugin = "maven-publish")
 apply(plugin = "signing")
@@ -26,12 +27,8 @@ configure<PublishingExtension> {
     }
     repositories {
         maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/ppuetsch/restic-jvm")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
+            name = "CentralBundle"
+            url = uri(rootProject.layout.buildDirectory.dir("central-bundle"))
         }
     }
 }
