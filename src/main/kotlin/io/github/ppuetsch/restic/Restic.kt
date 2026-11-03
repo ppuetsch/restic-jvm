@@ -36,16 +36,6 @@ public class Restic(
     public val configuration: ResticConfiguration,
 ) {
     private val runner = ProcessRunner(configuration)
-    private val backupCommand = BackupCommand(runner)
-    private val restoreCommand = RestoreCommand(runner)
-    private val forgetCommand = ForgetCommand(runner)
-    private val fileCommands = FileCommands(runner)
-    private val modifyCommands = ModifyCommands(runner)
-    private val maintenanceCommands = MaintenanceCommands(runner)
-    private val repairCommands = RepairCommands(runner)
-    private val keyCommands = KeyCommands(runner)
-    private val catCommands = CatCommands(runner)
-    private val toolCommands = ToolCommands(runner)
 
     /**
      * Creates a new repository (`restic init`).
@@ -76,7 +66,7 @@ public class Restic(
         paths: List<Path>,
         options: BackupOptions = BackupOptions.DEFAULT,
         listener: BackupListener? = null,
-    ): BackupResult = backupCommand.backupPaths(paths.map(Path::toString), options, listener)
+    ): BackupResult = BackupCommand(runner).backupPaths(paths.map(Path::toString), options, listener)
 
     /** Kotlin variant of [backup] that builds the options with a builder lambda. */
     @JvmSynthetic
@@ -95,7 +85,7 @@ public class Restic(
         input: InputStream,
         options: BackupOptions = BackupOptions.DEFAULT,
         listener: BackupListener? = null,
-    ): BackupResult = backupCommand.backupStandardInput(input, options, listener)
+    ): BackupResult = BackupCommand(runner).backupStandardInput(input, options, listener)
 
     /**
      * Lets restic start the command and backs up its standard output as one file
@@ -108,7 +98,7 @@ public class Restic(
         command: List<String>,
         options: BackupOptions = BackupOptions.DEFAULT,
         listener: BackupListener? = null,
-    ): BackupResult = backupCommand.backupCommandOutput(command, options, listener)
+    ): BackupResult = BackupCommand(runner).backupCommandOutput(command, options, listener)
 
     /** All matching snapshots as a flat list, oldest first (`restic snapshots`), even if `groupBy` is set. */
     @JvmOverloads
@@ -192,7 +182,7 @@ public class Restic(
         target: Path,
         options: RestoreOptions = RestoreOptions.DEFAULT,
         listener: RestoreListener? = null,
-    ): RestoreSummary = restoreCommand.restore(snapshotId, target, options, listener)
+    ): RestoreSummary = RestoreCommand(runner).restore(snapshotId, target, options, listener)
 
     /** Kotlin variant of [restore] that builds the options with a builder lambda. */
     @JvmSynthetic
@@ -213,32 +203,32 @@ public class Restic(
     public fun forget(
         options: ForgetOptions,
         outputListener: OutputLineListener? = null,
-    ): ForgetResult = forgetCommand.forget(options, outputListener)
+    ): ForgetResult = ForgetCommand(runner).forget(options, outputListener)
 
     /** Kotlin variant of [forget] that builds the options with a builder lambda. */
     @JvmSynthetic
     public fun forget(configure: ForgetOptions.Builder.() -> Unit): ForgetResult = forget(ForgetOptions.builder().apply(configure).build())
 
     /** Looking into snapshots: list, read, compare and mount their files. */
-    public fun files(): FileCommands = fileCommands
+    public fun files(): FileCommands = FileCommands(runner)
 
     /** Changing snapshots: tags, rewriting, copying from another repository. */
-    public fun modify(): ModifyCommands = modifyCommands
+    public fun modify(): ModifyCommands = ModifyCommands(runner)
 
     /** Keeping the repository healthy and small: prune, check, stats, locks, caches. */
-    public fun maintenance(): MaintenanceCommands = maintenanceCommands
+    public fun maintenance(): MaintenanceCommands = MaintenanceCommands(runner)
 
     /** Repairing a damaged repository. */
-    public fun repair(): RepairCommands = repairCommands
+    public fun repair(): RepairCommands = RepairCommands(runner)
 
     /** The keys (passwords) of the repository. */
-    public fun keys(): KeyCommands = keyCommands
+    public fun keys(): KeyCommands = KeyCommands(runner)
 
     /** Reading single repository objects by ID (`restic cat`). */
-    public fun cat(): CatCommands = catCommands
+    public fun cat(): CatCommands = CatCommands(runner)
 
     /** Commands about the restic binary itself rather than the repository. */
-    public fun tools(): ToolCommands = toolCommands
+    public fun tools(): ToolCommands = ToolCommands(runner)
 
     /** Constants for calls of [Restic]. */
     public companion object {

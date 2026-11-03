@@ -7,9 +7,6 @@ import java.nio.file.Path
 public class FileCommands internal constructor(
     private val runner: ProcessRunner,
 ) {
-    private val diffCommand = DiffCommand(runner)
-    private val mountCommand = MountCommand(runner)
-
     /**
      * Lists the content of a snapshot (`restic ls`) and reports each entry to the listener individually, without keeping
      * all entries in memory.
@@ -91,7 +88,7 @@ public class FileCommands internal constructor(
         secondSnapshotId: String,
         options: DiffOptions = DiffOptions.DEFAULT,
         listener: DiffListener? = null,
-    ): DiffStatistics = diffCommand.diff(firstSnapshotId, secondSnapshotId, options, listener)
+    ): DiffStatistics = DiffCommand(runner).diff(firstSnapshotId, secondSnapshotId, options, listener)
 
     /** Like [diff], but collects all changes in a list. */
     @JvmOverloads
@@ -113,5 +110,5 @@ public class FileCommands internal constructor(
     public fun mount(
         mountpoint: Path,
         options: MountOptions = MountOptions.DEFAULT,
-    ): MountHandle = mountCommand.mount(mountpoint, options)
+    ): MountHandle = MountCommand(runner).mount(mountpoint, options)
 }

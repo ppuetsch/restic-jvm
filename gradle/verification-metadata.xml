@@ -3,6 +3,10 @@
    <configuration>
       <verify-metadata>true</verify-metadata>
       <verify-signatures>false</verify-signatures>
+      <trusted-artifacts>
+         <trust file=".*-sources\.jar" regex="true"/>
+         <trust file="gradle-.*-src\.zip" regex="true"/>
+      </trusted-artifacts>
    </configuration>
    <components>
       <component group="antlr" name="antlr" version="2.7.7">
