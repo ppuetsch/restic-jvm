@@ -42,16 +42,29 @@ internal class BackupCommand(
     ): BackupResult {
         val errors = mutableListOf<BackupEvent.Error>()
         var summary: BackupSummary? = null
-        val handleLine = { line: String ->
-            Json.parseOrNull(line)?.let(::backupEventFrom)?.let { event ->
+        val eventLock = Any()
+        val handleEvent = { event: BackupEvent ->
+            synchronized(eventLock) {
                 if (event is BackupEvent.Error) errors += event
                 if (event is BackupEvent.Summary) summary = event.summary
                 listener?.onEvent(event)
             }
         }
-        val request = ProcessRequest(arguments, standardInput = input, cancellation = options.cancellationToken)
+        val handleLine = { line: String -> Json.parseOrNull(line)?.let(::backupEventFrom)?.let(handleEvent) }
+        // restic reports files it could not read as JSON error messages on standard error, not on standard output
+        val handleErrorLine = { line: String ->
+            val event = Json.parseOrNull(line)?.let(::backupEventFrom)
+            if (event is BackupEvent.Error) handleEvent(event)
+        }
+        val request =
+            ProcessRequest(
+                arguments,
+                standardInput = input,
+                cancellation = options.cancellationToken,
+                onStandardErrorLine = handleErrorLine,
+            )
         val outcome = runner.run(request) { line -> handleLine(line) }
-        return resultFrom(outcome, summary, errors)
+        return synchronized(eventLock) { resultFrom(outcome, summary, errors.toList()) }
     }
 
     private fun resultFrom(

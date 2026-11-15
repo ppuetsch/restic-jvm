@@ -123,7 +123,10 @@ public data class BackupResult(
     val hasUnreadableSources: Boolean,
 )
 
-/** Receives the events of a running backup; called on the thread that reads restic's output. */
+/**
+ * Receives the events of a running backup; called on the threads that read restic's output and error output, never
+ * concurrently.
+ */
 public fun interface BackupListener {
     /** A new event; should return quickly, otherwise restic's output backs up. */
     public fun onEvent(event: BackupEvent)
