@@ -55,6 +55,9 @@ internal class ProcessRunner(
     /** A runner whose calls can be cancelled through [token], unless they already carry a token of their own. */
     fun cancellableBy(token: CancellationToken?): ProcessRunner = if (token == null) this else ProcessRunner(configuration, token)
 
+    /** `true` if the caller configured the variable; the library then leaves it alone. */
+    fun configuresEnvironmentVariable(name: String): Boolean = configuration.processEnvironment().containsKey(name)
+
     fun run(
         arguments: List<String>,
         onStandardOutputLine: (String) -> Unit = {},

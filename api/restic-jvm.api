@@ -373,6 +373,7 @@ public final class io/github/ppuetsch/restic/CheckOptions {
 	public static final field DEFAULT Lio/github/ppuetsch/restic/CheckOptions;
 	public static final fun builder ()Lio/github/ppuetsch/restic/CheckOptions$Builder;
 	public final fun getCancellationToken ()Lio/github/ppuetsch/restic/CancellationToken;
+	public final fun getProgressListener ()Lio/github/ppuetsch/restic/CheckProgressListener;
 	public final fun getReadData ()Z
 	public final fun getReadDataSubset ()Ljava/lang/String;
 	public final fun getWithCache ()Z
@@ -381,6 +382,7 @@ public final class io/github/ppuetsch/restic/CheckOptions {
 public final class io/github/ppuetsch/restic/CheckOptions$Builder {
 	public final fun build ()Lio/github/ppuetsch/restic/CheckOptions;
 	public final fun cancellationToken (Lio/github/ppuetsch/restic/CancellationToken;)Lio/github/ppuetsch/restic/CheckOptions$Builder;
+	public final fun progress (Lio/github/ppuetsch/restic/CheckProgressListener;)Lio/github/ppuetsch/restic/CheckOptions$Builder;
 	public final fun readData ()Lio/github/ppuetsch/restic/CheckOptions$Builder;
 	public final fun readData (Z)Lio/github/ppuetsch/restic/CheckOptions$Builder;
 	public static synthetic fun readData$default (Lio/github/ppuetsch/restic/CheckOptions$Builder;ZILjava/lang/Object;)Lio/github/ppuetsch/restic/CheckOptions$Builder;
@@ -392,6 +394,31 @@ public final class io/github/ppuetsch/restic/CheckOptions$Builder {
 
 public final class io/github/ppuetsch/restic/CheckOptions$Companion {
 	public final fun builder ()Lio/github/ppuetsch/restic/CheckOptions$Builder;
+}
+
+public final class io/github/ppuetsch/restic/CheckProgress {
+	public fun <init> (Ljava/lang/String;Ljava/time/Duration;Ljava/lang/Double;JLjava/lang/Long;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/time/Duration;
+	public final fun component3 ()Ljava/lang/Double;
+	public final fun component4 ()J
+	public final fun component5 ()Ljava/lang/Long;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/time/Duration;Ljava/lang/Double;JLjava/lang/Long;Ljava/lang/String;)Lio/github/ppuetsch/restic/CheckProgress;
+	public static synthetic fun copy$default (Lio/github/ppuetsch/restic/CheckProgress;Ljava/lang/String;Ljava/time/Duration;Ljava/lang/Double;JLjava/lang/Long;Ljava/lang/String;ILjava/lang/Object;)Lio/github/ppuetsch/restic/CheckProgress;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDone ()J
+	public final fun getElapsed ()Ljava/time/Duration;
+	public final fun getPercentDone ()Ljava/lang/Double;
+	public final fun getPhase ()Ljava/lang/String;
+	public final fun getTotal ()Ljava/lang/Long;
+	public final fun getUnit ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/github/ppuetsch/restic/CheckProgressListener {
+	public abstract fun onProgress (Lio/github/ppuetsch/restic/CheckProgress;)V
 }
 
 public final class io/github/ppuetsch/restic/CheckResult {
