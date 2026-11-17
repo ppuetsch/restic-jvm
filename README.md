@@ -35,7 +35,7 @@ Releases are on Maven Central.
 
 ```kotlin
 dependencies {
-    implementation("io.github.ppuetsch:restic-jvm:0.1.1")
+    implementation("io.github.ppuetsch:restic-jvm:0.1.2")
 }
 ```
 
@@ -44,7 +44,7 @@ dependencies {
 To run with nothing but Java installed, add the artifact with the restic binary for the platform the service runs on:
 
 ```kotlin
-runtimeOnly("io.github.ppuetsch:restic-jvm-binary-linux-x86_64:0.1.1")
+runtimeOnly("io.github.ppuetsch:restic-jvm-binary-linux-x86_64:0.1.2")
 ```
 
 Available: `linux-x86_64`, `linux-aarch64`, `windows-x86_64`, `macos-x86_64`, `macos-aarch64`, or
@@ -282,8 +282,8 @@ Each release carries the jars, their PGP signatures, a CycloneDX SBOM and the pu
 
 ```
 gpg --import signing-key.asc
-gpg --verify restic-jvm-0.1.1.jar.asc restic-jvm-0.1.1.jar
-gh attestation verify restic-jvm-0.1.1.jar --repo ppuetsch/restic-jvm
+gpg --verify restic-jvm-0.1.2.jar.asc restic-jvm-0.1.2.jar
+gh attestation verify restic-jvm-0.1.2.jar --repo ppuetsch/restic-jvm
 ```
 
 Apache License 2.0.

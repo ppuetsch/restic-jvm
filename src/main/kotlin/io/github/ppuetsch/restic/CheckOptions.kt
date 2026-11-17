@@ -9,6 +9,7 @@ import tools.jackson.databind.JsonNode
  * @property readDataSubset Reads and verifies only part of the data (`--read-data-subset`).
  * @property withCache Uses the local cache instead of a fresh one (`--with-cache`).
  * @property cancellationToken Token that cancels the call.
+ * @property progressListener Receives the progress; with it restic runs without `--json`, see [Builder.progress].
  */
 public class CheckOptions private constructor(
     builder: Builder,
@@ -17,6 +18,7 @@ public class CheckOptions private constructor(
     public val readDataSubset: String? = builder.readDataSubset
     public val withCache: Boolean = builder.withCache
     public val cancellationToken: CancellationToken? = builder.cancellationToken
+    public val progressListener: CheckProgressListener? = builder.progressListener
 
     internal fun arguments(): List<String> =
         buildList {
@@ -31,6 +33,7 @@ public class CheckOptions private constructor(
         internal var readDataSubset: String? = null
         internal var withCache: Boolean = false
         internal var cancellationToken: CancellationToken? = null
+        internal var progressListener: CheckProgressListener? = null
 
         /** Reads all data blobs and verifies their checksums (`--read-data`); downloads the whole repository. */
         @JvmOverloads
@@ -48,6 +51,14 @@ public class CheckOptions private constructor(
 
         /** Token that cancels the call from another thread. */
         public fun cancellationToken(token: CancellationToken): Builder = apply { cancellationToken = token }
+
+        /**
+         * Reports the progress of every phase to [listener]. restic prints progress only in its text output, so the
+         * check then runs without `--json`: [CheckResult.brokenPacks] and the suggestions are read from restic's text
+         * and [CheckResult.errorCount] counts the damaged packs (at least 1 for a damaged repository). Without a
+         * `RESTIC_PROGRESS_FPS` in the configuration's environment, restic reports once per second.
+         */
+        public fun progress(listener: CheckProgressListener): Builder = apply { progressListener = listener }
 
         /** Creates the immutable options. */
         public fun build(): CheckOptions = CheckOptions(this)

@@ -39,12 +39,14 @@ internal class ProcessRequest(
     val cancellation: CancellationToken? = null,
     val standardOutput: OutputStream? = null,
     val onStandardErrorLine: ((String) -> Unit)? = null,
+    /** Applied before the configuration's environment, so the caller's own values win. */
+    val defaultEnvironment: Map<String, String> = emptyMap(),
 ) {
     fun withDefaultCancellation(token: CancellationToken?): ProcessRequest =
         if (cancellation != null || token == null) {
             this
         } else {
-            ProcessRequest(arguments, extraEnvironment, standardInput, token, standardOutput, onStandardErrorLine)
+            ProcessRequest(arguments, extraEnvironment, standardInput, token, standardOutput, onStandardErrorLine, defaultEnvironment)
         }
 }
 
@@ -96,6 +98,7 @@ internal class ProcessRunner(
 
     private fun start(request: ProcessRequest): Process {
         val builder = ProcessBuilder(listOf(configuration.binary) + configuration.globalArguments() + request.arguments)
+        builder.environment().putAll(request.defaultEnvironment)
         builder.environment().putAll(configuration.processEnvironment())
         builder.environment().putAll(request.extraEnvironment)
         configuration.workingDirectory?.let { builder.directory(it.toFile()) }

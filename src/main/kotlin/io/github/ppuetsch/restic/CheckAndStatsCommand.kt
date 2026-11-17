@@ -2,6 +2,9 @@ package io.github.ppuetsch.restic
 
 import tools.jackson.databind.JsonNode
 
+private const val PROGRESS_FPS_VARIABLE: String = "RESTIC_PROGRESS_FPS"
+private const val PROGRESS_REPORTS_PER_SECOND: String = "1"
+
 /** A message from the JSON output of `restic check`. */
 public sealed interface CheckMessage {
     /**
@@ -115,7 +118,9 @@ private class CheckCollector {
         outcome: ProcessOutcome,
         errorLines: List<String>,
     ): CheckResult {
-        val checkSummary = summary ?: throw commandExceptionFor(outcome.exitCode, outcome.standardError)
+        // restic also prints a summary when it gives up, for example on a locked repository (exit code 11)
+        val checkRan = outcome.exitCode == 0 || outcome.exitCode == 1
+        val checkSummary = summary?.takeIf { checkRan } ?: throw commandExceptionFor(outcome.exitCode, outcome.standardError)
         return CheckResult(
             errorCount = checkSummary.errorCount,
             brokenPacks = checkSummary.brokenPacks,
@@ -165,6 +170,11 @@ internal class CheckAndStatsCommand(
     fun check(
         options: CheckOptions,
         listener: OutputLineListener?,
+    ): CheckResult = options.progressListener?.let { checkWithProgress(options, it, listener) } ?: checkWithJson(options, listener)
+
+    private fun checkWithJson(
+        options: CheckOptions,
+        listener: OutputLineListener?,
     ): CheckResult {
         val collector = CheckCollector()
         val errorLines = mutableListOf<String>()
@@ -181,6 +191,24 @@ internal class CheckAndStatsCommand(
                     listener?.onLine(readableLine)
                 }
             }
+        return collector.resultOrThrow(outcome, errorLines)
+    }
+
+    private fun checkWithProgress(
+        options: CheckOptions,
+        progressListener: CheckProgressListener,
+        listener: OutputLineListener?,
+    ): CheckResult {
+        val collector = CheckTextCollector(progressListener, listener)
+        val errorLines = mutableListOf<String>()
+        val request =
+            ProcessRequest(
+                listOf("check") + options.arguments(),
+                cancellation = options.cancellationToken,
+                onStandardErrorLine = readableErrorLines(listener, errorLines),
+                defaultEnvironment = mapOf(PROGRESS_FPS_VARIABLE to PROGRESS_REPORTS_PER_SECOND),
+            )
+        val outcome = runner.run(request) { line -> collector.accept(line) }
         return collector.resultOrThrow(outcome, errorLines)
     }
 
