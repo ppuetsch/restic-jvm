@@ -44,6 +44,7 @@ private const val REPOSITORY_CONTAINS_ERRORS: String = "Fatal: repository contai
 private val PROGRESS_LINE =
     Regex("""^\[(?:(\d+):)?(\d+):(\d+)]\s+(?:(\d+(?:\.\d+)?)%\s+)?(\d+)(?:\s*/\s*(\d+))?\s+(\S+).*$""")
 private val DAMAGED_PACK_LINE = Regex("""^pack ([0-9a-f]{64}) contains""")
+private val WHITESPACE = Regex("""\s+""")
 private val REPAIR_PACKS_LINE = Regex("""^restic repair packs ((?:[0-9a-f]{64}\s*)+)$""")
 
 internal fun checkProgressFrom(
@@ -111,16 +112,13 @@ internal class CheckTextCollector(
         )
     }
 
-    private fun brokenPacksIn(errorMessages: List<String>): List<String> =
-        errorMessages
-            .flatMap { message ->
-                DAMAGED_PACK_LINE.find(message)?.let { listOf(it.groupValues[1]) }
-                    ?: REPAIR_PACKS_LINE
-                        .find(message)
-                        ?.groupValues
-                        ?.get(1)
-                        ?.split(Regex("""\s+"""))
-                        ?.filter(String::isNotEmpty)
-                    ?: emptyList()
-            }.distinct()
+    /** restic names damaged packs in "pack <id> contains …" and again in its advice "restic repair packs <id> <id> …". */
+    private fun brokenPacksIn(errorMessages: List<String>): List<String> = errorMessages.flatMap(::packIdsIn).distinct()
+
+    private fun packIdsIn(message: String): List<String> {
+        val damagedPack = DAMAGED_PACK_LINE.find(message)?.groupValues?.get(1)
+        if (damagedPack != null) return listOf(damagedPack)
+        val repairArguments = REPAIR_PACKS_LINE.find(message)?.groupValues?.get(1)
+        return repairArguments?.split(WHITESPACE)?.filter(String::isNotEmpty).orEmpty()
+    }
 }

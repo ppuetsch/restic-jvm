@@ -206,11 +206,18 @@ internal class CheckAndStatsCommand(
                 listOf("check") + options.arguments(),
                 cancellation = options.cancellationToken,
                 onStandardErrorLine = readableErrorLines(listener, errorLines),
-                defaultEnvironment = mapOf(PROGRESS_FPS_VARIABLE to PROGRESS_REPORTS_PER_SECOND),
+                extraEnvironment = progressEnvironment(),
             )
         val outcome = runner.run(request) { line -> collector.accept(line) }
         return collector.resultOrThrow(outcome, errorLines)
     }
+
+    private fun progressEnvironment(): Map<String, String> =
+        if (runner.configuresEnvironmentVariable(PROGRESS_FPS_VARIABLE)) {
+            emptyMap()
+        } else {
+            mapOf(PROGRESS_FPS_VARIABLE to PROGRESS_REPORTS_PER_SECOND)
+        }
 
     fun stats(options: StatsOptions): StatsResult {
         var lastLine = ""
